@@ -12,6 +12,7 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping("/api/class")
 public class ClassController {
+    //test
 
     @Autowired
     private ClassService classService;
