@@ -23,8 +23,6 @@ public class DietPlan {
     @Column(length = 50, nullable = false)
     private String title;
 
-//    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-//    private LocalDateTime startedAt;
 
     @Column(updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

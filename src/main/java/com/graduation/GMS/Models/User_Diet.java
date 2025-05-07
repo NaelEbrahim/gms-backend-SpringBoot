@@ -21,7 +21,7 @@ public class User_Diet {
 
     @Column(nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime bookedAt;
+    private LocalDateTime startedAt;
 
     private Float rate;
 
