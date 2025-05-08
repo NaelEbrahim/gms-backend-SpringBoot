@@ -39,7 +39,7 @@ public class DietPlan {
     @OneToMany(mappedBy = "diet_plan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<User_Diet> userDietList;
 
-    @OneToMany(mappedBy = "diet_plan", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "dietPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Plan_Meal> planMealList;
 
 }

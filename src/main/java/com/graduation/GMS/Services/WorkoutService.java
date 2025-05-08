@@ -41,7 +41,7 @@ public class WorkoutService {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Workout created successfully"));
     }
-
+    @Transactional
     public ResponseEntity<?> updateWorkout(Integer id, WorkoutRequest request) {
         Optional<Workout> optionalWorkout = workoutRepository.findById(id);
         if (optionalWorkout.isEmpty()) {

@@ -3,12 +3,12 @@ package com.graduation.GMS.Services;
 import com.graduation.GMS.DTO.Request.AssignProgramToClassRequest;
 import com.graduation.GMS.DTO.Request.ClassRequest;
 import com.graduation.GMS.DTO.Response.ClassResponse;
+import com.graduation.GMS.DTO.Response.ProgramResponse;
+import com.graduation.GMS.DTO.Response.UserResponse;
+import com.graduation.GMS.DTO.Response.WorkoutResponse;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
-import com.graduation.GMS.Repositories.ClassRepository;
-import com.graduation.GMS.Repositories.Class_ProgramRepository;
-import com.graduation.GMS.Repositories.ProgramRepository;
-import com.graduation.GMS.Repositories.UserRepository;
+import com.graduation.GMS.Repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +19,7 @@ import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ClassService {
@@ -30,6 +31,9 @@ public class ClassService {
     private  ProgramRepository programRepository;
     @Autowired
     private Class_ProgramRepository class_ProgramRepository;
+    @Autowired
+    private Program_WorkoutRepository programWorkoutRepository;
+
 
 
     @Transactional
@@ -60,6 +64,7 @@ public class ClassService {
     }
 
     // Update an existing class
+    @Transactional
     public ResponseEntity<?> updateClass(Integer id, ClassRequest request) {
         Optional<Class> optionalClass = classRepository.findById(id);
         if (optionalClass.isEmpty()) {
@@ -103,23 +108,62 @@ public class ClassService {
 
         classRepository.deleteById(id);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("message", "Class deleted successfully"));    }
-    // Method to get a class by ID
+                .body(Map.of("message", "Class deleted successfully"));
+    }
+
     public ResponseEntity<?> getClassById(Integer classId) {
         Optional<Class> classOptional = classRepository.findById(classId);
         if (classOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "class Not found"));
+                    .body(Map.of("message", "Class not found"));
         }
 
         Class classEntity = classOptional.get();
-        ClassResponse responseDto = new ClassResponse(classEntity.getId(), classEntity.getName(), classEntity.getDescription(), classEntity.getPrice());
+        UserResponse coachResponse = mapToUserResponse(classEntity.getAuditCoach());
+        // Get all programs associated with this class
+        List<ProgramResponse> programResponses = class_ProgramRepository.findByAClass(classEntity)
+                .stream()
+                .map(classProgram -> {
+                    Program program = classProgram.getProgram();
+                    ;
+                    // Get all workouts for each program
+                    List<WorkoutResponse> workoutResponses = programWorkoutRepository.findByProgram(program)
+                            .stream()
+                            .map(programWorkout -> {
+                                Workout workout = programWorkout.getWorkout();
+                                return new WorkoutResponse(
+                                        workout.getId(),
+                                        workout.getTitle(),
+                                        workout.getPrimary_muscle(),
+                                        workout.getSecondary_muscles(),
+                                        workout.getAvg_calories(),
+                                        workout.getDescription()
+                                );
+                            })
+                            .collect(Collectors.toList());
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(responseDto);
+                    return new ProgramResponse(
+                            program.getId(),
+                            program.getTitle(),
+                            program.getLevel(),
+                            program.getIsPublic(),
+                            workoutResponses
+                    );
+                })
+                .collect(Collectors.toList());
+
+        ClassResponse responseDto = new ClassResponse(
+                coachResponse,
+                classEntity.getId(),
+                classEntity.getName(),
+                classEntity.getDescription(),
+                classEntity.getPrice(),
+                programResponses
+        );
+
+        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
 
-    // Method to get all classes
     public ResponseEntity<?> getAllClasses() {
         List<Class> classes = classRepository.findAll();
 
@@ -129,18 +173,52 @@ public class ClassService {
         }
 
         List<ClassResponse> classResponses = classes.stream()
-                .map(c -> new ClassResponse(
-                        c.getId(),
-                        c.getName(),
-                        c.getDescription(),
-                        c.getPrice()
-                ))
-                .toList();
+                .map(classEntity -> {
+                    // Get all programs for each class
+                    List<ProgramResponse> programResponses = class_ProgramRepository.findByAClass(classEntity)
+                            .stream()
+                            .map(classProgram -> {
+                                Program program = classProgram.getProgram();
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(classResponses);
+                                // Get all workouts for each program
+                                List<WorkoutResponse> workoutResponses = programWorkoutRepository.findByProgram(program)
+                                        .stream()
+                                        .map(programWorkout -> {
+                                            Workout workout = programWorkout.getWorkout();
+                                            return new WorkoutResponse(
+                                                    workout.getId(),
+                                                    workout.getTitle(),
+                                                    workout.getPrimary_muscle(),
+                                                    workout.getSecondary_muscles(),
+                                                    workout.getAvg_calories(),
+                                                    workout.getDescription()
+                                            );
+                                        })
+                                        .collect(Collectors.toList());
+
+                                return new ProgramResponse(
+                                        program.getId(),
+                                        program.getTitle(),
+                                        program.getLevel(),
+                                        program.getIsPublic(),
+                                        workoutResponses
+                                );
+                            })
+                            .collect(Collectors.toList());
+
+                    return new ClassResponse(
+                            mapToUserResponse(classEntity.getAuditCoach()),
+                            classEntity.getId(),
+                            classEntity.getName(),
+                            classEntity.getDescription(),
+                            classEntity.getPrice(),
+                            programResponses
+                    );
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.status(HttpStatus.OK).body(classResponses);
     }
-
 
     // Method to assign a program to a class
 
@@ -180,6 +258,19 @@ public class ClassService {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Program successfully assigned to class"));
+    }
+    private UserResponse mapToUserResponse(User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getGender(),
+                user.getDob(),
+                user.getCreatedAt(),
+                user.getQr()
+        );
     }
 
 }

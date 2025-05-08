@@ -42,7 +42,7 @@ public class ClassController {
     }
 
     // Endpoint to get all classes
-    @GetMapping("show/all")
+    @GetMapping("/show/all")
     public ResponseEntity<?> getAllClasses() {
         return classService.getAllClasses();
     }

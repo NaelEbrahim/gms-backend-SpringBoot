@@ -5,18 +5,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClassResponse {
-    private UserResponse coach;
-    private Integer id;
-    private String name;
-    private String description;
-    private Float price;
-    private List<ProgramResponse> programs;
-}
+public class MealResponse {
 
+    private int id;
+
+    private String title;
+
+    private String calories;
+
+    private String description;
+}

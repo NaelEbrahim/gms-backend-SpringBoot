@@ -3,6 +3,7 @@ package com.graduation.GMS.Services;
 import com.graduation.GMS.DTO.Request.ProgramRequest;
 import com.graduation.GMS.DTO.Request.AssignWorkoutToProgramRequest;
 import com.graduation.GMS.DTO.Response.ProgramResponse;
+import com.graduation.GMS.DTO.Response.WorkoutResponse;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,7 +93,6 @@ public class ProgramService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Program deleted successfully"));
     }
-
     public ResponseEntity<?> getProgramById(Integer id) {
         Optional<Program> programOptional = programRepository.findById(id);
         if (programOptional.isEmpty()) {
@@ -101,15 +101,32 @@ public class ProgramService {
         }
 
         Program program = programOptional.get();
+
+        // Get all workouts associated with this program
+        List<WorkoutResponse> workoutResponses = programWorkoutRepository.findByProgram(program)
+                .stream()
+                .map(programWorkout -> {
+                    Workout workout = programWorkout.getWorkout();
+                    return new WorkoutResponse(
+                            workout.getId(),
+                            workout.getTitle(),
+                            workout.getPrimary_muscle(),
+                            workout.getSecondary_muscles(),
+                            workout.getAvg_calories(),
+                            workout.getDescription()
+                    );
+                })
+                .toList();
+
         ProgramResponse response = new ProgramResponse(
                 program.getId(),
                 program.getTitle(),
                 program.getLevel(),
-                program.getIsPublic()
+                program.getIsPublic(),
+                workoutResponses
         );
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     public ResponseEntity<?> getAllPrograms() {
@@ -121,17 +138,36 @@ public class ProgramService {
         }
 
         List<ProgramResponse> programResponses = programs.stream()
-                .map(p -> new ProgramResponse(
-                        p.getId(),
-                        p.getTitle(),
-                        p.getLevel(),
-                        p.getIsPublic()
-                ))
+                .map(program -> {
+                    // Get workouts for each program
+                    List<WorkoutResponse> workoutResponses = programWorkoutRepository.findByProgram(program)
+                            .stream()
+                            .map(programWorkout -> {
+                                Workout workout = programWorkout.getWorkout();
+                                return new WorkoutResponse(
+                                        workout.getId(),
+                                        workout.getTitle(),
+                                        workout.getPrimary_muscle(),
+                                        workout.getSecondary_muscles(),
+                                        workout.getAvg_calories(),
+                                        workout.getDescription()
+                                );
+                            })
+                            .collect(Collectors.toList());
+
+                    return new ProgramResponse(
+                            program.getId(),
+                            program.getTitle(),
+                            program.getLevel(),
+                            program.getIsPublic(),
+                            workoutResponses
+                    );
+                })
                 .collect(Collectors.toList());
 
-        return  ResponseEntity.status(HttpStatus.OK)
-                .body(programResponses);
+        return ResponseEntity.status(HttpStatus.OK).body(programResponses);
     }
+
 
     @Transactional
     public ResponseEntity<?> assignWorkoutToProgram(AssignWorkoutToProgramRequest request) {

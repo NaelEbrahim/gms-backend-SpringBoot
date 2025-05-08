@@ -1,22 +1,29 @@
 package com.graduation.GMS.DTO.Response;
 
-
-import com.graduation.GMS.Models.Enums.Level;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProgramResponse {
+public class DietResponse {
+
     private Integer id;
-    private String name;
-    private Level level;
-    private Boolean isPublic;
-    private List<WorkoutResponse> workouts;
+
+    private UserResponse coach;
+
+    private String title;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime lastModifiedAt;
+
+    private List<MealResponse> meals;
+
 }

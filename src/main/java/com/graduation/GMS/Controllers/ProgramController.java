@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/program")
@@ -38,7 +37,7 @@ public class ProgramController {
         return programService.getProgramById(id);
     }
 
-    @GetMapping("show/all")
+    @GetMapping("/show/all")
     public ResponseEntity<?> getAllPrograms() {
         return programService.getAllPrograms();
     }
