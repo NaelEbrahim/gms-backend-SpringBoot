@@ -22,6 +22,6 @@ public class Plan_Meal {
 
     @ManyToOne
     @JoinColumn(name = "diet_plan_id")
-    private DietPlan diet_plan;
+    private DietPlan dietPlan;
 
 }
