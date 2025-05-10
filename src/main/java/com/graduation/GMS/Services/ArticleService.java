@@ -8,23 +8,25 @@ import com.graduation.GMS.Models.Enums.Wiki;
 import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.ArticleRepository;
 import com.graduation.GMS.Repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.validation.Valid;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class ArticleService {
-    @Autowired
+
     private ArticleRepository articleRepository;
-    @Autowired
+
     private UserRepository userRepository;
 
     @Transactional

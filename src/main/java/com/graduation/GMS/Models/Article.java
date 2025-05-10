@@ -29,6 +29,7 @@ public class Article {
 
     private String category;
 
+    @Enumerated(EnumType.STRING)
     private Wiki wikiType;
 
     @Column(updatable = false, nullable = false)

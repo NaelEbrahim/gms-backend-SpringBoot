@@ -4,6 +4,7 @@ import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.DTO.Response.WorkoutResponse;
 import com.graduation.GMS.Models.Workout;
 import com.graduation.GMS.Repositories.WorkoutRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +17,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class WorkoutService {
-    @Autowired
+
     private WorkoutRepository workoutRepository;
 
     @Transactional

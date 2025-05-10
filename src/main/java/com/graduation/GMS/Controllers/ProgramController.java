@@ -3,11 +3,11 @@ package com.graduation.GMS.Controllers;
 import com.graduation.GMS.DTO.Request.ProgramRequest;
 import com.graduation.GMS.DTO.Request.AssignWorkoutToProgramRequest;
 import com.graduation.GMS.Services.ProgramService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/program")

@@ -22,6 +22,7 @@ public class Program {
     @Column(length = 50, nullable = false)
     private String title;
 
+    @Enumerated(EnumType.STRING)
     private Level level;
 
     private Boolean isPublic;

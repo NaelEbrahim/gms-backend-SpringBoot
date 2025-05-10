@@ -1,31 +1,31 @@
 package com.graduation.GMS.Models;
 
-import com.graduation.GMS.Models.Enums.Day;
+
+import com.graduation.GMS.Models.Enums.Roles;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
-@Getter
 @Setter
-@NoArgsConstructor
+@Getter
 @AllArgsConstructor
-public class Schedule {
+@NoArgsConstructor
+public class Role {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(unique = true)
     @Enumerated(EnumType.STRING)
-    private Day dayNum;
+    private Roles roleName;
 
-    @ManyToOne
-    @JoinColumn(name = "user_program_id")
-    private User_Program user_program;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<User_Role> userRoleList;
 
 }

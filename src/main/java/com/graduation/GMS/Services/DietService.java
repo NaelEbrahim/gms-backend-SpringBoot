@@ -12,26 +12,28 @@ import com.graduation.GMS.Repositories.MealRepository;
 import com.graduation.GMS.Repositories.Plan_MealRepository;
 import com.graduation.GMS.Repositories.UserRepository;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class DietService {
-    @Autowired
+
     private DietPlanRepository dietPlanRepository;
-    @Autowired
+
     private Plan_MealRepository planMealRepository;
-    @Autowired
+
     private MealRepository mealRepository;
-    @Autowired
+
     private UserRepository userRepository;
 
     @Transactional

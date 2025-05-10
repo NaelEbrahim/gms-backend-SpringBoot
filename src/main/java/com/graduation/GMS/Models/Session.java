@@ -27,6 +27,7 @@ public class Session {
 
     private String description;
 
+    @Enumerated(EnumType.STRING)
     private Day days;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

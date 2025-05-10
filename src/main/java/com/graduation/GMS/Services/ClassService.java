@@ -9,29 +9,31 @@ import com.graduation.GMS.DTO.Response.WorkoutResponse;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
 import com.graduation.GMS.Repositories.*;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class ClassService {
-    @Autowired
+
     private UserRepository userRepository;
-    @Autowired
+
     private  ClassRepository classRepository;
-    @Autowired
+
     private  ProgramRepository programRepository;
-    @Autowired
+
     private Class_ProgramRepository class_ProgramRepository;
-    @Autowired
+
     private Program_WorkoutRepository programWorkoutRepository;
 
 

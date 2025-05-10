@@ -3,11 +3,12 @@ package com.graduation.GMS.Controllers;
 import com.graduation.GMS.DTO.Request.AssignMealToDietRequest;
 import com.graduation.GMS.DTO.Request.DietRequest;
 import com.graduation.GMS.Services.DietService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+
 
 @RestController
 @RequestMapping("/api/diet")

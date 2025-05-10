@@ -5,20 +5,21 @@ import com.graduation.GMS.DTO.Response.MealResponse;
 import com.graduation.GMS.Models.Meal;
 import com.graduation.GMS.Repositories.MealRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class MealService {
-    @Autowired
+
     private MealRepository mealRepository;
 
     @Transactional
@@ -26,7 +27,7 @@ public class MealService {
         // Check if meal title already exists
         Optional<Meal> existingMeal = mealRepository.findByTitle(request.getTitle());
         if (existingMeal.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Meal title already exists"));
         }
 
@@ -40,6 +41,7 @@ public class MealService {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Meal created successfully"));
     }
+
     @Transactional
     public ResponseEntity<?> updateMeal(Integer id, @Valid MealRequest request) {
         Optional<Meal> optionalMeal = mealRepository.findById(id);
@@ -50,7 +52,7 @@ public class MealService {
         Meal meal = optionalMeal.get();
 
 
-        if (!request.getTitle().isEmpty()&&!meal.getTitle().equals(request.getTitle())) {
+        if (!request.getTitle().isEmpty() && !meal.getTitle().equals(request.getTitle())) {
             meal.setTitle(request.getTitle());
         }
 
@@ -74,7 +76,7 @@ public class MealService {
         }
 
         mealRepository.deleteById(id);
-        return  ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Meal deleted successfully"));
     }
 
@@ -93,7 +95,7 @@ public class MealService {
                 meal.getCalories()
         );
 
-        return  ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
 
@@ -114,7 +116,7 @@ public class MealService {
                 ))
                 .collect(Collectors.toList());
 
-        return  ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(mealResponses);
     }
 }

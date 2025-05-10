@@ -1,16 +1,17 @@
 package com.graduation.GMS.Controllers;
 import com.graduation.GMS.DTO.Request.MealRequest;
 import com.graduation.GMS.Services.MealService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/api/meal")
+@AllArgsConstructor
 public class MealController {
-    @Autowired
+
     private MealService mealService;
 
     // Endpoint to create a new Meal

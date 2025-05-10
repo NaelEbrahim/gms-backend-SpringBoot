@@ -6,7 +6,7 @@ import com.graduation.GMS.DTO.Response.ProgramResponse;
 import com.graduation.GMS.DTO.Response.WorkoutResponse;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Repositories.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,12 +18,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class ProgramService {
-    @Autowired
+
     private ProgramRepository programRepository;
-    @Autowired
+
     private WorkoutRepository workoutRepository;
-    @Autowired
+
     private Program_WorkoutRepository programWorkoutRepository;
 
     @Transactional

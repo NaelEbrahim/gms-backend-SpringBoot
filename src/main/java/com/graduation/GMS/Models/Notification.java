@@ -26,6 +26,7 @@ public class Notification {
 
     private String content;
 
+    @Enumerated(EnumType.STRING)
     private NotificationStatus status;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
