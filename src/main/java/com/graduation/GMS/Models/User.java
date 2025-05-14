@@ -55,8 +55,8 @@ public class User {
 
     // Relations
     @JsonIgnore
-    @OneToOne(mappedBy = "user", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private AuthToken authTokens;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AuthToken> authTokens;
 
     @JsonIgnore
     @OneToMany(mappedBy = "auditCoach", cascade = CascadeType.ALL, orphanRemoval = true)

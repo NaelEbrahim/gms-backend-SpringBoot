@@ -14,7 +14,6 @@ import com.graduation.GMS.Repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
 
 @Service
 @AllArgsConstructor
@@ -211,18 +212,5 @@ public class DietService {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Meal successfully assigned to dietPlan"));
-    }
-    private UserResponse mapToUserResponse(User user) {
-        return new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                user.getPhoneNumber(),
-                user.getGender(),
-                user.getDob(),
-                user.getCreatedAt(),
-                user.getQr()
-        );
     }
 }

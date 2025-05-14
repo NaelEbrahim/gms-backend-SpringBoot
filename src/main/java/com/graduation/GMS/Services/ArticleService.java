@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
+
 @Service
 @AllArgsConstructor
 public class ArticleService {
@@ -201,19 +203,6 @@ public class ArticleService {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(articleResponses);
-    }
-    private UserResponse mapToUserResponse(User user) {
-        return new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                user.getPhoneNumber(),
-                user.getGender(),
-                user.getDob(),
-                user.getCreatedAt(),
-                user.getQr()
-        );
     }
 
 }

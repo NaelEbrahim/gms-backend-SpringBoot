@@ -11,7 +11,6 @@ import com.graduation.GMS.Models.Class;
 import com.graduation.GMS.Repositories.*;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -21,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
 
 @Service
 @AllArgsConstructor
@@ -261,18 +262,6 @@ public class ClassService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Program successfully assigned to class"));
     }
-    private UserResponse mapToUserResponse(User user) {
-        return new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                user.getPhoneNumber(),
-                user.getGender(),
-                user.getDob(),
-                user.getCreatedAt(),
-                user.getQr()
-        );
-    }
+
 
 }

@@ -26,9 +26,8 @@ public class AuthToken {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime RT_EXP;
 
-    @MapsId
-    @OneToOne
-    @JoinColumn(name = "id")
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     @JsonIgnore
     private User user;
 

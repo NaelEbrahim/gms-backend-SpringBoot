@@ -1,12 +1,13 @@
 package com.graduation.GMS.Services;
 
 
+import com.graduation.GMS.Config.JwtConfig;
 import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -16,26 +17,33 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class JwtService {
 
-    private final String secret_Key = "d4XxeUg1xwh9UKQRUt51K8rz68M+UK1FCsKvMbHUmQ9dHCARrU99l0iqravNcEsN";
+    private final JwtConfig jwtConfig;
 
-    public String generateJwt(User user, List<Roles> roles) {
-        final long expiration_time = 86400000;
+
+    public String generateAccessToken(User user, List<Roles> roles) {
         Map<String, Object> claims = new HashMap<>();
-
         List<String> roleNames = roles.stream()
                 .map(Enum::name)
                 .collect(Collectors.toList());
-
         claims.put("roles", roleNames);
+        return generateJwt(user, jwtConfig.getAccessTokenExpiration(), claims);
+    }
 
+    public String generateRefreshToken(User user) {
+        return generateJwt(user, jwtConfig.getRefreshTokenExpiration(), null);
+    }
+
+    private String generateJwt(User user, Integer expirationTime, Map<String, Object> claims) {
+        System.out.println(expirationTime);
         return Jwts.builder()
                 .claims(claims)
                 .subject(user.getEmail())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration_time))
-                .signWith(Keys.hmacShaKeyFor(secret_Key.getBytes()))
+                .expiration(new Date(System.currentTimeMillis() + expirationTime))
+                .signWith(jwtConfig.getSecretKey())
                 .compact();
     }
 
@@ -50,7 +58,7 @@ public class JwtService {
 
     private Claims getClaims(String token) {
         return Jwts.parser()
-                .verifyWith(Keys.hmacShaKeyFor(secret_Key.getBytes()))
+                .verifyWith(jwtConfig.getSecretKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

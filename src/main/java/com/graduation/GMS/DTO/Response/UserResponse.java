@@ -2,11 +2,8 @@ package com.graduation.GMS.DTO.Response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.graduation.GMS.Models.Enums.Gender;
-import jakarta.persistence.Column;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.graduation.GMS.Models.User;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,10 +28,50 @@ public class UserResponse {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dob;
 
-    @Column(updatable = false, nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
-    @Column(unique = true, nullable = false)
     private String qr;
+
+    private String accessToken;
+
+    public UserResponse(User user, String accessToken) {
+        this.id = user.getId();
+        this.firstName = user.getFirstName();
+        this.lastName = user.getLastName();
+        this.email = user.getEmail();
+        this.phoneNumber = user.getPhoneNumber();
+        this.gender = user.getGender();
+        this.dob = user.getDob();
+        this.createdAt = user.getCreatedAt();
+        this.qr = user.getQr();
+        this.accessToken = accessToken;
+    }
+
+    public UserResponse(Integer id, String firstName, String lastName, String email, String phoneNumber, Gender gender, LocalDate dob, LocalDateTime createdAt, String qr) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.gender = gender;
+        this.dob = dob;
+        this.createdAt = createdAt;
+        this.qr = qr;
+    }
+
+    public static UserResponse mapToUserResponse(User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getGender(),
+                user.getDob(),
+                user.getCreatedAt(),
+                user.getQr()
+        );
+    }
+
 }

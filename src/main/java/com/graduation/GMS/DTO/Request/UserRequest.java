@@ -14,7 +14,7 @@ import java.util.List;
 
 @Setter
 @Getter
-public class CreateUserRequest {
+public class UserRequest {
 
     @NotBlank(message = "firstName is required")
     private String firstName;
