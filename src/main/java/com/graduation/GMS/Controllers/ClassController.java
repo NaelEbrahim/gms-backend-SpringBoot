@@ -4,17 +4,16 @@ import com.graduation.GMS.DTO.Request.AssignProgramToClassRequest;
 import com.graduation.GMS.DTO.Request.ClassRequest;
 import com.graduation.GMS.Services.ClassService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
 @RestController
 @RequestMapping("/api/class")
+@AllArgsConstructor
 public class ClassController {
-    //test
 
-    @Autowired
     private ClassService classService;
 
     // Endpoint to create a new class

@@ -2,17 +2,16 @@ package com.graduation.GMS.Controllers;
 
 import com.graduation.GMS.DTO.Request.FAQRequest;
 import com.graduation.GMS.Services.FAQService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/FAQ")
+@AllArgsConstructor
 public class FAQController {
 
-    @Autowired
     private FAQService faqService;
 
     // Endpoint to create a new faq

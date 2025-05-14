@@ -11,11 +11,12 @@ import com.graduation.GMS.Repositories.DietPlanRepository;
 import com.graduation.GMS.Repositories.MealRepository;
 import com.graduation.GMS.Repositories.Plan_MealRepository;
 import com.graduation.GMS.Repositories.UserRepository;
+import com.graduation.GMS.Tools.HandleCurrentUserSession;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -38,7 +39,8 @@ public class DietService {
     private UserRepository userRepository;
 
     @Transactional
-    public ResponseEntity<?> createDiet(@Valid DietRequest request) {
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> createDiet(DietRequest request) {
         // Check if the diet title already exists (optional validation)
         Optional<DietPlan> existingDietPlan = dietPlanRepository.findByTitle(request.getTitle());
         if (existingDietPlan.isPresent()) {
@@ -47,13 +49,9 @@ public class DietService {
         }
         // Convert the DTO to entity and save
         DietPlan dietPlanEntity = new DietPlan();
-        Optional<User> coach =userRepository.findById(request.getCoachId());
-        if (coach.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Coach Not Found"));
-        }
+
         dietPlanEntity.setTitle(request.getTitle());
-        dietPlanEntity.setCoach(coach.get());
+        dietPlanEntity.setCoach(HandleCurrentUserSession.getCurrentUser());
         dietPlanEntity.setCreatedAt(LocalDateTime.now());
         dietPlanEntity.setLastModifiedAt(LocalDateTime.now());
         // Save the dietPlan to the database
@@ -63,7 +61,9 @@ public class DietService {
                 .body(Map.of("message", "Diet Plan created successfully"));
     }
 
-    public ResponseEntity<?> updateDiet(Integer id, @Valid DietRequest request) {
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> updateDiet(Integer id, DietRequest request) {
         Optional<DietPlan> optionalDietPlan = dietPlanRepository.findById(id);
         if (optionalDietPlan.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -72,15 +72,6 @@ public class DietService {
 
         DietPlan existingDietPlan = optionalDietPlan.get();
 
-        Optional<User> coach =userRepository.findById(request.getCoachId());
-        if (coach.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Coach Not Found"));
-        }
-
-        if (!existingDietPlan.getCoach().getId().equals(request.getCoachId())) {
-            existingDietPlan.setCoach(coach.get());
-        }
 
         if (!existingDietPlan.getTitle().equals(request.getTitle())&&!request.getTitle().isEmpty()) {
             existingDietPlan.setTitle(request.getTitle());
@@ -177,7 +168,9 @@ public class DietService {
         return ResponseEntity.status(HttpStatus.OK).body(dietPlanResponses);
     }
 
-    public ResponseEntity<?> assignMealToDiet(@Valid AssignMealToDietRequest request) {
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> assignMealToDiet(AssignMealToDietRequest request) {
         Integer dietPlanId = request.getDiet_plan_id();
         Integer mealId = request.getMeal_id();
 

@@ -12,8 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 
 public class ClassRequest {
-    @NotBlank(message = "CoachId is required")
-    private int coachId;
 
     @NotBlank(message = "Class name is required")
     @Size(max = 100, message = "Class name must not exceed 100 characters")

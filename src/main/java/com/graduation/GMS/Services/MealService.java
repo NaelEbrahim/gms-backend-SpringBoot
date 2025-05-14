@@ -5,10 +5,10 @@ import com.graduation.GMS.DTO.Response.MealResponse;
 import com.graduation.GMS.Models.Meal;
 import com.graduation.GMS.Repositories.MealRepository;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,7 +23,8 @@ public class MealService {
     private MealRepository mealRepository;
 
     @Transactional
-    public ResponseEntity<?> createMeal(@Valid MealRequest request) {
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> createMeal(MealRequest request) {
         // Check if meal title already exists
         Optional<Meal> existingMeal = mealRepository.findByTitle(request.getTitle());
         if (existingMeal.isPresent()) {
@@ -43,7 +44,8 @@ public class MealService {
     }
 
     @Transactional
-    public ResponseEntity<?> updateMeal(Integer id, @Valid MealRequest request) {
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> updateMeal(Integer id,MealRequest request) {
         Optional<Meal> optionalMeal = mealRepository.findById(id);
         if (optionalMeal.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -69,6 +71,7 @@ public class MealService {
                 .body(Map.of("message", "Meal updated successfully"));
     }
 
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> deleteMeal(Integer id) {
         if (!mealRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

@@ -17,6 +17,4 @@ public class DietRequest {
     @Size(max = 100, message = "Class Title must not exceed 100 characters")
     private String title;
 
-    @NotBlank(message = "CoachId is required")
-    private int coachId;
 }

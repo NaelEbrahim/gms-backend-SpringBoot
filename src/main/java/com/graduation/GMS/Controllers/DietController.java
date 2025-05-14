@@ -4,7 +4,7 @@ import com.graduation.GMS.DTO.Request.AssignMealToDietRequest;
 import com.graduation.GMS.DTO.Request.DietRequest;
 import com.graduation.GMS.Services.DietService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/diet")
+@AllArgsConstructor
 public class DietController {
 
-    @Autowired
     private DietService dietService;
 
     // Endpoint to create a new diet

@@ -5,13 +5,13 @@ import com.graduation.GMS.DTO.Response.ArticleResponse;
 import com.graduation.GMS.DTO.Response.UserResponse;
 import com.graduation.GMS.Models.Article;
 import com.graduation.GMS.Models.Enums.Wiki;
-import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.ArticleRepository;
 import com.graduation.GMS.Repositories.UserRepository;
-import jakarta.validation.Valid;
+import com.graduation.GMS.Tools.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +32,8 @@ public class ArticleService {
     private UserRepository userRepository;
 
     @Transactional
-    public ResponseEntity<?> createArticle(@Valid ArticleRequest request) {
+    @PreAuthorize("hasAnyAuthority('Admin')")
+    public ResponseEntity<?> createArticle(ArticleRequest request) {
 
         // Check if article title already exists
         Optional<Article> existingArticle = articleRepository.findByTitle(request.getTitle());
@@ -41,14 +42,13 @@ public class ArticleService {
                     .body(Map.of("message", "Article title already exists"));
         }
 
-        Optional<User> admin =userRepository.findById(request.getAdminId());
         Article article = new Article();
         article.setCreatedAt(LocalDateTime.now());
         article.setTitle(request.getTitle());
         article.setContent(request.getContent());
         article.setCategory(request.getCategory());
         article.setWikiType(request.getWikiType());
-        article.setAdmin(admin.get());
+        article.setAdmin(HandleCurrentUserSession.getCurrentUser());
         article.setLastModifiedAt(LocalDateTime.now());
         articleRepository.save(article);
         // Return the response with the saved article details
@@ -56,7 +56,8 @@ public class ArticleService {
                 .body(Map.of("message", "Article created successfully"));
     }
     @Transactional
-    public ResponseEntity<?> updateArticle(Integer id, @Valid ArticleRequest request) {
+    @PreAuthorize("hasAnyAuthority('Admin')")
+    public ResponseEntity<?> updateArticle(Integer id, ArticleRequest request) {
         Optional<Article> optionalArticle = articleRepository.findById(id);
         if (optionalArticle.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -64,16 +65,6 @@ public class ArticleService {
         }
 
         Article existingArticle = optionalArticle.get();
-
-        Optional<User> admin =userRepository.findById(request.getAdminId());
-        if (admin.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Admin Not Found"));
-        }
-
-        if (!existingArticle.getAdmin().getId().equals(request.getAdminId())) {
-            existingArticle.setAdmin(admin.get());
-        }
 
         if (!existingArticle.getTitle().equals(request.getTitle())&&!request.getTitle().isEmpty()) {
             existingArticle.setTitle(request.getTitle());
@@ -93,7 +84,7 @@ public class ArticleService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Article updated successfully"));
     }
-
+    @PreAuthorize("hasAnyAuthority('Admin')")
     public ResponseEntity<?> deleteArticle(Integer id) {
         if (!articleRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

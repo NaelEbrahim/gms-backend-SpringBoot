@@ -9,6 +9,7 @@ import com.graduation.GMS.Repositories.*;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class ProgramService {
     private Program_WorkoutRepository programWorkoutRepository;
 
     @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createProgram(ProgramRequest request) {
         // Check if program title already exists
         Optional<Program> existingProgram = programRepository.findByTitle(request.getTitle());
@@ -51,6 +53,8 @@ public class ProgramService {
                 .body(Map.of("message", "Program created successfully"));
     }
 
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> updateProgram(Integer id, ProgramRequest request) {
         Optional<Program> optionalProgram = programRepository.findById(id);
         if (optionalProgram.isEmpty()) {
@@ -84,6 +88,7 @@ public class ProgramService {
                 .body(Map.of("message", "Program updated successfully"));
     }
 
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> deleteProgram(Integer id) {
         if (!programRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -114,7 +119,9 @@ public class ProgramService {
                             workout.getPrimary_muscle(),
                             workout.getSecondary_muscles(),
                             workout.getAvg_calories(),
-                            workout.getDescription()
+                            workout.getDescription(),
+                            programWorkout.getReps(),
+                            programWorkout.getSets()
                     );
                 })
                 .toList();
@@ -151,7 +158,9 @@ public class ProgramService {
                                         workout.getPrimary_muscle(),
                                         workout.getSecondary_muscles(),
                                         workout.getAvg_calories(),
-                                        workout.getDescription()
+                                        workout.getDescription(),
+                                        programWorkout.getReps(),
+                                        programWorkout.getSets()
                                 );
                             })
                             .collect(Collectors.toList());
@@ -171,6 +180,7 @@ public class ProgramService {
 
 
     @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> assignWorkoutToProgram(AssignWorkoutToProgramRequest request) {
         Optional<Program> programOptional = programRepository.findById(request.getProgramId());
         if (programOptional.isEmpty()) {

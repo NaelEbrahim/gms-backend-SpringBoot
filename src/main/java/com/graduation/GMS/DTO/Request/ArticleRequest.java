@@ -15,9 +15,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ArticleRequest {
 
-    @NotBlank(message = "AdminId is required")
-    private int adminId;
-
     @NotBlank(message = "Title is required")
     @Size(max = 100, message = "Title name must not exceed 100 characters")
     private String title;

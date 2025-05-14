@@ -3,15 +3,16 @@ package com.graduation.GMS.Controllers;
 import com.graduation.GMS.DTO.Request.ArticleRequest;
 import com.graduation.GMS.Services.ArticleService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
 @RestController
 @RequestMapping("/api/article")
+@AllArgsConstructor
 public class ArticleController {
-    @Autowired
+
     private ArticleService articleService;
 
     // Endpoint to create a new Article

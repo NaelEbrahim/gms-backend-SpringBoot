@@ -16,4 +16,6 @@ public class WorkoutResponse {
     private String secondaryMuscles;
     private String avgCalories;
     private String description;
+    private Integer reps;
+    private Integer sets;
 }

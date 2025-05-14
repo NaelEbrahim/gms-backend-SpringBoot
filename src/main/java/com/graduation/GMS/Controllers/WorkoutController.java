@@ -3,6 +3,7 @@ package com.graduation.GMS.Controllers;
 import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.Services.WorkoutService;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,9 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/workout")
+@AllArgsConstructor
 public class WorkoutController {
 
-    @Autowired
     private WorkoutService workoutService;
 
     @PostMapping("create")

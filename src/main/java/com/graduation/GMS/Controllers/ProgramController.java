@@ -4,16 +4,16 @@ import com.graduation.GMS.DTO.Request.ProgramRequest;
 import com.graduation.GMS.DTO.Request.AssignWorkoutToProgramRequest;
 import com.graduation.GMS.Services.ProgramService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
 @RestController
 @RequestMapping("/api/program")
+@AllArgsConstructor
 public class ProgramController {
 
-    @Autowired
     private ProgramService programService;
 
     @PostMapping("/create")

@@ -9,10 +9,12 @@ import com.graduation.GMS.DTO.Response.WorkoutResponse;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
 import com.graduation.GMS.Repositories.*;
+import com.graduation.GMS.Tools.HandleCurrentUserSession;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,9 +40,9 @@ public class ClassService {
     private Program_WorkoutRepository programWorkoutRepository;
 
 
-
     @Transactional
-    public ResponseEntity<?> createClass(@Valid ClassRequest request) {
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> createClass(ClassRequest request) {
         // Check if the class title already exists (optional validation)
         Optional<Class> existingClass = classRepository.findByName(request.getName());
         if (existingClass.isPresent()) {
@@ -49,12 +51,8 @@ public class ClassService {
         }
         // Convert the DTO to entity and save
         Class classEntity = new Class();
-        Optional<User> coach =userRepository.findById(request.getCoachId());
-        if (coach.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Coach Not Found"));
-        }
-        classEntity.setAuditCoach(coach.get());
+
+        classEntity.setAuditCoach(HandleCurrentUserSession.getCurrentUser());
         classEntity.setName(request.getName());
         classEntity.setDescription(request.getDescription());
         classEntity.setPrice(request.getPrice());
@@ -68,6 +66,7 @@ public class ClassService {
 
     // Update an existing class
     @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> updateClass(Integer id, ClassRequest request) {
         Optional<Class> optionalClass = classRepository.findById(id);
         if (optionalClass.isEmpty()) {
@@ -77,15 +76,6 @@ public class ClassService {
 
         Class existingClass = optionalClass.get();
 
-        Optional<User> coach =userRepository.findById(request.getCoachId());
-        if (coach.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Coach Not Found"));
-        }
-
-        if (!existingClass.getAuditCoach().getId().equals(request.getCoachId())) {
-            existingClass.setAuditCoach(coach.get());
-        }
 
         if (!existingClass.getName().equals(request.getName())&&!request.getName().isEmpty()) {
             existingClass.setName(request.getName());
@@ -103,6 +93,7 @@ public class ClassService {
     }
 
     // Delete a class
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> deleteClass(Integer id) {
         if (!classRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -140,7 +131,9 @@ public class ClassService {
                                         workout.getPrimary_muscle(),
                                         workout.getSecondary_muscles(),
                                         workout.getAvg_calories(),
-                                        workout.getDescription()
+                                        workout.getDescription(),
+                                        programWorkout.getReps(),
+                                        programWorkout.getSets()
                                 );
                             })
                             .collect(Collectors.toList());
@@ -194,7 +187,9 @@ public class ClassService {
                                                     workout.getPrimary_muscle(),
                                                     workout.getSecondary_muscles(),
                                                     workout.getAvg_calories(),
-                                                    workout.getDescription()
+                                                    workout.getDescription(),
+                                                    programWorkout.getReps(),
+                                                    programWorkout.getSets()
                                             );
                                         })
                                         .collect(Collectors.toList());
@@ -226,6 +221,7 @@ public class ClassService {
     // Method to assign a program to a class
 
     @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> assignProgramToClass(@Valid AssignProgramToClassRequest request) {
         Integer classId = request.getClassId();
         Integer programId = request.getProgramId();

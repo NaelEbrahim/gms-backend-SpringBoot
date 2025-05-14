@@ -5,9 +5,9 @@ import com.graduation.GMS.DTO.Response.WorkoutResponse;
 import com.graduation.GMS.Models.Workout;
 import com.graduation.GMS.Repositories.WorkoutRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +23,7 @@ public class WorkoutService {
     private WorkoutRepository workoutRepository;
 
     @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createWorkout(WorkoutRequest request) {
         // Check if workout title already exists
         Optional<Workout> existingWorkout = workoutRepository.findByTitle(request.getTitle());
@@ -43,7 +44,9 @@ public class WorkoutService {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Workout created successfully"));
     }
+
     @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> updateWorkout(Integer id, WorkoutRequest request) {
         Optional<Workout> optionalWorkout = workoutRepository.findById(id);
         if (optionalWorkout.isEmpty()) {
@@ -79,6 +82,7 @@ public class WorkoutService {
                 .body(Map.of("message", "Workout updated successfully"));
     }
 
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> deleteWorkout(Integer id) {
         if (!workoutRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -105,7 +109,9 @@ public class WorkoutService {
                 workout.getPrimary_muscle(),
                 workout.getSecondary_muscles(),
                 workout.getAvg_calories(),
-                workout.getDescription()
+                workout.getDescription(),
+                0,
+                0
         );
 
         return  ResponseEntity.status(HttpStatus.OK)
@@ -127,7 +133,9 @@ public class WorkoutService {
                         w.getPrimary_muscle(),
                         w.getSecondary_muscles(),
                         w.getAvg_calories(),
-                        w.getDescription()
+                        w.getDescription(),
+                        0,
+                        0
                 ))
                 .collect(Collectors.toList());
 

@@ -13,9 +13,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FAQRequest {
 
-    @NotBlank(message = "AdminId is required")
-    private int adminId;
-
     @NotBlank(message = "Question is required")
     @Size(max = 500, message = "Question name must not exceed 500 characters")
     private String question;

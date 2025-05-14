@@ -42,7 +42,6 @@ public class UserService {
 
     private final JwtService jwtService;
 
-
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> createUser(UserRequest createRequest) throws Exception {
