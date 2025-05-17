@@ -10,12 +10,20 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WorkoutResponse {
+
     private Integer id;
+
     private String title;
+
     private String primaryMuscle;
+
     private String secondaryMuscles;
+
     private String avgCalories;
+
     private String description;
+
     private Integer reps;
+
     private Integer sets;
 }

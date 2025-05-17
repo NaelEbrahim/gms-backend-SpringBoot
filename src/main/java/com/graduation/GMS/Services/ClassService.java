@@ -81,7 +81,7 @@ public class ClassService {
             existingClass.setName(request.getName());
         }
         if (!existingClass.getDescription().equals(request.getDescription())&&!request.getDescription().isEmpty()) {
-            existingClass.setDescription(request.getName());
+            existingClass.setDescription(request.getDescription());
         }
         if (!existingClass.getPrice().equals(request.getPrice())&&request.getPrice()!=null) {
             existingClass.setPrice(request.getPrice());

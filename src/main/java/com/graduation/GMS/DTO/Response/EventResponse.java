@@ -5,23 +5,25 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClassResponse {
-    private UserResponse coach;
+public class EventResponse {
 
     private Integer id;
 
-    private String name;
+    private UserResponse admin;
+
+    private String title;
 
     private String description;
 
-    private Float price;
+    private LocalDateTime startedAt;
 
-    private List<ProgramResponse> programs;
+    private List<PrizeResponse> prizes;
+
 }
-

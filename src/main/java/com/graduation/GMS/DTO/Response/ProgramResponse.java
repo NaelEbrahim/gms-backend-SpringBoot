@@ -14,9 +14,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProgramResponse {
+
     private Integer id;
+
     private String name;
+
     private Level level;
+
     private Boolean isPublic;
+
     private List<WorkoutResponse> workouts;
 }
