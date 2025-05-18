@@ -55,32 +55,29 @@ public class UserService {
         }
         // Create User
         User newUser = new User();
+        String password = (createRequest.getPassword() == null) ? Generators.generatePassword() : createRequest.getPassword();
         newUser.setFirstName(createRequest.getFirstName());
         newUser.setLastName(createRequest.getLastName());
         newUser.setEmail(createRequest.getEmail());
-        //Test BEGIN
-        String pass = Generators.generatePassword();
-        System.out.println(pass);
-        //Test END
-        newUser.setPassword(securityConfig.passwordEncoder().encode(pass));
         newUser.setGender(createRequest.getGender());
         newUser.setDob(createRequest.getDob());
         newUser.setPhoneNumber(createRequest.getPhoneNumber());
         newUser.setCreatedAt(LocalDateTime.now());
         newUser.setQr(Generators.generateQRCode(createRequest.getEmail()));
-        var savedUser = userRepository.save(newUser);
+        newUser.setPassword(securityConfig.passwordEncoder().encode(password));
+        userRepository.save(newUser);
         //Roles
         for (Roles roleName : createRequest.getRoles()) {
             Role role = roleRepository.findByRoleName(roleName)
                     .orElseGet(() -> roleRepository.save(Role.builder().roleName(roleName).build()));
             userRoleRepository.save(User_Role.builder()
-                    .user(savedUser)
+                    .user(newUser)
                     .role(role)
                     .build());
         }
-        UserResponse userResponse = new UserResponse(savedUser, null);
+        UserResponse userResponse = new UserResponse(newUser, password, null);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userResponse);
+                .body(Map.of("message", userResponse));
     }
 
     @Transactional
@@ -104,8 +101,9 @@ public class UserService {
             cookie.setMaxAge(259200);
             cookie.setPath("/auth/refresh");
             response.addCookie(cookie);
-            UserResponse userResponse = new UserResponse(user, accessToken);
-            return ResponseEntity.ok().body(Map.of("message", userResponse));
+            UserResponse userResponse = new UserResponse(user, null, accessToken);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(Map.of("message", userResponse));
         } else
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "invalid username or password"));

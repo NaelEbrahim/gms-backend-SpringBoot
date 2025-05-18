@@ -3,7 +3,6 @@ package com.graduation.GMS.Controllers;
 import com.graduation.GMS.DTO.Request.UserRequest;
 import com.graduation.GMS.DTO.Request.LoginRequest;
 import com.graduation.GMS.Services.UserService;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;

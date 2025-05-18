@@ -33,18 +33,16 @@ public class UserResponse {
 
     private String qr;
 
+    private String password;
+
     private String accessToken;
 
-    public UserResponse(User user, String accessToken) {
-        this.id = user.getId();
-        this.firstName = user.getFirstName();
-        this.lastName = user.getLastName();
-        this.email = user.getEmail();
-        this.phoneNumber = user.getPhoneNumber();
-        this.gender = user.getGender();
-        this.dob = user.getDob();
-        this.createdAt = user.getCreatedAt();
-        this.qr = user.getQr();
+
+    public UserResponse(User user, String password, String accessToken) {
+        this(user.getId(), user.getFirstName(), user.getLastName(),
+                user.getEmail(), user.getPhoneNumber(), user.getGender(), user.getDob(),
+                user.getCreatedAt(), user.getQr());
+        this.password = password;
         this.accessToken = accessToken;
     }
 
