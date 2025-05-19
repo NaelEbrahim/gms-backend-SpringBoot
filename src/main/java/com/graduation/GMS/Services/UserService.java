@@ -4,6 +4,7 @@ import com.graduation.GMS.Config.SecurityConfig;
 import com.graduation.GMS.DTO.Request.UserRequest;
 import com.graduation.GMS.DTO.Request.LoginRequest;
 import com.graduation.GMS.DTO.Response.UserResponse;
+import com.graduation.GMS.DTO.Response.UserWithPasswordResponse;
 import com.graduation.GMS.Models.AuthToken;
 import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Models.Role;
@@ -42,9 +43,13 @@ public class UserService {
 
     private final JwtService jwtService;
 
-    @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> createUser(UserRequest createRequest) throws Exception {
+        return internalCreateUser(createRequest);
+    }
+
+    @Transactional
+    public ResponseEntity<?> internalCreateUser(UserRequest createRequest) throws Exception {
         if (userRepository.findByEmail(createRequest.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message:", "email already exist"));
@@ -75,7 +80,7 @@ public class UserService {
                     .role(role)
                     .build());
         }
-        UserResponse userResponse = new UserResponse(newUser, password, null);
+        UserWithPasswordResponse userResponse = new UserWithPasswordResponse(newUser, password);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", userResponse));
     }

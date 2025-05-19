@@ -2,15 +2,14 @@ package com.graduation.GMS.Services;
 
 import com.graduation.GMS.DTO.Request.AssignProgramToClassRequest;
 import com.graduation.GMS.DTO.Request.ClassRequest;
-import com.graduation.GMS.DTO.Response.ClassResponse;
-import com.graduation.GMS.DTO.Response.ProgramResponse;
-import com.graduation.GMS.DTO.Response.UserResponse;
-import com.graduation.GMS.DTO.Response.WorkoutResponse;
+import com.graduation.GMS.DTO.Request.ClassSubscriptionRequest;
+import com.graduation.GMS.DTO.Request.FeedBackRequest;
+import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
 import com.graduation.GMS.Repositories.*;
+import com.graduation.GMS.Tools.GlobalExceptionHandler;
 import com.graduation.GMS.Tools.HandleCurrentUserSession;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +39,9 @@ public class ClassService {
 
     private Program_WorkoutRepository programWorkoutRepository;
 
+    private SubscriptionRepository subscriptionRepository;
+
+    private SubscriptionHistoryRepository subscriptionHistoryRepository;
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
@@ -154,7 +157,9 @@ public class ClassService {
                 classEntity.getName(),
                 classEntity.getDescription(),
                 classEntity.getPrice(),
-                programResponses
+                programResponses,
+                null,
+                null
         );
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
@@ -210,7 +215,9 @@ public class ClassService {
                             classEntity.getName(),
                             classEntity.getDescription(),
                             classEntity.getPrice(),
-                            programResponses
+                            programResponses,
+                            null,
+                            null
                     );
                 })
                 .collect(Collectors.toList());
@@ -222,7 +229,7 @@ public class ClassService {
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
-    public ResponseEntity<?> assignProgramToClass(@Valid AssignProgramToClassRequest request) {
+    public ResponseEntity<?> assignProgramToClass(AssignProgramToClassRequest request) {
         Integer classId = request.getClassId();
         Integer programId = request.getProgramId();
 
@@ -259,5 +266,262 @@ public class ClassService {
                 .body(Map.of("message", "Program successfully assigned to class"));
     }
 
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
+    public ResponseEntity<?> addNewSubscription(ClassSubscriptionRequest request) throws Exception {
+        Optional<Class> classOptional = classRepository.findById(request.getClassId());
+
+        // Validate class and user existence
+        if (classOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Class not found"));
+        }
+        Optional<User> userOptional = userRepository.findById(request.getUserId());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
+
+        // Check if user already has an active subscription
+        Optional<Subscription> existingSubscription = subscriptionRepository
+                .findByUserAndAClass(userOptional.get(), classOptional.get());
+        if (existingSubscription.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "User already has an active subscription to this class"));
+        }
+        // Create and save subscription
+        Subscription subscription = new Subscription();
+        subscription.setUser(userOptional.get());
+        subscription.setAClass(classOptional.get());
+        subscription.setJoinedAt(LocalDateTime.now());
+        subscription.setIsActive(true);
+        Subscription savedSubscription = subscriptionRepository.save(subscription);
+
+        // Record payment if provided
+        processPayment(request, userOptional.get(), classOptional.get());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("message", "Subscription created successfully"));
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
+    public ResponseEntity<?> updateSubscription(ClassSubscriptionRequest request) throws Exception {
+        Optional<Class> classOptional = classRepository.findById(request.getClassId());
+
+        // Validate class and user existence
+        if (classOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Class not found"));
+        }
+        Optional<User> userOptional = userRepository.findById(request.getUserId());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
+
+        // Check if user already has an active subscription
+        Optional<Subscription> existingSubscription = subscriptionRepository
+                .findByUserAndAClass(userOptional.get(), classOptional.get());
+        if (existingSubscription.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "User not Subscribed to this class"));
+        }
+        //is active
+        existingSubscription.get().setIsActive(true);
+        subscriptionRepository.save(existingSubscription.get());
+        // Record payment if provided
+        processPayment(request, userOptional.get(), classOptional.get());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("message", "Subscription updated successfully"));
+    }
+
+    private void processPayment(ClassSubscriptionRequest request, User user, Class classEntity) throws Exception {
+        if (request.getPaymentAmount() != null && request.getPaymentAmount() > 0) {
+            // Validate payment amount matches class price with discount
+            float expectedAmount = calculateExpectedAmount(classEntity.getPrice(), request.getDiscountPercentage());
+
+            if (Math.abs(request.getPaymentAmount() - expectedAmount) > 0.01f) {
+             throw new Exception("Payment amount doesn't match expected value");
+            }
+
+            SubscriptionHistory history = new SubscriptionHistory();
+            history.setUser(user);
+            history.setAClass(classEntity);
+            history.setPaymentDate(LocalDateTime.now());
+            history.setPaymentAmount(request.getPaymentAmount());
+            history.setDiscountPercentage(request.getDiscountPercentage());
+            subscriptionHistoryRepository.save(history);
+        }
+    }
+
+    private float calculateExpectedAmount(float basePrice, Float discountPercentage) {
+        return discountPercentage != null ?
+                basePrice * (1 - discountPercentage/100) :
+                basePrice;
+    }
+
+    @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
+    public ResponseEntity<?> getSubscribersByClass(Integer classId) {
+        Optional<Class> classOptional = classRepository.findById(classId);
+        if (classOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Class not found"));
+        }
+
+
+        Class classEntity = classOptional.get();
+        UserResponse coachResponse = mapToUserResponse(classEntity.getAuditCoach());
+        // Get all subscribers for this class
+        List<UserResponse> subscribers = subscriptionRepository.findByAClass(classEntity)
+                .stream()
+                .map(subscription -> {
+                    User user = subscription.getUser();
+                    return  mapToUserResponse(user);
+                })
+                .toList();
+
+        ClassResponse responseDto = new ClassResponse(
+                coachResponse,
+                classEntity.getId(),
+                classEntity.getName(),
+                classEntity.getDescription(),
+                classEntity.getPrice(),
+                null,
+                subscribers,
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+    }
+    @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
+    public ResponseEntity<?>  getSubscribersByActiveStatus(Integer classId, boolean isActive){
+        Optional<Class> classOptional = classRepository.findById(classId);
+        if (classOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Class not found"));
+        }
+
+
+
+        Class classEntity = classOptional.get();
+        UserResponse coachResponse = mapToUserResponse(classEntity.getAuditCoach());
+        // Get only active subscribers
+        List<UserResponse> activeSubscribers = subscriptionRepository.findByAClassAndIsActive(classEntity,isActive)
+                .stream()
+                .map(subscription -> {
+                    User user = subscription.getUser();
+                    return  mapToUserResponse(user);
+                })
+                .toList();
+
+        ClassResponse responseDto = new ClassResponse(
+                coachResponse,
+                classEntity.getId(),
+                classEntity.getName(),
+                classEntity.getDescription(),
+                classEntity.getPrice(),
+                null,
+                activeSubscribers,
+                null
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> getMyClasses() {
+        User currentUser = HandleCurrentUserSession.getCurrentUser();
+        List<Subscription> subscriptions = subscriptionRepository.findByUser(currentUser);
+
+        if (subscriptions.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "No class subscriptions found"));
+        }
+
+        // Preload all needed data in bulk to avoid N+1 queries
+        List<Class> classes = subscriptions.stream()
+                .map(Subscription::getAClass)
+                .toList();
+
+        List<ClassResponse> classResponses = subscriptions.stream()
+                .map(subscription -> {
+                    Class classEntity = subscription.getAClass();
+                    return new ClassResponse(
+                            mapToUserResponse(classEntity.getAuditCoach()),
+                            classEntity.getId(),
+                            classEntity.getName(),
+                            classEntity.getDescription(),
+                            classEntity.getPrice(),
+                            null,
+                            null,  // subscribers
+                            null  // feedback
+                    );
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(classResponses);
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> updateClassFeedback(FeedBackRequest request) {
+        User currentUser = HandleCurrentUserSession.getCurrentUser();
+        Optional<Class> classOptional = classRepository.findById(request.getClassId());
+
+        if (classOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Class not found"));
+        }
+
+        Optional<Subscription> subscription = subscriptionRepository.findByUserAndAClass(
+                currentUser,
+                classOptional.get()
+        );
+
+        if (subscription.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "You are not subscribed to this class"));
+        }
+
+        subscription.get().setFeedback(request.getFeedback());
+        subscriptionRepository.save(subscription.get());
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "Feedback updated successfully"));
+    }
+
+    public ResponseEntity<?> getAllCassFeedBacks(Integer classId) {
+        Optional<Class> classOptional = classRepository.findById(classId);
+        if (classOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Class not found"));
+        }
+
+        Class classEntity = classOptional.get();
+        UserResponse coachResponse = mapToUserResponse(classEntity.getAuditCoach());
+        // Get only active subscribers
+        List<UserFeedBackResponse> feedBacks = subscriptionRepository.findFeedbackByClass(classEntity)
+                .stream()
+                .map(subscription -> {
+                    User user = subscription.getUser();
+                    return new UserFeedBackResponse(user,subscription.getFeedback());
+                })
+                .toList();
+
+        ClassResponse responseDto = new ClassResponse(
+                coachResponse,
+                classEntity.getId(),
+                classEntity.getName(),
+                classEntity.getDescription(),
+                classEntity.getPrice(),
+                null,
+                null,
+                feedBacks
+
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+    }
 
 }

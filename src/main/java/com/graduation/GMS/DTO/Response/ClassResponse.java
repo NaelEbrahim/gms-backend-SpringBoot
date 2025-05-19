@@ -23,5 +23,9 @@ public class ClassResponse {
     private Float price;
 
     private List<ProgramResponse> programs;
+
+    private List<UserResponse> subscribers;
+
+    private List<UserFeedBackResponse> feedbacks;
 }
 

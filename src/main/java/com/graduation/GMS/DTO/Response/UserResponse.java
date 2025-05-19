@@ -33,8 +33,6 @@ public class UserResponse {
 
     private String qr;
 
-    private String password;
-
     private String accessToken;
 
 
@@ -42,7 +40,6 @@ public class UserResponse {
         this(user.getId(), user.getFirstName(), user.getLastName(),
                 user.getEmail(), user.getPhoneNumber(), user.getGender(), user.getDob(),
                 user.getCreatedAt(), user.getQr());
-        this.password = password;
         this.accessToken = accessToken;
     }
 

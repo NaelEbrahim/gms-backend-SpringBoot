@@ -2,8 +2,12 @@ package com.graduation.GMS.Services;
 
 import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.DTO.Response.WorkoutResponse;
+import com.graduation.GMS.Models.User;
+import com.graduation.GMS.Models.User_Workout_favorite;
 import com.graduation.GMS.Models.Workout;
+import com.graduation.GMS.Repositories.User_Workout_FavoriteRepository;
 import com.graduation.GMS.Repositories.WorkoutRepository;
+import com.graduation.GMS.Tools.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +20,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+
 @Service
 @AllArgsConstructor
 public class WorkoutService {
 
     private WorkoutRepository workoutRepository;
+
+    private User_Workout_FavoriteRepository userWorkoutFavorite;
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
@@ -142,5 +149,79 @@ public class WorkoutService {
         return  ResponseEntity.status(HttpStatus.OK)
                 .body(workoutResponses);
     }
+
+    //add to favorite
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> addWorkoutToFavorites(Integer workoutId) {
+        User user = HandleCurrentUserSession.getCurrentUser();
+
+        Workout workout = workoutRepository.findById(workoutId)
+                .orElseThrow(() -> new RuntimeException("Workout not found"));
+
+        Optional<User_Workout_favorite> existingFavorite = userWorkoutFavorite.findByUserAndWorkout(user, workout);
+        if (existingFavorite.isPresent()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Workout already in favorites"));
+        }
+
+        User_Workout_favorite favorite = new User_Workout_favorite();
+        favorite.setUser(user);
+        favorite.setWorkout(workout);
+        userWorkoutFavorite.save(favorite);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "Workout added to favorites"));
+    }
+
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> removeWorkoutFromFavorites(Integer workoutId) {
+        User user = HandleCurrentUserSession.getCurrentUser();
+
+        Workout workout = workoutRepository.findById(workoutId)
+                .orElseThrow(() -> new RuntimeException("Workout not found"));
+
+        Optional<User_Workout_favorite> favoriteOptional = userWorkoutFavorite.findByUserAndWorkout(user, workout);
+        if (favoriteOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Workout is not in favorites"));
+        }
+
+        userWorkoutFavorite.delete(favoriteOptional.get());
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "Workout removed from favorites"));
+    }
+
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> getMyFavoriteWorkouts() {
+        User user = HandleCurrentUserSession.getCurrentUser();
+
+        List<User_Workout_favorite> favorites = userWorkoutFavorite.findAllByUser(user);
+
+        if (favorites.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "No favorite workouts found"));
+        }
+
+        List<WorkoutResponse> responseList = favorites.stream()
+                .map(fav -> {
+                    Workout w = fav.getWorkout();
+                    return new WorkoutResponse(
+                            w.getId(),
+                            w.getTitle(),
+                            w.getPrimary_muscle(),
+                            w.getSecondary_muscles(),
+                            w.getAvg_calories(),
+                            w.getDescription(),
+                            0,
+                            0
+                    );
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.status(HttpStatus.OK).body(responseList);
+    }
+
+
 
 }

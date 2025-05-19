@@ -4,7 +4,6 @@ import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.Services.WorkoutService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,6 +39,24 @@ public class WorkoutController {
     @GetMapping("show/all")
     public ResponseEntity<?> getAllWorkouts() {
         return workoutService.getAllWorkouts();
+    }
+
+    // Add to favorites
+    @PostMapping("/{id}/add-to-favorite")
+    public ResponseEntity<?> addWorkoutToFavorites(@PathVariable("id") Integer workoutId) {
+        return workoutService.addWorkoutToFavorites(workoutId);
+    }
+
+    // Remove from favorites
+    @PostMapping("/{id}/remove-from-favorite")
+    public ResponseEntity<?> removeWorkoutFromFavorites(@PathVariable("id") Integer workoutId) {
+        return workoutService.removeWorkoutFromFavorites(workoutId);
+    }
+
+    // Get all favorites for current user
+    @GetMapping("/my-favorites")
+    public ResponseEntity<?> getMyFavoriteWorkouts() {
+        return workoutService.getMyFavoriteWorkouts();
     }
 
 }
