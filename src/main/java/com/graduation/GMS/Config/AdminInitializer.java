@@ -30,13 +30,13 @@ public class AdminInitializer implements CommandLineRunner {
             admin.setEmail("ahmedHallak457@gmail.com");
             admin.setPhoneNumber("0945621467");
             admin.setGender(Gender.Male);
-            admin.setDob(LocalDate.of(1997,4,16));
+            admin.setDob(LocalDate.of(1997, 4, 16));
             admin.setPassword("e&X7a*gT");
             List<Roles> roles = new ArrayList<>();
             roles.add(Roles.Admin);
             roles.add(Roles.Coach);
             admin.setRoles(roles);
-            userService.createUser(admin);
+            userService.internalCreateUser(admin);
         }
     }
 

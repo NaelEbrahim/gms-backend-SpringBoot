@@ -42,9 +42,14 @@ public class UserService {
 
     private final JwtService jwtService;
 
-    @Transactional
+
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> createUser(UserRequest createRequest) throws Exception {
+        return internalCreateUser(createRequest);
+    }
+
+    @Transactional
+    public ResponseEntity<?> internalCreateUser(UserRequest createRequest) throws Exception {
         if (userRepository.findByEmail(createRequest.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message:", "email already exist"));
@@ -79,6 +84,7 @@ public class UserService {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", userResponse));
     }
+
 
     @Transactional
     public ResponseEntity<?> userLogin(LoginRequest loginRequest, HttpServletResponse response) {
