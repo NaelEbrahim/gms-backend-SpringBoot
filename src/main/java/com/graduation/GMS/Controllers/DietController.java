@@ -1,7 +1,6 @@
 package com.graduation.GMS.Controllers;
 
-import com.graduation.GMS.DTO.Request.AssignMealToDietRequest;
-import com.graduation.GMS.DTO.Request.DietRequest;
+import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.Services.DietService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -51,5 +50,45 @@ public class DietController {
     @PostMapping("/assign-meal")
     public ResponseEntity<?> assignMealToDiet(@RequestBody @Valid AssignMealToDietRequest request) {
         return dietService.assignMealToDiet(request);
+    }
+
+
+    // User Diet Assignment Endpoints
+    @PostMapping("/assign")
+    public ResponseEntity<?> assignDietToUser(@RequestBody @Valid AssignDietToUser request) {
+        return dietService.assignDietToUser(request);
+    }
+
+    @PostMapping("/unassign")
+    public ResponseEntity<?> unAssignDietToUser(@RequestBody @Valid AssignDietToUser request) {
+        return dietService.unAssignDietToUser(request);
+    }
+
+    // Rating and Feedback Endpoints
+    @PostMapping("/rate")
+    public ResponseEntity<?> rateDietPlan(@RequestBody @Valid RateDietRequest request) {
+        return dietService.rateDietPlan(request);
+    }
+
+    @PostMapping("/feedback")
+    public ResponseEntity<?> submitFeedback(@RequestBody @Valid FeedBackDietRequest request) {
+        return dietService.submitFeedback(request);
+    }
+
+    // Get all feedbacks for a specific diet Plan
+    @GetMapping("/{dietId}/feedbacks")
+    public ResponseEntity<?> getAllDietPlanFeedBacks(@PathVariable Integer dietId) {
+        return dietService.getAllDietPlanFeedBacks(dietId);
+    }
+
+    // User Diet Endpoints
+    @GetMapping("/my-diets")
+    public ResponseEntity<?> getMyAssignedDiets() {
+        return dietService.getMyAssignedDiets();
+    }
+
+    @GetMapping("/assigned/{userId}")
+    public ResponseEntity<?> getAssignedDietsByUserId(@PathVariable Integer userId) {
+        return dietService.getAssignedDietsByUserId(userId);
     }
 }

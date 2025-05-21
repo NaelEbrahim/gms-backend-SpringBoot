@@ -24,6 +24,10 @@ public class DietResponse {
 
     private LocalDateTime lastModifiedAt;
 
+    private Float rate;
+
     private List<MealResponse> meals;
+
+    private List<UserFeedBackResponse> feedBacks;
 
 }

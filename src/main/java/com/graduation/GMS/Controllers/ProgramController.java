@@ -49,13 +49,13 @@ public class ProgramController {
 
     // Assign a program to a user
     @PostMapping("/assign")
-    public ResponseEntity<?> assignProgramToUser(@RequestBody AssignProgramToUser request) {
+    public ResponseEntity<?> assignProgramToUser(@RequestBody AssignProgramToUserRequest request) {
         return programService.assignProgramToUser(request);
     }
 
     // Unassign a program from a user
     @PostMapping("/unassign")
-    public ResponseEntity<?> unAssignProgramFromUser(@RequestBody AssignProgramToUser request) {
+    public ResponseEntity<?> unAssignProgramFromUser(@RequestBody AssignProgramToUserRequest request) {
         return programService.unAssignProgramToUser(request);
     }
 

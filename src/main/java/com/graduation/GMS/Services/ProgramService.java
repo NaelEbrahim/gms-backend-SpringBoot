@@ -3,7 +3,6 @@ package com.graduation.GMS.Services;
 import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
-import com.graduation.GMS.Models.Class;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Tools.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
@@ -18,8 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
 
 @Service
 @AllArgsConstructor
@@ -253,7 +250,7 @@ public class ProgramService {
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
-    public ResponseEntity<?> assignProgramToUser(AssignProgramToUser request) {
+    public ResponseEntity<?> assignProgramToUser(AssignProgramToUserRequest request) {
         Optional<User> userOptional = userRepository.findById(request.getUserId());
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -291,7 +288,7 @@ public class ProgramService {
     }
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
-    public ResponseEntity<?> unAssignProgramToUser(AssignProgramToUser request) {
+    public ResponseEntity<?> unAssignProgramToUser(AssignProgramToUserRequest request) {
         Optional<User> userOptional = userRepository.findById(request.getUserId());
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
