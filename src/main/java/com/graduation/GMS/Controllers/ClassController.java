@@ -3,7 +3,7 @@ package com.graduation.GMS.Controllers;
 import com.graduation.GMS.DTO.Request.AssignProgramToClassRequest;
 import com.graduation.GMS.DTO.Request.ClassRequest;
 import com.graduation.GMS.DTO.Request.ClassSubscriptionRequest;
-import com.graduation.GMS.DTO.Request.FeedBackRequest;
+import com.graduation.GMS.DTO.Request.FeedBackClassRequest;
 import com.graduation.GMS.Services.ClassService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -78,7 +78,7 @@ public class ClassController {
     }
     // Endpoint to add feedback
     @PostMapping("/feedBack")
-    public ResponseEntity<?> addFeedBack(@RequestBody FeedBackRequest request) throws Exception {
+    public ResponseEntity<?> addFeedBack(@RequestBody FeedBackClassRequest request) throws Exception {
         return classService.updateClassFeedback(request);
     }
     // Get active/inactive subscribers for a class

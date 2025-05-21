@@ -3,12 +3,11 @@ package com.graduation.GMS.Services;
 import com.graduation.GMS.DTO.Request.AssignProgramToClassRequest;
 import com.graduation.GMS.DTO.Request.ClassRequest;
 import com.graduation.GMS.DTO.Request.ClassSubscriptionRequest;
-import com.graduation.GMS.DTO.Request.FeedBackRequest;
+import com.graduation.GMS.DTO.Request.FeedBackClassRequest;
 import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
 import com.graduation.GMS.Repositories.*;
-import com.graduation.GMS.Tools.GlobalExceptionHandler;
 import com.graduation.GMS.Tools.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -146,7 +145,9 @@ public class ClassService {
                             program.getTitle(),
                             program.getLevel(),
                             program.getIsPublic(),
-                            workoutResponses
+                            null,
+                            workoutResponses,
+                            null
                     );
                 })
                 .collect(Collectors.toList());
@@ -204,7 +205,9 @@ public class ClassService {
                                         program.getTitle(),
                                         program.getLevel(),
                                         program.getIsPublic(),
-                                        workoutResponses
+                                        null,
+                                        workoutResponses,
+                                        null
                                 );
                             })
                             .collect(Collectors.toList());
@@ -466,7 +469,7 @@ public class ClassService {
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('User')")
-    public ResponseEntity<?> updateClassFeedback(FeedBackRequest request) {
+    public ResponseEntity<?> updateClassFeedback(FeedBackClassRequest request) {
         User currentUser = HandleCurrentUserSession.getCurrentUser();
         Optional<Class> classOptional = classRepository.findById(request.getClassId());
 

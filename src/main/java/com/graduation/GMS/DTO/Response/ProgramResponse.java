@@ -23,5 +23,9 @@ public class ProgramResponse {
 
     private Boolean isPublic;
 
+    private Float rate;
+
     private List<WorkoutResponse> workouts;
+
+    private List<UserFeedBackResponse> feedbacks;
 }

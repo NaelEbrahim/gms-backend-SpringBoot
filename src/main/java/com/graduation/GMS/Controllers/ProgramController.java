@@ -1,7 +1,6 @@
 package com.graduation.GMS.Controllers;
 
-import com.graduation.GMS.DTO.Request.ProgramRequest;
-import com.graduation.GMS.DTO.Request.AssignWorkoutToProgramRequest;
+import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.Services.ProgramService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -46,5 +45,47 @@ public class ProgramController {
     public ResponseEntity<?> assignWorkoutToProgram(
             @Valid @RequestBody AssignWorkoutToProgramRequest request) {
         return programService.assignWorkoutToProgram(request);
+    }
+
+    // Assign a program to a user
+    @PostMapping("/assign")
+    public ResponseEntity<?> assignProgramToUser(@RequestBody AssignProgramToUser request) {
+        return programService.assignProgramToUser(request);
+    }
+
+    // Unassign a program from a user
+    @PostMapping("/unassign")
+    public ResponseEntity<?> unAssignProgramFromUser(@RequestBody AssignProgramToUser request) {
+        return programService.unAssignProgramToUser(request);
+    }
+
+    // Rate a program
+    @PostMapping("/rate")
+    public ResponseEntity<?> rateProgram(@RequestBody RateProgramRequest request) {
+        return programService.rateProgram(request);
+    }
+
+    // Submit feedback for a program
+    @PostMapping("/feedback")
+    public ResponseEntity<?> submitFeedback(@RequestBody FeedBackProgramRequest request) {
+        return programService.submitFeedback(request);
+    }
+
+    // Get all feedbacks for a specific program
+    @GetMapping("/{programId}/feedbacks")
+    public ResponseEntity<?> getAllProgramFeedbacks(@PathVariable Integer programId) {
+        return programService.getAllProgramFeedBacks(programId);
+    }
+
+    // Get all programs assigned to the currently logged-in user
+    @GetMapping("/my-programs")
+    public ResponseEntity<?> getMyAssignedPrograms() {
+        return programService.getMyAssignedPrograms();
+    }
+
+    // Get all programs assigned to a specific user (Admin/Coach only)
+    @GetMapping("/assigned/{userId}")
+    public ResponseEntity<?> getAssignedProgramsByUserId(@PathVariable Integer userId) {
+        return programService.getAssignedProgramsByUserId(userId);
     }
 }

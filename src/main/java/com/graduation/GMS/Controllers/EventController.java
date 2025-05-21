@@ -61,8 +61,17 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}/participants")
-    public ResponseEntity<?> getEventParticipants(@PathVariable Integer eventId) {
-        return eventService.getEventParticipants(eventId);
+    public ResponseEntity<?> getEventParticipants(@PathVariable Integer eventId ,@RequestParam String rank) {
+        if (rank.equalsIgnoreCase("desc")) {
+            return eventService.getEventParticipantsDesc(eventId);
+        }
+        else if (rank.equalsIgnoreCase("asc")) {
+            return eventService.getEventParticipantsASC(eventId);
+        }
+        else {
+            return eventService.getEventParticipants(eventId);
+        }
+
     }
 
 }

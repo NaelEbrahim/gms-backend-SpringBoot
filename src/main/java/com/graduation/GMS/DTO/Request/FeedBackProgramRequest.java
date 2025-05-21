@@ -1,5 +1,4 @@
 package com.graduation.GMS.DTO.Request;
-
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,10 +9,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class FeedBackRequest {
-    @NotNull(message = "Class Id is required")
-    private Integer classId;
+public class FeedBackProgramRequest {
+    @NotNull(message = "Program Id is required")
+    private Integer programId;
 
     private String feedback;
-
 }

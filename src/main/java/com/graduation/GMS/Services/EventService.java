@@ -297,6 +297,7 @@ public class EventService {
         ));
     }
 
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> getEventParticipants(Integer eventId) {
@@ -310,6 +311,72 @@ public class EventService {
 
         // Get all participants with their scores
         List<ParticipantResponse> participants = eventParticipantRepository.findByEvent(event.get())
+                .stream()
+                .map(participation -> new ParticipantResponse(
+                        participation.getUser(),
+                        participation.getScore()
+                ))
+                .collect(Collectors.toList());
+
+        if (participants.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        // Build response
+        EventParticipantResponse response = new EventParticipantResponse();
+        response.setTitle(event.get().getTitle());
+        response.setStartedAt(event.get().getStartedAt());
+        response.setParticipants(participants);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
+    public ResponseEntity<?> getEventParticipantsASC(Integer eventId) {
+        // Find the event
+        Optional<Event> event = eventRepository.findById(eventId);
+        if (event.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Event not found"));
+        }
+
+
+        // Get all participants with their scores
+        List<ParticipantResponse> participants = eventParticipantRepository.findByEventOrderByScoreAsc(event.get())
+                .stream()
+                .map(participation -> new ParticipantResponse(
+                        participation.getUser(),
+                        participation.getScore()
+                ))
+                .collect(Collectors.toList());
+
+        if (participants.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        // Build response
+        EventParticipantResponse response = new EventParticipantResponse();
+        response.setTitle(event.get().getTitle());
+        response.setStartedAt(event.get().getStartedAt());
+        response.setParticipants(participants);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
+    public ResponseEntity<?> getEventParticipantsDesc(Integer eventId) {
+        // Find the event
+        Optional<Event> event = eventRepository.findById(eventId);
+        if (event.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Event not found"));
+        }
+
+
+        // Get all participants with their scores
+        List<ParticipantResponse> participants = eventParticipantRepository.findByEventOrderByScoreDesc(event.get())
                 .stream()
                 .map(participation -> new ParticipantResponse(
                         participation.getUser(),
