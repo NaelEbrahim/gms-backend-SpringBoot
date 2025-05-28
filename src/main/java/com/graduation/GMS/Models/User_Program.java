@@ -41,7 +41,5 @@ public class User_Program {
     @JoinColumn(name = "program_id")
     private Program program;
 
-    @OneToMany(mappedBy = "user_program", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Schedule> scheduleList;
 
 }
