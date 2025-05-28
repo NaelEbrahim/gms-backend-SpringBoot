@@ -11,11 +11,16 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MealResponse {
 
-    private int id;
+    private Integer id;
 
     private String title;
 
-    private String calories;
+    private Float baseCalories;  // per 100g
+
+    private Float quantity;      // in grams
 
     private String description;
+
+    private Float totalCalories; // calculated field
+
 }

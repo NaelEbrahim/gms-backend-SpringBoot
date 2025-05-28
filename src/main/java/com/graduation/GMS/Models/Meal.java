@@ -21,7 +21,7 @@ public class Meal {
     @Column(length = 50, nullable = false)
     private String title;
 
-    private String calories;
+    private Float calories;
 
     private String description;
 

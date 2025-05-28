@@ -270,6 +270,44 @@ public class ClassService {
     }
 
     @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> unAssignProgramToClass(AssignProgramToClassRequest request) {
+        Integer classId = request.getClassId();
+        Integer programId = request.getProgramId();
+
+        Optional<Class> classOptional = classRepository.findById(classId);
+        if (classOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Class not found"));
+        }
+
+        Optional<Program> programOptional = programRepository.findById(programId);
+        if (programOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Program not found"));
+        }
+
+        Class classEntity = classOptional.get();
+        Program programEntity = programOptional.get();
+
+        // Optional: Check if already assigned
+        boolean exists = class_ProgramRepository.existsByAClassAndProgram(classEntity, programEntity);
+        if (!exists) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "Program is Not assigned to this class"));
+        }
+
+        Class_Program classProgram = class_ProgramRepository.findByAClassAndProgram(classEntity,programEntity);
+
+        class_ProgramRepository.delete(classProgram);
+
+        class_ProgramRepository.save(classProgram);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "Program successfully  Unassigned From class"));
+    }
+
+    @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> addNewSubscription(ClassSubscriptionRequest request) throws Exception {
         Optional<Class> classOptional = classRepository.findById(request.getClassId());
@@ -292,6 +330,9 @@ public class ClassService {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "User already has an active subscription to this class"));
         }
+        // Record payment if provided
+        processPayment(request, userOptional.get(), classOptional.get());
+
         // Create and save subscription
         Subscription subscription = new Subscription();
         subscription.setUser(userOptional.get());
@@ -299,9 +340,6 @@ public class ClassService {
         subscription.setJoinedAt(LocalDateTime.now());
         subscription.setIsActive(true);
         Subscription savedSubscription = subscriptionRepository.save(subscription);
-
-        // Record payment if provided
-        processPayment(request, userOptional.get(), classOptional.get());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Subscription created successfully"));

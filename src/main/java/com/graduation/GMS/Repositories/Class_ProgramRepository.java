@@ -17,4 +17,7 @@ public interface Class_ProgramRepository extends JpaRepository<Class_Program, In
 
     @Query("SELECT cp FROM Class_Program cp WHERE cp.aClass = :aClass")
     List<Class_Program> findByAClass(@Param("aClass") Class aClass);
+
+    @Query("SELECT cp FROM Class_Program cp WHERE cp.aClass = :aClass And cp.program= :program")
+    Class_Program findByAClassAndProgram(Class aClass, Program program);
 }

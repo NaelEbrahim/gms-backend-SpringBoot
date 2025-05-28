@@ -4,6 +4,8 @@ import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.DietPlan;
+import com.graduation.GMS.Models.Enums.Day;
+import com.graduation.GMS.Models.Enums.MealTime;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Tools.HandleCurrentUserSession;
 import jakarta.transaction.Transactional;
@@ -14,9 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
 
@@ -79,7 +80,8 @@ public class DietService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Diet Plan updated successfully"));
     }
-
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> deleteDiet(Integer id) {
         if (!dietPlanRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -98,34 +100,65 @@ public class DietService {
                     .body(Map.of("message", "Diet Plan not found"));
         }
 
-        DietPlan dietPlanEntity = dietPlanOptional.get();
-        UserResponse coachResponse = mapToUserResponse(dietPlanEntity.getCoach());
-        // Get all meals associated with this diet plan
-        List<MealResponse> mealResponses = planMealRepository.findByDietPlan(dietPlanEntity)
+        DietPlan dietPlan = dietPlanOptional.get();
+
+        // Build the schedule
+        ScheduleResponse schedule = buildScheduleResponse(dietPlan);
+
+        // Get feedbacks
+        List<UserFeedBackResponse> feedBacks = userDietRepository.findFeedbackByDietPlan(dietPlan)
                 .stream()
-                .map(planMeal -> {
-                    Meal meal = planMeal.getMeal();
-                    return new MealResponse(
-                            meal.getId(),
-                            meal.getTitle(),
-                            meal.getCalories(),
-                            meal.getDescription()
-                    );
-                })
+                .map(ud -> new UserFeedBackResponse(ud.getUser(), ud.getFeedBack()))
                 .toList();
 
-        DietResponse responseDto = new DietResponse(
-                dietPlanEntity.getId(),
-                coachResponse,
-                dietPlanEntity.getTitle(),
-                dietPlanEntity.getCreatedAt(),
-                dietPlanEntity.getLastModifiedAt(),
-                calculateRate(dietPlanEntity.getId()),
-                mealResponses,
-                null
+        DietResponse response = new DietResponse(
+                dietPlan.getId(),
+                mapToUserResponse(dietPlan.getCoach()),
+                dietPlan.getTitle(),
+                dietPlan.getCreatedAt(),
+                dietPlan.getLastModifiedAt(),
+                calculateRate(dietPlan.getId()),
+                schedule,
+                feedBacks
         );
 
-        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+        return ResponseEntity.ok(response);
+    }
+
+    private ScheduleResponse buildScheduleResponse(DietPlan dietPlan) {
+        Map<Day, MealDayResponse> schedule = new LinkedHashMap<>();
+
+        planMealRepository.findByDietPlan(dietPlan)
+                .stream()
+                .collect(Collectors.groupingBy(Plan_Meal::getDay))
+                .forEach((day, dayMeals) -> {
+                    Map<MealTime, List<MealResponse>> mealsByTime = dayMeals.stream()
+                            .collect(Collectors.groupingBy(
+                                    Plan_Meal::getMealTime,
+                                    Collectors.mapping(pm -> new MealResponse(
+                                            pm.getMeal().getId(),
+                                            pm.getMeal().getTitle(),
+                                            pm.getMeal().getCalories(),
+                                            pm.getQuantity(),
+                                            pm.getMeal().getDescription(),
+                                            calculateCalories(pm.getMeal().getCalories(), pm.getQuantity())
+                                    ), Collectors.toList())
+                            ));
+
+                    schedule.put(day, new MealDayResponse(
+                            mealsByTime.getOrDefault(MealTime.Breakfast, List.of()),
+                            mealsByTime.getOrDefault(MealTime.Lunch, List.of()),
+                            mealsByTime.getOrDefault(MealTime.Dinner, List.of()),
+                            mealsByTime.getOrDefault(MealTime.Snack, List.of())
+                    ));
+                });
+
+        return new ScheduleResponse(schedule);
+    }
+
+    public Float calculateCalories(Float baseCalories, Float quantity) {
+        if (baseCalories == null || quantity == null) return 0.0f;
+        return (baseCalories / 100) * quantity;
     }
 
     private Float calculateRate(int dietId) {
@@ -172,7 +205,9 @@ public class DietService {
                                         meal.getId(),
                                         meal.getTitle(),
                                         meal.getCalories(),
-                                        meal.getDescription()
+                                        planMeal.getQuantity(),
+                                        meal.getDescription(),
+                                        calculateCalories(meal.getCalories(),planMeal.getQuantity())
                                 );
                             })
                             .toList();
@@ -184,7 +219,7 @@ public class DietService {
                             dietPlan.getCreatedAt(),
                             dietPlan.getLastModifiedAt(),
                             calculateRate(dietPlan.getId()),
-                            mealResponses,
+                            buildScheduleResponse(dietPlan),
                             null
                     );
                 })
@@ -215,7 +250,7 @@ public class DietService {
         Meal mealEntity = mealOptional.get();
 
         // Optional: Check if already assigned
-        boolean exists = planMealRepository.existsByDietPlanAndMeal(dietPlanEntity, mealEntity);
+        boolean exists = planMealRepository.existsByDietPlanAndMealAndDayAndMealTime(dietPlanEntity, mealEntity,request.getDay(),request.getMealTime());
         if (exists) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Meal is already assigned to this dietPlan"));
@@ -225,12 +260,88 @@ public class DietService {
         Plan_Meal planMeal = new Plan_Meal();
         planMeal.setDietPlan(dietPlanEntity);
         planMeal.setMeal(mealEntity);
+        planMeal.setQuantity(request.getQuantity());
+        planMeal.setDay(request.getDay());
+        planMeal.setMealTime(request.getMealTime());
 
         planMealRepository.save(planMeal);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Meal successfully assigned to dietPlan"));
     }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> updateAssignedMealToDiet(AssignMealToDietRequest request) {
+        Integer dietPlanId = request.getDiet_plan_id();
+        Integer mealId = request.getMeal_id();
+
+        Optional<DietPlan> dietPlanOptional = dietPlanRepository.findById(dietPlanId);
+        if (dietPlanOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Diet Plan not found"));
+        }
+
+        Optional<Meal> mealOptional = mealRepository.findById(mealId);
+        if (mealOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Meal not found"));
+        }
+
+        DietPlan dietPlanEntity = dietPlanOptional.get();
+        Meal mealEntity = mealOptional.get();
+
+
+        Optional<Plan_Meal> planMealOpt = planMealRepository.findByDietPlanAndMealAndDayAndMealTime(dietPlanEntity,
+                mealEntity,request.getDay(),request.getMealTime());
+
+        if (planMealOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Meal not assigned to diet plan"));
+        }
+
+        Plan_Meal pm = planMealOpt.get();
+
+        if(request.getQuantity()!=null && !request.getQuantity().equals(pm.getQuantity())){
+            pm.setQuantity(request.getQuantity());
+        }
+
+        planMealRepository.save(pm);
+
+        return ResponseEntity.ok(Map.of("message", "Meal assignment updated successfully"));
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> unAssignMealFromDiet(AssignMealToDietRequest request) {
+        Integer dietPlanId = request.getDiet_plan_id();
+        Integer mealId = request.getMeal_id();
+
+        Optional<DietPlan> dietPlanOptional = dietPlanRepository.findById(dietPlanId);
+        if (dietPlanOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Diet Plan not found"));
+        }
+
+        Optional<Meal> mealOptional = mealRepository.findById(mealId);
+        if (mealOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Meal not found"));
+        }
+
+        DietPlan dietPlanEntity = dietPlanOptional.get();
+        Meal mealEntity = mealOptional.get();
+
+        Optional<Plan_Meal> planMealOpt = planMealRepository.findByDietPlanAndMealAndDayAndMealTime(dietPlanEntity,
+                mealEntity,request.getDay(),request.getMealTime());
+
+        if (planMealOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Meal not assigned to diet plan"));
+        }
+
+        planMealRepository.delete(planMealOpt.get());
+        return ResponseEntity.ok(Map.of("message", "Meal successfully removed from diet plan"));
+    }
+
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
@@ -429,7 +540,9 @@ public class DietService {
                                         meal.getId(),
                                         meal.getTitle(),
                                         meal.getCalories(),
-                                        meal.getDescription()
+                                        pm.getQuantity(),
+                                        meal.getDescription(),
+                                        calculateCalories(meal.getCalories(), pm.getQuantity())
                                 );
                             })
                             .toList();
@@ -441,7 +554,7 @@ public class DietService {
                             dietPlan.getCreatedAt(),
                             dietPlan.getLastModifiedAt(),
                             calculateRate(dietPlan.getId()),
-                            meals,
+                            buildScheduleResponse(dietPlan),
                             null
                     );
                 })
@@ -478,7 +591,9 @@ public class DietService {
                                         meal.getId(),
                                         meal.getTitle(),
                                         meal.getCalories(),
-                                        meal.getDescription()
+                                        pm.getQuantity(),
+                                        meal.getDescription(),
+                                        calculateCalories(meal.getCalories(), pm.getQuantity())
                                 );
                             })
                             .toList();
@@ -490,7 +605,7 @@ public class DietService {
                             dietPlan.getCreatedAt(),
                             dietPlan.getLastModifiedAt(),
                             calculateRate(dietPlan.getId()),
-                            meals,
+                            buildScheduleResponse(dietPlan),
                             null
                     );
                 })

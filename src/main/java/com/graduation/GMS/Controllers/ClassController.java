@@ -53,6 +53,11 @@ public class ClassController {
     public ResponseEntity<?> assignProgramToClass(@RequestBody @Valid AssignProgramToClassRequest request) {
         return classService.assignProgramToClass(request);
     }
+    // Endpoint to Unassign a program to a class (Request body)
+    @PostMapping("/unassign-program")
+    public ResponseEntity<?> unAssignProgramToClass(@RequestBody @Valid AssignProgramToClassRequest request) {
+        return classService.unAssignProgramToClass(request);
+    }
     // Endpoint to add Subscription
     @PostMapping("/new-subscription")
     public ResponseEntity<?> addNewSubscription(@RequestBody @Valid ClassSubscriptionRequest request) throws Exception {

@@ -8,6 +8,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,8 +27,9 @@ public class DietResponse {
 
     private Float rate;
 
-    private List<MealResponse> meals;
+    private ScheduleResponse schedule;
 
     private List<UserFeedBackResponse> feedBacks;
+
 
 }

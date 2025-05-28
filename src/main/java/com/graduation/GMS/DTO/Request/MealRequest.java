@@ -17,7 +17,7 @@ public class MealRequest {
     @Size(max = 100, message = "Program title must not exceed 100 characters")
     private String title;
 
-    private String calories;
+    private Float calories;
 
     @Size(max = 1000, message = "Description must not exceed 1000 characters")
     private String description;

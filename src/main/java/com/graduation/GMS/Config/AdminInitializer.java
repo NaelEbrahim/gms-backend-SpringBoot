@@ -3,20 +3,13 @@ package com.graduation.GMS.Config;
 import com.graduation.GMS.DTO.Request.UserRequest;
 import com.graduation.GMS.Models.Enums.Gender;
 import com.graduation.GMS.Models.Enums.Roles;
-import com.graduation.GMS.Models.Role;
-import com.graduation.GMS.Models.User;
-import com.graduation.GMS.Models.User_Role;
-import com.graduation.GMS.Repositories.RoleRepository;
 import com.graduation.GMS.Repositories.UserRepository;
-import com.graduation.GMS.Repositories.User_RoleRepository;
 import com.graduation.GMS.Services.UserService;
-import com.graduation.GMS.Tools.Generators;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 

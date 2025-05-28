@@ -51,6 +51,16 @@ public class DietController {
     public ResponseEntity<?> assignMealToDiet(@RequestBody @Valid AssignMealToDietRequest request) {
         return dietService.assignMealToDiet(request);
     }
+    // Endpoint to update assign a meal for a diet (Request body)
+    @PostMapping("/update-assign-meal")
+    public ResponseEntity<?> updateAssignMealToDiet(@RequestBody @Valid AssignMealToDietRequest request) {
+        return dietService.updateAssignedMealToDiet(request);
+    }
+    // Endpoint to Unassign a meal for a diet (Request body)
+    @PostMapping("/unassign-meal")
+    public ResponseEntity<?> unAssignMealToDiet(@RequestBody @Valid AssignMealToDietRequest request) {
+        return dietService.unAssignMealFromDiet(request);
+    }
 
 
     // User Diet Assignment Endpoints

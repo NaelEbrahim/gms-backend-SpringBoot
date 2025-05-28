@@ -62,7 +62,7 @@ public class MealService {
             meal.setDescription(request.getDescription());
         }
 
-        if (!request.getCalories().isEmpty() && !meal.getCalories().equals(request.getCalories())) {
+        if (request.getCalories()!=null && !meal.getCalories().equals(request.getCalories())) {
             meal.setCalories(request.getCalories());
         }
 
@@ -94,8 +94,10 @@ public class MealService {
         MealResponse response = new MealResponse(
                 meal.getId(),
                 meal.getTitle(),
+                meal.getCalories(),
+                null,
                 meal.getDescription(),
-                meal.getCalories()
+                null
         );
 
         return ResponseEntity.status(HttpStatus.OK)
@@ -114,8 +116,11 @@ public class MealService {
                 .map(w -> new MealResponse(
                         w.getId(),
                         w.getTitle(),
+                        w.getCalories(),
+                        null,
                         w.getDescription(),
-                        w.getCalories()
+                        null
+
                 ))
                 .collect(Collectors.toList());
 

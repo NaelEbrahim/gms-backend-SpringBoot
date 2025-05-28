@@ -1,5 +1,7 @@
 package com.graduation.GMS.Models;
 
+import com.graduation.GMS.Models.Enums.Day;
+import com.graduation.GMS.Models.Enums.MealTime;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,6 +18,15 @@ public class Plan_Meal {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column
+    private Float quantity;
+
+    @Column
+    private Day day;
+
+    @Column
+    private MealTime mealTime;
+
     @ManyToOne
     @JoinColumn(name = "meal_id")
     private Meal meal;
@@ -23,5 +34,6 @@ public class Plan_Meal {
     @ManyToOne
     @JoinColumn(name = "diet_plan_id")
     private DietPlan dietPlan;
+
 
 }
