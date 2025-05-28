@@ -41,11 +41,6 @@ public class UserController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> userLogout(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body("Invalid token");
-        }
-        String token = authHeader.substring(7);
         return userService.logout();
     }
 
