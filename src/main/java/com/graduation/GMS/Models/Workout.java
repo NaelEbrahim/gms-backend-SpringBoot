@@ -26,7 +26,7 @@ public class Workout {
 
     private String secondary_muscles;
 
-    private String avg_calories;
+    private Float avg_calories;
 
     private String description;
 

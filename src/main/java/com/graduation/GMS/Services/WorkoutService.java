@@ -64,7 +64,7 @@ public class WorkoutService {
         Workout workout = optionalWorkout.get();
 
 
-        if (!request.getTitle().isEmpty()&&!workout.getTitle().equals(request.getTitle())) {
+        if (!request.getTitle().isEmpty() && !workout.getTitle().equals(request.getTitle())) {
             workout.setTitle(request.getTitle());
         }
 
@@ -76,7 +76,7 @@ public class WorkoutService {
             workout.setSecondary_muscles(request.getSecondaryMuscles());
         }
 
-        if (!request.getAvgCalories().isEmpty() && !workout.getAvg_calories().equals(request.getAvgCalories())) {
+        if (request.getAvgCalories() != null && !workout.getAvg_calories().equals(request.getAvgCalories())) {
             workout.setAvg_calories(request.getAvgCalories());
         }
 
@@ -97,7 +97,7 @@ public class WorkoutService {
         }
 
         workoutRepository.deleteById(id);
-        return  ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Workout deleted successfully"));
 
     }
@@ -121,7 +121,7 @@ public class WorkoutService {
                 0
         );
 
-        return  ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(response);
     }
 
@@ -146,7 +146,7 @@ public class WorkoutService {
                 ))
                 .collect(Collectors.toList());
 
-        return  ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(workoutResponses);
     }
 
@@ -221,7 +221,6 @@ public class WorkoutService {
 
         return ResponseEntity.status(HttpStatus.OK).body(responseList);
     }
-
 
 
 }

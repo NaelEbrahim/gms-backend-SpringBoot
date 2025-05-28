@@ -7,6 +7,8 @@ import com.graduation.GMS.DTO.Request.FeedBackClassRequest;
 import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
+import com.graduation.GMS.Models.Enums.Day;
+import com.graduation.GMS.Models.Enums.Muscle;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,9 +33,9 @@ public class ClassService {
 
     private UserRepository userRepository;
 
-    private  ClassRepository classRepository;
+    private ClassRepository classRepository;
 
-    private  ProgramRepository programRepository;
+    private ProgramRepository programRepository;
 
     private Class_ProgramRepository class_ProgramRepository;
 
@@ -79,13 +82,13 @@ public class ClassService {
         Class existingClass = optionalClass.get();
 
 
-        if (!existingClass.getName().equals(request.getName())&&!request.getName().isEmpty()) {
+        if (!existingClass.getName().equals(request.getName()) && !request.getName().isEmpty()) {
             existingClass.setName(request.getName());
         }
-        if (!existingClass.getDescription().equals(request.getDescription())&&!request.getDescription().isEmpty()) {
+        if (!existingClass.getDescription().equals(request.getDescription()) && !request.getDescription().isEmpty()) {
             existingClass.setDescription(request.getDescription());
         }
-        if (!existingClass.getPrice().equals(request.getPrice())&&request.getPrice()!=null) {
+        if (!existingClass.getPrice().equals(request.getPrice()) && request.getPrice() != null) {
             existingClass.setPrice(request.getPrice());
         }
         classRepository.save(existingClass);
@@ -139,14 +142,13 @@ public class ClassService {
                                 );
                             })
                             .collect(Collectors.toList());
-
                     return new ProgramResponse(
                             program.getId(),
                             program.getTitle(),
                             program.getLevel(),
                             program.getIsPublic(),
                             null,
-                            workoutResponses,
+                            buildProgramScheduleResponse(program),
                             null
                     );
                 })
@@ -206,7 +208,7 @@ public class ClassService {
                                         program.getLevel(),
                                         program.getIsPublic(),
                                         null,
-                                        workoutResponses,
+                                        buildProgramScheduleResponse(program),
                                         null
                                 );
                             })
@@ -297,7 +299,7 @@ public class ClassService {
                     .body(Map.of("message", "Program is Not assigned to this class"));
         }
 
-        Class_Program classProgram = class_ProgramRepository.findByAClassAndProgram(classEntity,programEntity);
+        Class_Program classProgram = class_ProgramRepository.findByAClassAndProgram(classEntity, programEntity);
 
         class_ProgramRepository.delete(classProgram);
 
@@ -384,7 +386,7 @@ public class ClassService {
             float expectedAmount = calculateExpectedAmount(classEntity.getPrice(), request.getDiscountPercentage());
 
             if (Math.abs(request.getPaymentAmount() - expectedAmount) > 0.01f) {
-             throw new Exception("Payment amount doesn't match expected value");
+                throw new Exception("Payment amount doesn't match expected value");
             }
 
             SubscriptionHistory history = new SubscriptionHistory();
@@ -399,7 +401,7 @@ public class ClassService {
 
     private float calculateExpectedAmount(float basePrice, Float discountPercentage) {
         return discountPercentage != null ?
-                basePrice * (1 - discountPercentage/100) :
+                basePrice * (1 - discountPercentage / 100) :
                 basePrice;
     }
 
@@ -419,7 +421,7 @@ public class ClassService {
                 .stream()
                 .map(subscription -> {
                     User user = subscription.getUser();
-                    return  mapToUserResponse(user);
+                    return mapToUserResponse(user);
                 })
                 .toList();
 
@@ -436,8 +438,9 @@ public class ClassService {
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
+
     @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
-    public ResponseEntity<?>  getSubscribersByActiveStatus(Integer classId, boolean isActive){
+    public ResponseEntity<?> getSubscribersByActiveStatus(Integer classId, boolean isActive) {
         Optional<Class> classOptional = classRepository.findById(classId);
         if (classOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -445,15 +448,14 @@ public class ClassService {
         }
 
 
-
         Class classEntity = classOptional.get();
         UserResponse coachResponse = mapToUserResponse(classEntity.getAuditCoach());
         // Get only active subscribers
-        List<UserResponse> activeSubscribers = subscriptionRepository.findByAClassAndIsActive(classEntity,isActive)
+        List<UserResponse> activeSubscribers = subscriptionRepository.findByAClassAndIsActive(classEntity, isActive)
                 .stream()
                 .map(subscription -> {
                     User user = subscription.getUser();
-                    return  mapToUserResponse(user);
+                    return mapToUserResponse(user);
                 })
                 .toList();
 
@@ -547,7 +549,7 @@ public class ClassService {
                 .stream()
                 .map(subscription -> {
                     User user = subscription.getUser();
-                    return new UserFeedBackResponse(user,subscription.getFeedback());
+                    return new UserFeedBackResponse(user, subscription.getFeedback());
                 })
                 .toList();
 
@@ -564,5 +566,54 @@ public class ClassService {
         );
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
+
+    private ProgramScheduleResponse buildProgramScheduleResponse(Program program) {
+        Map<Day, WorkoutDayResponse> schedule = new LinkedHashMap<>();
+
+        // Group all Program_Workout entries by day
+        programWorkoutRepository.findByProgram(program).stream()
+                .collect(Collectors.groupingBy(Program_Workout::getDay))
+                .forEach((day, dayWorkouts) -> {
+                    // Group workouts by their primary muscle
+                    Map<String, List<WorkoutResponse>> groupedByMuscle = dayWorkouts.stream()
+                            .collect(Collectors.groupingBy(
+                                    pw -> pw.getWorkout().getPrimary_muscle(),
+                                    Collectors.mapping(pw -> {
+                                        Workout w = pw.getWorkout();
+                                        return new WorkoutResponse(
+                                                w.getId(),
+                                                w.getTitle(),
+                                                w.getPrimary_muscle(),
+                                                String.join(", ", w.getSecondary_muscles()),
+                                                w.getAvg_calories() * pw.getSets(),
+                                                w.getDescription(),
+                                                pw.getReps(),
+                                                pw.getSets()
+                                        );
+                                    }, Collectors.toList())
+                            ));
+
+                    // Build WorkoutDayResponse with grouped muscle lists
+                    WorkoutDayResponse dayResponse = new WorkoutDayResponse();
+                    dayResponse.setChest(groupedByMuscle.getOrDefault(Muscle.Chest.name(), List.of()));
+                    dayResponse.setBack(groupedByMuscle.getOrDefault(Muscle.Back.name(), List.of()));
+                    dayResponse.setShoulders(groupedByMuscle.getOrDefault(Muscle.Shoulders.name(), List.of()));
+                    dayResponse.setBiceps(groupedByMuscle.getOrDefault(Muscle.Biceps.name(), List.of()));
+                    dayResponse.setTriceps(groupedByMuscle.getOrDefault(Muscle.Triceps.name(), List.of()));
+                    dayResponse.setForearms(groupedByMuscle.getOrDefault(Muscle.Forearms.name(), List.of()));
+                    dayResponse.setAbs(groupedByMuscle.getOrDefault(Muscle.Abs.name(), List.of()));
+                    dayResponse.setGlutes(groupedByMuscle.getOrDefault(Muscle.Glutes.name(), List.of()));
+                    dayResponse.setQuadriceps(groupedByMuscle.getOrDefault(Muscle.Quadriceps.name(), List.of()));
+                    dayResponse.setHamstrings(groupedByMuscle.getOrDefault(Muscle.Hamstrings.name(), List.of()));
+                    dayResponse.setCalves(groupedByMuscle.getOrDefault(Muscle.Calves.name(), List.of()));
+
+                    schedule.put(day, dayResponse);
+                });
+
+        ProgramScheduleResponse response = new ProgramScheduleResponse();
+        response.setDays(schedule);
+        return response;
+    }
+
 
 }

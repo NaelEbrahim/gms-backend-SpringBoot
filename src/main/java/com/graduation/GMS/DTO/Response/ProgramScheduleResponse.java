@@ -8,11 +8,13 @@ import lombok.Setter;
 
 import java.util.Map;
 
-@Getter
+
 @Setter
-@NoArgsConstructor
+@Getter
 @AllArgsConstructor
-public class ScheduleResponse {
-    private Map<Day, MealDayResponse> days;
+@NoArgsConstructor
+public class ProgramScheduleResponse {
+
+    private Map<Day, WorkoutDayResponse> days;
 
 }

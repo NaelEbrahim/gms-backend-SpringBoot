@@ -70,7 +70,7 @@ public class DietService {
         DietPlan existingDietPlan = optionalDietPlan.get();
 
 
-        if (!existingDietPlan.getTitle().equals(request.getTitle())&&!request.getTitle().isEmpty()) {
+        if (!existingDietPlan.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
             existingDietPlan.setTitle(request.getTitle());
         }
 
@@ -80,6 +80,7 @@ public class DietService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Diet Plan updated successfully"));
     }
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> deleteDiet(Integer id) {
@@ -207,7 +208,7 @@ public class DietService {
                                         meal.getCalories(),
                                         planMeal.getQuantity(),
                                         meal.getDescription(),
-                                        calculateCalories(meal.getCalories(),planMeal.getQuantity())
+                                        calculateCalories(meal.getCalories(), planMeal.getQuantity())
                                 );
                             })
                             .toList();
@@ -250,7 +251,7 @@ public class DietService {
         Meal mealEntity = mealOptional.get();
 
         // Optional: Check if already assigned
-        boolean exists = planMealRepository.existsByDietPlanAndMealAndDayAndMealTime(dietPlanEntity, mealEntity,request.getDay(),request.getMealTime());
+        boolean exists = planMealRepository.existsByDietPlanAndMealAndDayAndMealTime(dietPlanEntity, mealEntity, request.getDay(), request.getMealTime());
         if (exists) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Meal is already assigned to this dietPlan"));
@@ -293,7 +294,7 @@ public class DietService {
 
 
         Optional<Plan_Meal> planMealOpt = planMealRepository.findByDietPlanAndMealAndDayAndMealTime(dietPlanEntity,
-                mealEntity,request.getDay(),request.getMealTime());
+                mealEntity, request.getDay(), request.getMealTime());
 
         if (planMealOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Meal not assigned to diet plan"));
@@ -301,7 +302,7 @@ public class DietService {
 
         Plan_Meal pm = planMealOpt.get();
 
-        if(request.getQuantity()!=null && !request.getQuantity().equals(pm.getQuantity())){
+        if (request.getQuantity() != null && !request.getQuantity().equals(pm.getQuantity())) {
             pm.setQuantity(request.getQuantity());
         }
 
@@ -332,7 +333,7 @@ public class DietService {
         Meal mealEntity = mealOptional.get();
 
         Optional<Plan_Meal> planMealOpt = planMealRepository.findByDietPlanAndMealAndDayAndMealTime(dietPlanEntity,
-                mealEntity,request.getDay(),request.getMealTime());
+                mealEntity, request.getDay(), request.getMealTime());
 
         if (planMealOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Meal not assigned to diet plan"));
@@ -378,6 +379,7 @@ public class DietService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Diet Plan successfully assigned to user"));
     }
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> unAssignDietToUser(AssignDietToUser request) {
@@ -501,7 +503,7 @@ public class DietService {
                 .stream()
                 .map(User_Diet -> {
                     User user = User_Diet.getUser();
-                    return new UserFeedBackResponse(user,User_Diet.getFeedBack());
+                    return new UserFeedBackResponse(user, User_Diet.getFeedBack());
                 })
                 .toList();
 
@@ -517,6 +519,7 @@ public class DietService {
         );
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
+
     @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> getMyAssignedDiets() {
         User currentUser = HandleCurrentUserSession.getCurrentUser();
@@ -531,7 +534,6 @@ public class DietService {
         List<DietResponse> dietResponses = userDiets.stream()
                 .map(ud -> {
                     DietPlan dietPlan = ud.getDiet_plan();
-
                     List<MealResponse> meals = planMealRepository.findByDietPlan(dietPlan)
                             .stream()
                             .map(pm -> {

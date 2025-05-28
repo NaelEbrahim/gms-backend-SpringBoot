@@ -25,7 +25,7 @@ public class ProgramResponse {
 
     private Float rate;
 
-    private List<WorkoutResponse> workouts;
+    private ProgramScheduleResponse schedule;
 
     private List<UserFeedBackResponse> feedbacks;
 }

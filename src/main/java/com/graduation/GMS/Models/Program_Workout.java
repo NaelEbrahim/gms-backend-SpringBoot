@@ -1,5 +1,7 @@
 package com.graduation.GMS.Models;
 
+import com.graduation.GMS.Models.Enums.Day;
+import com.graduation.GMS.Models.Enums.Muscle;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,6 +21,12 @@ public class Program_Workout {
     private Integer reps;
 
     private Integer sets;
+
+    @Enumerated(EnumType.STRING)
+    private Day day;
+
+    @Enumerated(EnumType.STRING)
+    private Muscle muscle;
 
     @ManyToOne
     @JoinColumn(name = "program_id")

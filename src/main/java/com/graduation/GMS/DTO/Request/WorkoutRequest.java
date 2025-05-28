@@ -24,7 +24,7 @@ public class WorkoutRequest {
     @Size(max = 50, message = "Secondary muscles must not exceed 50 characters")
     private String secondaryMuscles;
 
-    private String avgCalories;
+    private Float avgCalories;
 
     @Size(max = 1000, message = "Description must not exceed 1000 characters")
     private String description;

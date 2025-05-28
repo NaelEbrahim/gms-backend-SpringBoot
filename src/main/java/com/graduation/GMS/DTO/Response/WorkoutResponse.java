@@ -19,7 +19,7 @@ public class WorkoutResponse {
 
     private String secondaryMuscles;
 
-    private String avgCalories;
+    private Float avgBurnedCalories;
 
     private String description;
 
