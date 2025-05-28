@@ -1,4 +1,4 @@
-package com.graduation.GMS.Tools;
+package com.graduation.GMS.Handlers;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleInvalidInput(Exception ex) {
         String errorMessage = ex.getMessage() != null ? ex.getMessage() : "Unknown error occurred";
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("exception message", errorMessage));
+                .body(Map.of("message", errorMessage));
     }
 
 }

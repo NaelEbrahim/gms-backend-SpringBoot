@@ -8,7 +8,7 @@ import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
 import com.graduation.GMS.Repositories.*;
-import com.graduation.GMS.Tools.HandleCurrentUserSession;
+import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +48,7 @@ public class ClassService {
         // Check if the class title already exists (optional validation)
         Optional<Class> existingClass = classRepository.findByName(request.getName());
         if (existingClass.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Class title already exists"));
         }
         // Convert the DTO to entity and save

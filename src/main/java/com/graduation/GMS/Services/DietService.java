@@ -7,7 +7,7 @@ import com.graduation.GMS.Models.DietPlan;
 import com.graduation.GMS.Models.Enums.Day;
 import com.graduation.GMS.Models.Enums.MealTime;
 import com.graduation.GMS.Repositories.*;
-import com.graduation.GMS.Tools.HandleCurrentUserSession;
+import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -41,7 +41,7 @@ public class DietService {
         // Check if the diet title already exists (optional validation)
         Optional<DietPlan> existingDietPlan = dietPlanRepository.findByTitle(request.getTitle());
         if (existingDietPlan.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Diet Plan title already exists"));
         }
         // Convert the DTO to entity and save

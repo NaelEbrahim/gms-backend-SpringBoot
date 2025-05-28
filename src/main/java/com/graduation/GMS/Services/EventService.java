@@ -10,7 +10,7 @@ import com.graduation.GMS.Repositories.EventRepository;
 import com.graduation.GMS.Repositories.Event_ParticipantRepository;
 import com.graduation.GMS.Repositories.PrizeRepository;
 import com.graduation.GMS.Repositories.UserRepository;
-import com.graduation.GMS.Tools.HandleCurrentUserSession;
+import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +45,7 @@ public class EventService {
         // Check if the event title already exists (optional validation)
         Optional<Event> existingEvent = eventRepository.findByTitle(request.getTitle());
         if (existingEvent.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Event title already exists"));
         }
         // Convert the DTO to entity and save

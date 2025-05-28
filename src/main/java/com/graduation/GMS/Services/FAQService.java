@@ -6,7 +6,7 @@ import com.graduation.GMS.DTO.Response.UserResponse;
 import com.graduation.GMS.Models.FAQ;
 import com.graduation.GMS.Repositories.FAQRepository;
 import com.graduation.GMS.Repositories.UserRepository;
-import com.graduation.GMS.Tools.HandleCurrentUserSession;
+import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
