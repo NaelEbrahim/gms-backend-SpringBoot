@@ -4,7 +4,7 @@ import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Repositories.*;
-import com.graduation.GMS.Tools.HandleCurrentUserSession;
+import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +38,7 @@ public class ProgramService {
         // Check if program title already exists
         Optional<Program> existingProgram = programRepository.findByTitle(request.getTitle());
         if (existingProgram.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Program title already exists"));
         }
 
@@ -48,8 +48,7 @@ public class ProgramService {
         program.setLevel(request.getLevel());
         if (request.getIsPublic().equalsIgnoreCase("true")) {
             program.setIsPublic(true);
-        }
-        else {
+        } else {
             program.setIsPublic(false);
         }
         programRepository.save(program);
@@ -73,16 +72,16 @@ public class ProgramService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Program title already exists"));
         }
-        if(!program.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
+        if (!program.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
             program.setTitle(request.getTitle());
         }
-        if(!program.getLevel().equals(request.getLevel()) && request.getLevel() != null) {
-            program.setLevel(request.getLevel());        }
-        if(!program.getIsPublic().equals(request.getIsPublic()) && !request.getIsPublic().isEmpty()) {
+        if (request.getLevel() != null && !program.getLevel().equals(request.getLevel())) {
+            program.setLevel(request.getLevel());
+        }
+        if (!request.getIsPublic().isEmpty() && !program.getIsPublic().equals(request.getIsPublic())) {
             if (request.getIsPublic().equalsIgnoreCase("true")) {
                 program.setIsPublic(true);
-            }
-            else {
+            } else {
                 program.setIsPublic(false);
             }
         }
@@ -103,6 +102,7 @@ public class ProgramService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Program deleted successfully"));
     }
+
     public ResponseEntity<?> getProgramById(Integer id) {
         Optional<Program> programOptional = programRepository.findById(id);
         if (programOptional.isEmpty()) {
@@ -185,6 +185,7 @@ public class ProgramService {
 
         return ResponseEntity.status(HttpStatus.OK).body(programResponses);
     }
+
     private Float calculateRate(int programId) {
         // First check if the program exists
         Optional<Program> programOptional = programRepository.findById(programId);
@@ -286,6 +287,7 @@ public class ProgramService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "program successfully assigned to user"));
     }
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> unAssignProgramToUser(AssignProgramToUserRequest request) {
@@ -410,7 +412,7 @@ public class ProgramService {
                 .stream()
                 .map(User_Program -> {
                     User user = User_Program.getUser();
-                    return new UserFeedBackResponse(user,User_Program.getFeedback());
+                    return new UserFeedBackResponse(user, User_Program.getFeedback());
                 })
                 .toList();
 
@@ -524,7 +526,6 @@ public class ProgramService {
 
         return ResponseEntity.ok(programResponses);
     }
-
 
 
 }

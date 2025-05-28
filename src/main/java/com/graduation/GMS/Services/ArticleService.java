@@ -7,7 +7,7 @@ import com.graduation.GMS.Models.Article;
 import com.graduation.GMS.Models.Enums.Wiki;
 import com.graduation.GMS.Repositories.ArticleRepository;
 import com.graduation.GMS.Repositories.UserRepository;
-import com.graduation.GMS.Tools.HandleCurrentUserSession;
+import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +38,7 @@ public class ArticleService {
         // Check if article title already exists
         Optional<Article> existingArticle = articleRepository.findByTitle(request.getTitle());
         if (existingArticle.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Article title already exists"));
         }
 
@@ -55,6 +55,7 @@ public class ArticleService {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Article created successfully"));
     }
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin')")
     public ResponseEntity<?> updateArticle(Integer id, ArticleRequest request) {
@@ -66,16 +67,16 @@ public class ArticleService {
 
         Article existingArticle = optionalArticle.get();
 
-        if (!existingArticle.getTitle().equals(request.getTitle())&&!request.getTitle().isEmpty()) {
+        if (!existingArticle.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
             existingArticle.setTitle(request.getTitle());
         }
-        if (!existingArticle.getContent().equals(request.getTitle())&&!request.getContent().isEmpty()) {
+        if (!existingArticle.getContent().equals(request.getTitle()) && !request.getContent().isEmpty()) {
             existingArticle.setContent(request.getContent());
         }
-        if (!existingArticle.getCategory().equals(request.getCategory())&&!request.getCategory().isEmpty()) {
+        if (!existingArticle.getCategory().equals(request.getCategory()) && !request.getCategory().isEmpty()) {
             existingArticle.setCategory(request.getCategory());
         }
-        if (!existingArticle.getWikiType().equals(request.getWikiType())&& request.getWikiType() != null) {
+        if (request.getWikiType() != null && !existingArticle.getWikiType().equals(request.getWikiType())) {
             existingArticle.setWikiType(request.getWikiType());
         }
         existingArticle.setLastModifiedAt(LocalDateTime.now());
@@ -84,6 +85,7 @@ public class ArticleService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Article updated successfully"));
     }
+
     @PreAuthorize("hasAnyAuthority('Admin')")
     public ResponseEntity<?> deleteArticle(Integer id) {
         if (!articleRepository.existsById(id)) {

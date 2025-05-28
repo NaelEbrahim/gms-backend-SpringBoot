@@ -7,7 +7,7 @@ import com.graduation.GMS.Models.User_Workout_favorite;
 import com.graduation.GMS.Models.Workout;
 import com.graduation.GMS.Repositories.User_Workout_FavoriteRepository;
 import com.graduation.GMS.Repositories.WorkoutRepository;
-import com.graduation.GMS.Tools.HandleCurrentUserSession;
+import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -6,10 +6,12 @@ import com.graduation.GMS.Models.User_Diet;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface User_DietRepository extends JpaRepository<User_Diet, Integer> {
     // Optimized exists query
     @Query("SELECT CASE WHEN COUNT(ud) > 0 THEN true ELSE false END " +

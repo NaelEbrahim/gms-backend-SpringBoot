@@ -1,6 +1,7 @@
 package com.graduation.GMS.Filters;
 
 import com.graduation.GMS.Models.Enums.Roles;
+import com.graduation.GMS.Repositories.AuthTokenRepository;
 import com.graduation.GMS.Services.JwtService;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
@@ -28,6 +29,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
 
+    private final AuthTokenRepository authTokenRepository;
+
     @Override
     protected void doFilterInternal(
             @Nonnull HttpServletRequest request,
@@ -41,25 +44,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         try {
             final String token = authHeader.substring(7);
-            if (!jwtService.validateToken(token)) {
+            if (jwtService.validateToken(token) && authTokenRepository.findByAccessToken(token).isPresent()) {
+                String email = jwtService.getEmailFromToken(token);
+                List<Roles> roles = jwtService.extractRoles(token);
+
+                List<GrantedAuthority> authorities = roles.stream()
+                        .map(role -> new SimpleGrantedAuthority(role.name()))
+                        .collect(Collectors.toList());
+                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            email,
+                            null,
+                            authorities
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+                filterChain.doFilter(request, response);
+            } else {
                 throw new BadCredentialsException("invalid Authorization header");
             }
-            String email = jwtService.getEmailFromToken(token);
-            List<Roles> roles = jwtService.extractRoles(token);
-
-            List<GrantedAuthority> authorities = roles.stream()
-                    .map(role -> new SimpleGrantedAuthority(role.name()))
-                    .collect(Collectors.toList());
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        email,
-                        null,
-                        authorities
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
-            filterChain.doFilter(request, response);
         } catch (BadCredentialsException e) {
             SecurityContextHolder.clearContext();
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
