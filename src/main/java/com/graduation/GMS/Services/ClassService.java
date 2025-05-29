@@ -133,8 +133,8 @@ public class ClassService {
                                 return new WorkoutResponse(
                                         workout.getId(),
                                         workout.getTitle(),
-                                        workout.getPrimary_muscle(),
-                                        workout.getSecondary_muscles(),
+                                        workout.getPrimary_muscle().name(),
+                                        workout.getSecondary_muscles().name(),
                                         workout.getAvg_calories(),
                                         workout.getDescription(),
                                         programWorkout.getReps(),
@@ -192,8 +192,8 @@ public class ClassService {
                                             return new WorkoutResponse(
                                                     workout.getId(),
                                                     workout.getTitle(),
-                                                    workout.getPrimary_muscle(),
-                                                    workout.getSecondary_muscles(),
+                                                    workout.getPrimary_muscle().name(),
+                                                    workout.getSecondary_muscles().name(),
                                                     workout.getAvg_calories(),
                                                     workout.getDescription(),
                                                     programWorkout.getReps(),
@@ -575,7 +575,7 @@ public class ClassService {
                 .collect(Collectors.groupingBy(Program_Workout::getDay))
                 .forEach((day, dayWorkouts) -> {
                     // Group workouts by their primary muscle
-                    Map<String, List<WorkoutResponse>> groupedByMuscle = dayWorkouts.stream()
+                    Map<Muscle, List<WorkoutResponse>> groupedByMuscle = dayWorkouts.stream()
                             .collect(Collectors.groupingBy(
                                     pw -> pw.getWorkout().getPrimary_muscle(),
                                     Collectors.mapping(pw -> {
@@ -583,8 +583,8 @@ public class ClassService {
                                         return new WorkoutResponse(
                                                 w.getId(),
                                                 w.getTitle(),
-                                                w.getPrimary_muscle(),
-                                                String.join(", ", w.getSecondary_muscles()),
+                                                w.getPrimary_muscle().name(),
+                                                String.join(", ", w.getSecondary_muscles().name()),
                                                 w.getAvg_calories() * pw.getSets(),
                                                 w.getDescription(),
                                                 pw.getReps(),

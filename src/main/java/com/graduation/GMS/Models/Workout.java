@@ -1,5 +1,6 @@
 package com.graduation.GMS.Models;
 
+import com.graduation.GMS.Models.Enums.Muscle;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,9 +23,11 @@ public class Workout {
     private String title;
 
     @Column(nullable = false)
-    private String primary_muscle;
+    @Enumerated(EnumType.STRING)
+    private Muscle primary_muscle;
 
-    private String secondary_muscles;
+    @Enumerated(EnumType.STRING)
+    private Muscle secondary_muscles;
 
     private Float avg_calories;
 

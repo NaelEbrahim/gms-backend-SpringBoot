@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 @Repository
 public interface User_Workout_FavoriteRepository extends JpaRepository<User_Workout_favorite, Integer> {
+
     Optional<User_Workout_favorite> findByUserAndWorkout(User user, Workout workout);
 
     List<User_Workout_favorite> findAllByUser(User user);

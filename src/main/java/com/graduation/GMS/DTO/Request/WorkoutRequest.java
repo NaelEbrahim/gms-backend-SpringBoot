@@ -1,5 +1,6 @@
 package com.graduation.GMS.DTO.Request;
 
+import com.graduation.GMS.Models.Enums.Muscle;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -18,11 +19,10 @@ public class WorkoutRequest {
     private String title;
 
     @NotBlank(message = "Primary muscle is required")
-    @Size(max = 50, message = "Primary muscle must not exceed 50 characters")
-    private String primaryMuscle;
+    private Muscle primaryMuscle;
 
     @Size(max = 50, message = "Secondary muscles must not exceed 50 characters")
-    private String secondaryMuscles;
+    private Muscle secondaryMuscles;
 
     private Float avgCalories;
 

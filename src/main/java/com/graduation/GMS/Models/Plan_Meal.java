@@ -22,9 +22,11 @@ public class Plan_Meal {
     private Float quantity;
 
     @Column
+    @Enumerated(EnumType.STRING)
     private Day day;
 
     @Column
+    @Enumerated(EnumType.STRING)
     private MealTime mealTime;
 
     @ManyToOne

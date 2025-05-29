@@ -114,24 +114,6 @@ public class ProgramService {
 
         Program program = programOptional.get();
 
-        // Get all workouts associated with this program
-        List<WorkoutResponse> workoutResponses = programWorkoutRepository.findByProgram(program)
-                .stream()
-                .map(programWorkout -> {
-                    Workout workout = programWorkout.getWorkout();
-                    return new WorkoutResponse(
-                            workout.getId(),
-                            workout.getTitle(),
-                            workout.getPrimary_muscle(),
-                            workout.getSecondary_muscles(),
-                            workout.getAvg_calories(),
-                            workout.getDescription(),
-                            programWorkout.getReps(),
-                            programWorkout.getSets()
-                    );
-                })
-                .toList();
-
         ProgramResponse response = new ProgramResponse(
                 program.getId(),
                 program.getTitle(),
@@ -156,22 +138,6 @@ public class ProgramService {
         List<ProgramResponse> programResponses = programs.stream()
                 .map(program -> {
                     // Get workouts for each program
-                    List<WorkoutResponse> workoutResponses = programWorkoutRepository.findByProgram(program)
-                            .stream()
-                            .map(programWorkout -> {
-                                Workout workout = programWorkout.getWorkout();
-                                return new WorkoutResponse(
-                                        workout.getId(),
-                                        workout.getTitle(),
-                                        workout.getPrimary_muscle(),
-                                        workout.getSecondary_muscles(),
-                                        workout.getAvg_calories(),
-                                        workout.getDescription(),
-                                        programWorkout.getReps(),
-                                        programWorkout.getSets()
-                                );
-                            })
-                            .collect(Collectors.toList());
 
                     return new ProgramResponse(
                             program.getId(),
@@ -447,23 +413,6 @@ public class ProgramService {
                 .map(up -> {
                     Program program = up.getProgram();
 
-                    List<WorkoutResponse> workouts = programWorkoutRepository.findByProgram(program)
-                            .stream()
-                            .map(pm -> {
-                                Workout workout = pm.getWorkout();
-                                return new WorkoutResponse(
-                                        workout.getId(),
-                                        workout.getTitle(),
-                                        workout.getPrimary_muscle(),
-                                        workout.getSecondary_muscles(),
-                                        workout.getAvg_calories(),
-                                        workout.getDescription(),
-                                        pm.getReps(),
-                                        pm.getSets()
-                                );
-                            })
-                            .toList();
-
                     return new ProgramResponse(
                             program.getId(),
                             program.getTitle(),
@@ -499,23 +448,6 @@ public class ProgramService {
                 .map(up -> {
                     Program program = up.getProgram();
 
-                    List<WorkoutResponse> workouts = programWorkoutRepository.findByProgram(program)
-                            .stream()
-                            .map(pm -> {
-                                Workout workout = pm.getWorkout();
-                                return new WorkoutResponse(
-                                        workout.getId(),
-                                        workout.getTitle(),
-                                        workout.getPrimary_muscle(),
-                                        workout.getSecondary_muscles(),
-                                        workout.getAvg_calories(),
-                                        workout.getDescription(),
-                                        pm.getReps(),
-                                        pm.getSets()
-                                );
-                            })
-                            .toList();
-
                     return new ProgramResponse(
                             program.getId(),
                             program.getTitle(),
@@ -540,7 +472,7 @@ public class ProgramService {
                 .collect(Collectors.groupingBy(Program_Workout::getDay))
                 .forEach((day, dayWorkouts) -> {
                     // Group workouts by their primary muscle
-                    Map<String, List<WorkoutResponse>> groupedByMuscle = dayWorkouts.stream()
+                    Map<Muscle, List<WorkoutResponse>> groupedByMuscle = dayWorkouts.stream()
                             .collect(Collectors.groupingBy(
                                     pw -> pw.getWorkout().getPrimary_muscle(),
                                     Collectors.mapping(pw -> {
@@ -548,8 +480,8 @@ public class ProgramService {
                                         return new WorkoutResponse(
                                                 w.getId(),
                                                 w.getTitle(),
-                                                w.getPrimary_muscle(),
-                                                String.join(", ", w.getSecondary_muscles()),
+                                                w.getPrimary_muscle().name(),
+                                                String.join(", ", w.getSecondary_muscles().name()),
                                                 w.getAvg_calories() * pw.getSets(),
                                                 w.getDescription(),
                                                 pw.getReps(),

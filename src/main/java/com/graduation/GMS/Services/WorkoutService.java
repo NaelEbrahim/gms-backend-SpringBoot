@@ -68,11 +68,11 @@ public class WorkoutService {
             workout.setTitle(request.getTitle());
         }
 
-        if (!request.getPrimaryMuscle().isEmpty() && !workout.getPrimary_muscle().equals(request.getPrimaryMuscle())) {
+        if (request.getPrimaryMuscle()!=null && !workout.getPrimary_muscle().equals(request.getPrimaryMuscle())) {
             workout.setPrimary_muscle(request.getPrimaryMuscle());
         }
 
-        if (!request.getSecondaryMuscles().isEmpty() && !workout.getSecondary_muscles().equals(request.getSecondaryMuscles())) {
+        if (request.getSecondaryMuscles()!=null && !workout.getSecondary_muscles().equals(request.getSecondaryMuscles())) {
             workout.setSecondary_muscles(request.getSecondaryMuscles());
         }
 
@@ -113,8 +113,8 @@ public class WorkoutService {
         WorkoutResponse response = new WorkoutResponse(
                 workout.getId(),
                 workout.getTitle(),
-                workout.getPrimary_muscle(),
-                workout.getSecondary_muscles(),
+                workout.getPrimary_muscle().name(),
+                workout.getSecondary_muscles().name(),
                 workout.getAvg_calories(),
                 workout.getDescription(),
                 0,
@@ -137,8 +137,8 @@ public class WorkoutService {
                 .map(w -> new WorkoutResponse(
                         w.getId(),
                         w.getTitle(),
-                        w.getPrimary_muscle(),
-                        w.getSecondary_muscles(),
+                        w.getPrimary_muscle().name(),
+                        w.getSecondary_muscles().name(),
                         w.getAvg_calories(),
                         w.getDescription(),
                         0,
@@ -209,8 +209,8 @@ public class WorkoutService {
                     return new WorkoutResponse(
                             w.getId(),
                             w.getTitle(),
-                            w.getPrimary_muscle(),
-                            w.getSecondary_muscles(),
+                            w.getPrimary_muscle().name(),
+                            w.getSecondary_muscles().name(),
                             w.getAvg_calories(),
                             w.getDescription(),
                             0,
