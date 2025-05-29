@@ -124,24 +124,6 @@ public class ClassService {
                 .stream()
                 .map(classProgram -> {
                     Program program = classProgram.getProgram();
-                    ;
-                    // Get all workouts for each program
-                    List<WorkoutResponse> workoutResponses = programWorkoutRepository.findByProgram(program)
-                            .stream()
-                            .map(programWorkout -> {
-                                Workout workout = programWorkout.getWorkout();
-                                return new WorkoutResponse(
-                                        workout.getId(),
-                                        workout.getTitle(),
-                                        workout.getPrimary_muscle().name(),
-                                        workout.getSecondary_muscles().name(),
-                                        workout.getAvg_calories(),
-                                        workout.getDescription(),
-                                        programWorkout.getReps(),
-                                        programWorkout.getSets()
-                                );
-                            })
-                            .collect(Collectors.toList());
                     return new ProgramResponse(
                             program.getId(),
                             program.getTitle(),
@@ -183,24 +165,6 @@ public class ClassService {
                             .stream()
                             .map(classProgram -> {
                                 Program program = classProgram.getProgram();
-
-                                // Get all workouts for each program
-                                List<WorkoutResponse> workoutResponses = programWorkoutRepository.findByProgram(program)
-                                        .stream()
-                                        .map(programWorkout -> {
-                                            Workout workout = programWorkout.getWorkout();
-                                            return new WorkoutResponse(
-                                                    workout.getId(),
-                                                    workout.getTitle(),
-                                                    workout.getPrimary_muscle().name(),
-                                                    workout.getSecondary_muscles().name(),
-                                                    workout.getAvg_calories(),
-                                                    workout.getDescription(),
-                                                    programWorkout.getReps(),
-                                                    programWorkout.getSets()
-                                            );
-                                        })
-                                        .collect(Collectors.toList());
 
                                 return new ProgramResponse(
                                         program.getId(),
@@ -571,49 +535,43 @@ public class ClassService {
         Map<Day, WorkoutDayResponse> schedule = new LinkedHashMap<>();
 
         // Group all Program_Workout entries by day
-        programWorkoutRepository.findByProgram(program).stream()
+        programWorkoutRepository.findByProgram(program)
+                .stream()
                 .collect(Collectors.groupingBy(Program_Workout::getDay))
                 .forEach((day, dayWorkouts) -> {
                     // Group workouts by their primary muscle
                     Map<Muscle, List<WorkoutResponse>> groupedByMuscle = dayWorkouts.stream()
                             .collect(Collectors.groupingBy(
-                                    pw -> pw.getWorkout().getPrimary_muscle(),
-                                    Collectors.mapping(pw -> {
-                                        Workout w = pw.getWorkout();
-                                        return new WorkoutResponse(
-                                                w.getId(),
-                                                w.getTitle(),
-                                                w.getPrimary_muscle().name(),
-                                                String.join(", ", w.getSecondary_muscles().name()),
-                                                w.getAvg_calories() * pw.getSets(),
-                                                w.getDescription(),
-                                                pw.getReps(),
-                                                pw.getSets()
-                                        );
-                                    }, Collectors.toList())
+                                    Program_Workout::getMuscle,
+                                    Collectors.mapping(pw -> new WorkoutResponse(
+                                            pw.getWorkout().getId(),
+                                            pw.getWorkout().getTitle(),
+                                            pw.getWorkout().getAvg_calories(),
+                                            pw.getWorkout().getPrimary_muscle().name(),
+                                            String.join(", ", pw.getWorkout().getSecondary_muscles().name()),
+                                            pw.getWorkout().getAvg_calories() * pw.getSets(),
+                                            pw.getWorkout().getDescription(),
+                                            pw.getReps(),
+                                            pw.getSets()
+                                    ),Collectors.toList())
                             ));
 
-                    // Build WorkoutDayResponse with grouped muscle lists
-                    WorkoutDayResponse dayResponse = new WorkoutDayResponse();
-                    dayResponse.setChest(groupedByMuscle.getOrDefault(Muscle.Chest.name(), List.of()));
-                    dayResponse.setBack(groupedByMuscle.getOrDefault(Muscle.Back.name(), List.of()));
-                    dayResponse.setShoulders(groupedByMuscle.getOrDefault(Muscle.Shoulders.name(), List.of()));
-                    dayResponse.setBiceps(groupedByMuscle.getOrDefault(Muscle.Biceps.name(), List.of()));
-                    dayResponse.setTriceps(groupedByMuscle.getOrDefault(Muscle.Triceps.name(), List.of()));
-                    dayResponse.setForearms(groupedByMuscle.getOrDefault(Muscle.Forearms.name(), List.of()));
-                    dayResponse.setAbs(groupedByMuscle.getOrDefault(Muscle.Abs.name(), List.of()));
-                    dayResponse.setGlutes(groupedByMuscle.getOrDefault(Muscle.Glutes.name(), List.of()));
-                    dayResponse.setQuadriceps(groupedByMuscle.getOrDefault(Muscle.Quadriceps.name(), List.of()));
-                    dayResponse.setHamstrings(groupedByMuscle.getOrDefault(Muscle.Hamstrings.name(), List.of()));
-                    dayResponse.setCalves(groupedByMuscle.getOrDefault(Muscle.Calves.name(), List.of()));
-
-                    schedule.put(day, dayResponse);
+                    schedule.put(day, new WorkoutDayResponse(
+                            groupedByMuscle.getOrDefault(Muscle.Chest, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Back, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Shoulders, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Biceps, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Triceps, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Forearms, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Abs, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Glutes, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Quadriceps, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Hamstrings, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Calves, List.of())
+                    ));
                 });
 
-        ProgramScheduleResponse response = new ProgramScheduleResponse();
-        response.setDays(schedule);
-        return response;
+        return new ProgramScheduleResponse(schedule);
     }
-
 
 }

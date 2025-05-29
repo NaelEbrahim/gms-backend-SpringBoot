@@ -198,20 +198,6 @@ public class DietService {
         List<DietResponse> dietPlanResponses = dietPlans.stream()
                 .map(dietPlan -> {
                     // Get meals for each diet plan
-                    List<MealResponse> mealResponses = planMealRepository.findByDietPlan(dietPlan)
-                            .stream()
-                            .map(planMeal -> {
-                                Meal meal = planMeal.getMeal();
-                                return new MealResponse(
-                                        meal.getId(),
-                                        meal.getTitle(),
-                                        meal.getCalories(),
-                                        planMeal.getQuantity(),
-                                        meal.getDescription(),
-                                        calculateCalories(meal.getCalories(), planMeal.getQuantity())
-                                );
-                            })
-                            .toList();
 
                     return new DietResponse(
                             dietPlan.getId(),
@@ -534,20 +520,6 @@ public class DietService {
         List<DietResponse> dietResponses = userDiets.stream()
                 .map(ud -> {
                     DietPlan dietPlan = ud.getDiet_plan();
-                    List<MealResponse> meals = planMealRepository.findByDietPlan(dietPlan)
-                            .stream()
-                            .map(pm -> {
-                                Meal meal = pm.getMeal();
-                                return new MealResponse(
-                                        meal.getId(),
-                                        meal.getTitle(),
-                                        meal.getCalories(),
-                                        pm.getQuantity(),
-                                        meal.getDescription(),
-                                        calculateCalories(meal.getCalories(), pm.getQuantity())
-                                );
-                            })
-                            .toList();
 
                     return new DietResponse(
                             dietPlan.getId(),

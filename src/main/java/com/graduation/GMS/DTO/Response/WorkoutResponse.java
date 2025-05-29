@@ -15,11 +15,13 @@ public class WorkoutResponse {
 
     private String title;
 
+    private Float baseAvgCalories;
+
     private String primaryMuscle;
 
     private String secondaryMuscles;
 
-    private Float avgBurnedCalories;
+    private Float totalBurnedCalories;
 
     private String description;
 

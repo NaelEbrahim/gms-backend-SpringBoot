@@ -113,6 +113,7 @@ public class WorkoutService {
         WorkoutResponse response = new WorkoutResponse(
                 workout.getId(),
                 workout.getTitle(),
+                0.0f,
                 workout.getPrimary_muscle().name(),
                 workout.getSecondary_muscles().name(),
                 workout.getAvg_calories(),
@@ -137,6 +138,7 @@ public class WorkoutService {
                 .map(w -> new WorkoutResponse(
                         w.getId(),
                         w.getTitle(),
+                        0.0f,
                         w.getPrimary_muscle().name(),
                         w.getSecondary_muscles().name(),
                         w.getAvg_calories(),
@@ -209,6 +211,7 @@ public class WorkoutService {
                     return new WorkoutResponse(
                             w.getId(),
                             w.getTitle(),
+                            0.0f,
                             w.getPrimary_muscle().name(),
                             w.getSecondary_muscles().name(),
                             w.getAvg_calories(),

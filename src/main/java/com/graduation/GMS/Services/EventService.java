@@ -319,7 +319,8 @@ public class EventService {
                 .collect(Collectors.toList());
 
         if (participants.isEmpty()) {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "There are No Participants For this Event"));
         }
 
         // Build response
@@ -352,7 +353,8 @@ public class EventService {
                 .collect(Collectors.toList());
 
         if (participants.isEmpty()) {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "There are No Participants For this Event"));
         }
 
         // Build response
@@ -385,7 +387,8 @@ public class EventService {
                 .collect(Collectors.toList());
 
         if (participants.isEmpty()) {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "There are No Participants For this Event"));
         }
 
         // Build response
