@@ -150,9 +150,6 @@ public class UserService {
         if (userRequest.getDob() != null) {
             user.setDob(userRequest.getDob());
         }
-        if (userRequest.getGender() != null) {
-            user.setGender(userRequest.getGender());
-        }
         userRepository.save(user);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message:", "information updated successfully"));

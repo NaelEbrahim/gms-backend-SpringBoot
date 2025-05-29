@@ -24,8 +24,6 @@ public class UpdateProfileRequest {
     @Size(min = 10, max = 20, message = "phone number must between 10-20 digit")
     private String phoneNumber;
 
-    private Gender gender;
-
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dob;
 

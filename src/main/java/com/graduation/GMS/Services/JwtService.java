@@ -29,6 +29,7 @@ public class JwtService {
                 .map(Enum::name)
                 .collect(Collectors.toList());
         claims.put("roles", roleNames);
+        claims.put("id", user.getId().toString());
         return generateJwt(user, jwtConfig.getAccessTokenExpiration(), claims);
     }
 
@@ -37,6 +38,7 @@ public class JwtService {
     }
 
     private String generateJwt(User user, Integer expirationTime, Map<String, Object> claims) {
+        System.out.println(user.getId().toString());
         return Jwts.builder()
                 .claims(claims)
                 .subject(user.getEmail())
@@ -65,6 +67,10 @@ public class JwtService {
 
     public String getEmailFromToken(String token) {
         return getClaims(token).getSubject();
+    }
+
+    public String extractId(String token) {
+        return getClaims(token).get("id").toString();
     }
 
     public List<Roles> extractRoles(String token) {
