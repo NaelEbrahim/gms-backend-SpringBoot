@@ -48,6 +48,16 @@ public class ProgramController {
         return programService.assignWorkoutToProgram(request);
     }
 
+    @PostMapping("/update-assign-workout")
+    public ResponseEntity<?> updateAssignWorkoutToProgram(@RequestBody @Valid AssignWorkoutToProgramRequest request) {
+        return programService.updateAssignedWorkoutToProgram(request);
+    }
+
+    @PostMapping("/unassign-workout")
+    public ResponseEntity<?> unAssignWorkoutToProgram(@RequestBody @Valid AssignWorkoutToProgramRequest request) {
+        return programService.unAssignWorkoutFromProgram(request);
+    }
+
     // Assign a program to a user
     @PostMapping("/assign")
     public ResponseEntity<?> assignProgramToUser(@RequestBody AssignProgramToUserRequest request) {
@@ -90,14 +100,6 @@ public class ProgramController {
         return programService.getAssignedProgramsByUserId(userId);
     }
 
-    @PostMapping("/update-assign-workout")
-    public ResponseEntity<?> updateAssignWorkoutToProgram(@RequestBody @Valid AssignWorkoutToProgramRequest request) {
-        return programService.updateAssignedWorkoutToProgram(request);
-    }
 
-    @PostMapping("/unassign-workout")
-    public ResponseEntity<?> unAssignWorkoutToProgram(@RequestBody @Valid AssignWorkoutToProgramRequest request) {
-        return programService.unAssignWorkoutFromProgram(request);
-    }
 
 }
