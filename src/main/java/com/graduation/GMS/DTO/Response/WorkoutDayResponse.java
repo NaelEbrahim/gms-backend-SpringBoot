@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@JsonInclude(JsonInclude.Include.NON_EMPTY) //
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class WorkoutDayResponse {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
