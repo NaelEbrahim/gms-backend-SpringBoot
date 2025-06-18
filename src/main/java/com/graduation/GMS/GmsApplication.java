@@ -11,4 +11,5 @@ public class GmsApplication {
 		SpringApplication.run(GmsApplication.class, args);
 	}
 
+
 }

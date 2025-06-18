@@ -42,19 +42,14 @@ public class ArticleController {
 
     // Endpoint to get all Articles
     @GetMapping("/show/all")
-    public ResponseEntity<?> getAllArticles() {
-        return articleService.getAllArticles();
+    public ResponseEntity<?> getAllArticles(@RequestParam String wiki) {
+        if (wiki.equalsIgnoreCase("Health")) {
+            return articleService.getAllHealthArticles();        }
+        else if (wiki.equalsIgnoreCase("Sport")) {
+            return articleService.getAllSportArticles();        }
+        else {
+            return articleService.getAllArticles();
+        }
     }
 
-    // Endpoint to get Health Articles
-    @GetMapping("/show/all/health")
-    public ResponseEntity<?> getAllHealthArticles() {
-        return articleService.getAllHealthArticles();
-    }
-
-    // Endpoint to get Sport Articles
-    @GetMapping("/show/all/sport")
-    public ResponseEntity<?> getAllSportArticles() {
-        return articleService.getAllSportArticles();
-    }
 }
