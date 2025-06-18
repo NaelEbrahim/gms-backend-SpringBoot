@@ -21,8 +21,6 @@ public class ArticleResponse {
 
     private String content;
 
-    private String category;
-
     private Wiki wikiType;
 
     private LocalDateTime createdAt;

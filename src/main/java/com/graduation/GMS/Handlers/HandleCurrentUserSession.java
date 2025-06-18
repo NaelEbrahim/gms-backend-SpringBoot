@@ -2,7 +2,7 @@ package com.graduation.GMS.Handlers;
 
 import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.UserRepository;
-import com.graduation.GMS.Services.JwtService;
+import com.graduation.GMS.Services.GeneralServices.JwtService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

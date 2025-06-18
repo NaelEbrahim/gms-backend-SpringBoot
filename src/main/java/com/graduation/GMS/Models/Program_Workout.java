@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -35,5 +37,9 @@ public class Program_Workout {
     @ManyToOne
     @JoinColumn(name = "workout_id")
     private Workout workout;
+
+    @OneToMany(mappedBy = "program_workout", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<User_Progress> userProgresses;
+
 
 }

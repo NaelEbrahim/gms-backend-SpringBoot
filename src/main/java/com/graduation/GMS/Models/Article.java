@@ -27,7 +27,6 @@ public class Article {
     @Column(nullable = false)
     private String content;
 
-    private String category;
 
     @Enumerated(EnumType.STRING)
     private Wiki wikiType;

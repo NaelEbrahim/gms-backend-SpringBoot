@@ -1,4 +1,4 @@
-package com.graduation.GMS.Services;
+package com.graduation.GMS.Services.GeneralServices;
 
 
 import com.graduation.GMS.Config.JwtConfig;

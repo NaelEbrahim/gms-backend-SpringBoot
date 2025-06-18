@@ -6,7 +6,6 @@ import com.graduation.GMS.DTO.Response.UserResponse;
 import com.graduation.GMS.Models.Article;
 import com.graduation.GMS.Models.Enums.Wiki;
 import com.graduation.GMS.Repositories.ArticleRepository;
-import com.graduation.GMS.Repositories.UserRepository;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,7 +28,6 @@ public class ArticleService {
 
     private ArticleRepository articleRepository;
 
-    private UserRepository userRepository;
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin')")
@@ -46,7 +44,6 @@ public class ArticleService {
         article.setCreatedAt(LocalDateTime.now());
         article.setTitle(request.getTitle());
         article.setContent(request.getContent());
-        article.setCategory(request.getCategory());
         article.setWikiType(request.getWikiType());
         article.setAdmin(HandleCurrentUserSession.getCurrentUser());
         article.setLastModifiedAt(LocalDateTime.now());
@@ -72,9 +69,6 @@ public class ArticleService {
         }
         if (!existingArticle.getContent().equals(request.getTitle()) && !request.getContent().isEmpty()) {
             existingArticle.setContent(request.getContent());
-        }
-        if (!existingArticle.getCategory().equals(request.getCategory()) && !request.getCategory().isEmpty()) {
-            existingArticle.setCategory(request.getCategory());
         }
         if (request.getWikiType() != null && !existingArticle.getWikiType().equals(request.getWikiType())) {
             existingArticle.setWikiType(request.getWikiType());
@@ -113,7 +107,6 @@ public class ArticleService {
                 adminResponse,
                 articleEntity.getTitle(),
                 articleEntity.getContent(),
-                articleEntity.getCategory(),
                 articleEntity.getWikiType(),
                 articleEntity.getCreatedAt(),
                 articleEntity.getLastModifiedAt()
@@ -138,7 +131,6 @@ public class ArticleService {
                         mapToUserResponse(article.getAdmin()),
                         article.getTitle(),
                         article.getContent(),
-                        article.getCategory(),
                         article.getWikiType(),
                         article.getCreatedAt(),
                         article.getLastModifiedAt()
@@ -162,7 +154,6 @@ public class ArticleService {
                         mapToUserResponse(c.getAdmin()),
                         c.getTitle(),
                         c.getContent(),
-                        c.getCategory(),
                         c.getWikiType(),
                         c.getCreatedAt(),
                         c.getLastModifiedAt()
@@ -187,7 +178,6 @@ public class ArticleService {
                         mapToUserResponse(c.getAdmin()),
                         c.getTitle(),
                         c.getContent(),
-                        c.getCategory(),
                         c.getWikiType(),
                         c.getCreatedAt(),
                         c.getLastModifiedAt()

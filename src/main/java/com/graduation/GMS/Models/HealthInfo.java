@@ -26,7 +26,7 @@ public class HealthInfo {
 
     private Float heightCm;
 
-    private Float bodyfat_Percentage;
+    private Float improvementPercentage;
 
     private String notes;
 

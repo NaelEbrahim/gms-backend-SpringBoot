@@ -25,11 +25,11 @@ public class Message {
     private LocalDateTime date;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "sender_id")
+    private User sender;
 
     @ManyToOne
-    @JoinColumn(name = "coach_id")
-    private User coach;
+    @JoinColumn(name = "receiver_id")
+    private User receiver;
 
 }

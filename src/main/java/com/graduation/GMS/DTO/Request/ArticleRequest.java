@@ -22,8 +22,6 @@ public class ArticleRequest {
     @Size(max = 1000, message = "Description must not exceed 1000 characters")
     private String content;
 
-    private String category;
-
     private Wiki wikiType;
 
 }

@@ -2,7 +2,7 @@ package com.graduation.GMS.Filters;
 
 import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.AuthTokenRepository;
-import com.graduation.GMS.Services.JwtService;
+import com.graduation.GMS.Services.GeneralServices.JwtService;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

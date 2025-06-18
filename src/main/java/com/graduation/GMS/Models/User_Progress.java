@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class User_Workout_Progress {
+public class User_Progress {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -36,7 +36,7 @@ public class User_Workout_Progress {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "workout_id")
-    private Workout workout;
+    @JoinColumn(name = "program_workout_id")
+    private Program_Workout program_workout;
 
 }
