@@ -4,6 +4,7 @@ import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Enums.Day;
+import com.graduation.GMS.Models.Enums.MealTime;
 import com.graduation.GMS.Models.Enums.Muscle;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
@@ -198,8 +199,8 @@ public class ProgramService {
         Workout workout = workoutOptional.get();
 
         // Check if already assigned
-        boolean exists = programWorkoutRepository.existsByProgramAndWorkout(program, workout);
-        if (exists) {
+        Optional<Program_Workout> exists = programWorkoutRepository.findByProgramAndWorkoutAndDay(program, workout,request.getDay());
+        if (exists.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Workout is already assigned to this program"));
         }
@@ -208,6 +209,8 @@ public class ProgramService {
         Program_Workout programWorkout = new Program_Workout();
         programWorkout.setProgram(program);
         programWorkout.setWorkout(workout);
+        programWorkout.setDay(request.getDay());
+        programWorkout.setMuscle(workout.getPrimary_muscle());
         programWorkout.setReps(request.getReps());
         programWorkout.setSets(request.getSets());
 
@@ -215,6 +218,83 @@ public class ProgramService {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Workout successfully assigned to program"));
+    }
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> updateAssignedWorkoutToProgram(AssignWorkoutToProgramRequest request) {
+        Integer programId = request.getProgramId();
+        Integer workoutId = request.getWorkoutId();
+
+        Optional<Program> programOptional = programRepository.findById(programId);
+        if (programOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Program not found"));
+        }
+
+        Optional<Workout> workoutOptional = workoutRepository.findById(workoutId);
+        if (workoutOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Workout not found"));
+        }
+
+        Program program = programOptional.get();
+        Workout workout = workoutOptional.get();
+
+        Optional<Program_Workout> programWorkoutOpt = programWorkoutRepository
+                .findByProgramAndWorkoutAndDay(program, workout, request.getDay());
+
+        if (programWorkoutOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Workout not assigned to program"));
+        }
+
+        Program_Workout pw = programWorkoutOpt.get();
+
+        if (request.getSets() != null && !request.getSets().equals(pw.getSets())) {
+            pw.setSets(request.getSets());
+        }
+
+        if (request.getReps() != null && !request.getReps().equals(pw.getReps())) {
+            pw.setReps(request.getReps());
+        }
+
+        programWorkoutRepository.save(pw);
+
+        return ResponseEntity.ok(Map.of("message", "Workout assignment updated successfully"));
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> unAssignWorkoutFromProgram(AssignWorkoutToProgramRequest request) {
+        Integer programId = request.getProgramId();
+        Integer workoutId = request.getWorkoutId();
+
+        Optional<Program> programOptional = programRepository.findById(programId);
+        if (programOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Program not found"));
+        }
+
+        Optional<Workout> workoutOptional = workoutRepository.findById(workoutId);
+        if (workoutOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Workout not found"));
+        }
+
+        Program program = programOptional.get();
+        Workout workout = workoutOptional.get();
+
+        Optional<Program_Workout> programWorkoutOpt =
+                programWorkoutRepository.findByProgramAndWorkoutAndDay(program, workout, request.getDay());
+
+        if (programWorkoutOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Workout not assigned to program"));
+        }
+
+        programWorkoutRepository.delete(programWorkoutOpt.get());
+
+        return ResponseEntity.ok(Map.of("message", "Workout successfully removed from program"));
     }
 
     @Transactional
@@ -468,128 +548,44 @@ public class ProgramService {
         Map<Day, WorkoutDayResponse> schedule = new LinkedHashMap<>();
 
         // Group all Program_Workout entries by day
-        programWorkoutRepository.findByProgram(program).stream()
+        programWorkoutRepository.findByProgram(program)
+                .stream()
                 .collect(Collectors.groupingBy(Program_Workout::getDay))
                 .forEach((day, dayWorkouts) -> {
                     // Group workouts by their primary muscle
                     Map<Muscle, List<WorkoutResponse>> groupedByMuscle = dayWorkouts.stream()
                             .collect(Collectors.groupingBy(
-                                    pw -> pw.getWorkout().getPrimary_muscle(),
-                                    Collectors.mapping(pw -> {
-                                        Workout w = pw.getWorkout();
-                                        return new WorkoutResponse(
-                                                w.getId(),
-                                                w.getTitle(),
-                                                w.getPrimary_muscle().name(),
-                                                String.join(", ", w.getSecondary_muscles().name()),
-                                                w.getAvg_calories() * pw.getSets(),
-                                                w.getDescription(),
+                                    Program_Workout::getMuscle,
+                                    Collectors.mapping(pw -> new WorkoutResponse(
+                                                pw.getWorkout().getId(),
+                                                pw.getWorkout().getTitle(),
+                                                pw.getWorkout().getAvg_calories(),
+                                                pw.getWorkout().getPrimary_muscle().name(),
+                                                String.join(", ", pw.getWorkout().getSecondary_muscles().name()),
+                                                pw.getWorkout().getAvg_calories() * pw.getSets(),
+                                                pw.getWorkout().getDescription(),
                                                 pw.getReps(),
                                                 pw.getSets()
-                                        );
-                                    }, Collectors.toList())
+                                        ),Collectors.toList())
                             ));
 
-                    // Build WorkoutDayResponse with grouped muscle lists
-                    WorkoutDayResponse dayResponse = new WorkoutDayResponse();
-                    dayResponse.setChest(groupedByMuscle.getOrDefault(Muscle.Chest.name(), List.of()));
-                    dayResponse.setBack(groupedByMuscle.getOrDefault(Muscle.Back.name(), List.of()));
-                    dayResponse.setShoulders(groupedByMuscle.getOrDefault(Muscle.Shoulders.name(), List.of()));
-                    dayResponse.setBiceps(groupedByMuscle.getOrDefault(Muscle.Biceps.name(), List.of()));
-                    dayResponse.setTriceps(groupedByMuscle.getOrDefault(Muscle.Triceps.name(), List.of()));
-                    dayResponse.setForearms(groupedByMuscle.getOrDefault(Muscle.Forearms.name(), List.of()));
-                    dayResponse.setAbs(groupedByMuscle.getOrDefault(Muscle.Abs.name(), List.of()));
-                    dayResponse.setGlutes(groupedByMuscle.getOrDefault(Muscle.Glutes.name(), List.of()));
-                    dayResponse.setQuadriceps(groupedByMuscle.getOrDefault(Muscle.Quadriceps.name(), List.of()));
-                    dayResponse.setHamstrings(groupedByMuscle.getOrDefault(Muscle.Hamstrings.name(), List.of()));
-                    dayResponse.setCalves(groupedByMuscle.getOrDefault(Muscle.Calves.name(), List.of()));
-
-                    schedule.put(day, dayResponse);
+                    schedule.put(day, new WorkoutDayResponse(
+                            groupedByMuscle.getOrDefault(Muscle.Chest, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Back, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Shoulders, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Biceps, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Triceps, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Forearms, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Abs, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Glutes, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Quadriceps, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Hamstrings, List.of()),
+                            groupedByMuscle.getOrDefault(Muscle.Calves, List.of())
+                    ));
                 });
 
-        ProgramScheduleResponse response = new ProgramScheduleResponse();
-        response.setDays(schedule);
-        return response;
+        return new ProgramScheduleResponse(schedule);
     }
-
-    @Transactional
-    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
-    public ResponseEntity<?> updateAssignedWorkoutToProgram(AssignWorkoutToProgramRequest request) {
-        Integer programId = request.getProgramId();
-        Integer workoutId = request.getWorkoutId();
-
-        Optional<Program> programOptional = programRepository.findById(programId);
-        if (programOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Program not found"));
-        }
-
-        Optional<Workout> workoutOptional = workoutRepository.findById(workoutId);
-        if (workoutOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Workout not found"));
-        }
-
-        Program program = programOptional.get();
-        Workout workout = workoutOptional.get();
-
-        Optional<Program_Workout> programWorkoutOpt = programWorkoutRepository
-                .findByProgramAndWorkoutAndDay(program, workout, request.getDay());
-
-        if (programWorkoutOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Workout not assigned to program"));
-        }
-
-        Program_Workout pw = programWorkoutOpt.get();
-
-        if (request.getSets() != null && !request.getSets().equals(pw.getSets())) {
-            pw.setSets(request.getSets());
-        }
-
-        if (request.getReps() != null && !request.getReps().equals(pw.getReps())) {
-            pw.setReps(request.getReps());
-        }
-
-        programWorkoutRepository.save(pw);
-
-        return ResponseEntity.ok(Map.of("message", "Workout assignment updated successfully"));
-    }
-
-    @Transactional
-    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
-    public ResponseEntity<?> unAssignWorkoutFromProgram(AssignWorkoutToProgramRequest request) {
-        Integer programId = request.getProgramId();
-        Integer workoutId = request.getWorkoutId();
-
-        Optional<Program> programOptional = programRepository.findById(programId);
-        if (programOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Program not found"));
-        }
-
-        Optional<Workout> workoutOptional = workoutRepository.findById(workoutId);
-        if (workoutOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Workout not found"));
-        }
-
-        Program program = programOptional.get();
-        Workout workout = workoutOptional.get();
-
-        Optional<Program_Workout> programWorkoutOpt =
-                programWorkoutRepository.findByProgramAndWorkoutAndDay(program, workout, request.getDay());
-
-        if (programWorkoutOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Workout not assigned to program"));
-        }
-
-        programWorkoutRepository.delete(programWorkoutOpt.get());
-
-        return ResponseEntity.ok(Map.of("message", "Workout successfully removed from program"));
-    }
-
 
 
 }

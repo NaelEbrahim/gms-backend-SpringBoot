@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/article")
 @AllArgsConstructor
 public class ArticleController {
+    //test
 
     private ArticleService articleService;
 

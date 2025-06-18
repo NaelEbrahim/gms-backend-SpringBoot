@@ -18,10 +18,8 @@ public class WorkoutRequest {
     @Size(max = 100, message = "Workout title must not exceed 100 characters")
     private String title;
 
-    @NotBlank(message = "Primary muscle is required")
     private Muscle primaryMuscle;
 
-    @Size(max = 50, message = "Secondary muscles must not exceed 50 characters")
     private Muscle secondaryMuscles;
 
     private Float avgCalories;
