@@ -467,17 +467,17 @@ public class UserService {
         }
         User user = userOpt.get();
         HealthInfo healthInfo = new HealthInfo();
-        if(request.getWeightKg()!=null && request.getWeightKg()>0){
+        if (request.getWeightKg() != null && request.getWeightKg() > 0) {
             healthInfo.setWeightKg(request.getWeightKg());
         }
         healthInfo.setUser(user);
-        if(request.getHeightCm()!=null && request.getHeightCm()>0){
+        if (request.getHeightCm() != null && request.getHeightCm() > 0) {
             healthInfo.setHeightCm(request.getHeightCm());
         }
-        if (request.getImprovementPercentage()!=null && request.getImprovementPercentage()>0){
+        if (request.getImprovementPercentage() != null && request.getImprovementPercentage() > 0) {
             healthInfo.setImprovementPercentage(request.getImprovementPercentage());
         }
-        if(!request.getNotes().isEmpty()){
+        if (!request.getNotes().isEmpty()) {
             healthInfo.setNotes(request.getNotes());
         }
         healthInfo.setRecordedAt(LocalDateTime.now());
@@ -515,8 +515,11 @@ public class UserService {
         return ResponseEntity.ok(response);
     }
 
+    public ResponseEntity<?> getUserProfile() {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", UserResponse.mapToUserResponse(HandleCurrentUserSession.getCurrentUser())));
 
-
+    }
 
 
 }

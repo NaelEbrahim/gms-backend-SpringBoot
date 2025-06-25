@@ -45,19 +45,15 @@ public class UserController {
 
     @GetMapping("/by-role")
     public ResponseEntity<?> getUsersByRole(@RequestParam String role) {
-        if(role.equalsIgnoreCase("Admin")) {
+        if (role.equalsIgnoreCase("Admin")) {
             return userService.getUsersByRole(Roles.Admin);
-        }
-        else if (role.equalsIgnoreCase("Secretary")) {
+        } else if (role.equalsIgnoreCase("Secretary")) {
             return userService.getUsersByRole(Roles.Secretary);
-        }
-        else if(role.equalsIgnoreCase("User")) {
+        } else if (role.equalsIgnoreCase("User")) {
             return userService.getUsersByRole(Roles.User);
-        }
-        else if(role.equalsIgnoreCase("Coach")) {
+        } else if (role.equalsIgnoreCase("Coach")) {
             return userService.getUsersByRole(Roles.Coach);
-        }
-        else
+        } else
             return userService.getAll();
     }
 
@@ -100,6 +96,11 @@ public class UserController {
     @GetMapping("/healthInfo/history/{userId}")
     public ResponseEntity<?> getHealthInfoHistory(@PathVariable Integer userId) {
         return userService.getHealthInfoHistory(userId);
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> userProfile() {
+        return userService.getUserProfile();
     }
 
 }
