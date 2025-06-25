@@ -1,9 +1,7 @@
 package com.graduation.GMS.Controllers;
 
-import com.graduation.GMS.DTO.Request.ResetPasswordRequest;
-import com.graduation.GMS.DTO.Request.UpdateProfileRequest;
-import com.graduation.GMS.DTO.Request.UserRequest;
-import com.graduation.GMS.DTO.Request.LoginRequest;
+import com.graduation.GMS.DTO.Request.*;
+import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Services.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -45,9 +43,63 @@ public class UserController {
         return userService.logout();
     }
 
-    @GetMapping("/profile")
-    public ResponseEntity<?> userProfile() {
-        return userService.getUserProfile();
+    @GetMapping("/by-role")
+    public ResponseEntity<?> getUsersByRole(@RequestParam String role) {
+        if(role.equalsIgnoreCase("Admin")) {
+            return userService.getUsersByRole(Roles.Admin);
+        }
+        else if (role.equalsIgnoreCase("Secretary")) {
+            return userService.getUsersByRole(Roles.Secretary);
+        }
+        else if(role.equalsIgnoreCase("User")) {
+            return userService.getUsersByRole(Roles.User);
+        }
+        else if(role.equalsIgnoreCase("Coach")) {
+            return userService.getUsersByRole(Roles.Coach);
+        }
+        else
+            return userService.getAll();
+    }
+
+    // --- Private Coach Assignment APIs ---
+
+    @PostMapping("/assignCoach")
+    public ResponseEntity<?> assignCoachToUser(@Valid @RequestBody AssignPrivateCoachToUserRequest request) {
+        return userService.assignPrivateCoachToUser(request);
+    }
+
+    @PostMapping("/updateAssignCoach")
+    public ResponseEntity<?> updateAssignCoachToUser(@Valid @RequestBody AssignPrivateCoachToUserRequest request) {
+        return userService.updateAssignPrivateCoachToUser(request);
+    }
+
+    @PostMapping("/unassignCoach")
+    public ResponseEntity<?> unAssignCoachToUser(@Valid @RequestBody UnAssignPrivateCoachToUserRequest request) {
+        return userService.unAssignCoachToUser(request);
+    }
+
+    // --- Attendance APIs ---
+
+    @PostMapping("/attendance")
+    public ResponseEntity<?> createAttendanceFromQr(@Valid @RequestBody QrAttendanceRequest request) {
+        return userService.createAttendanceFromQr(request);
+    }
+
+    @GetMapping("/attendance/{userId}")
+    public ResponseEntity<?> getUserAttendanceById(@PathVariable Integer userId) {
+        return userService.getUserAttendanceById(userId);
+    }
+
+    // --- Health Info APIs ---
+
+    @PostMapping("/healthInfo")
+    public ResponseEntity<?> createOrUpdateHealthInfo(@Valid @RequestBody HealthInfoRequest request) {
+        return userService.createOrUpdateHealthInfo(request);
+    }
+
+    @GetMapping("/healthInfo/history/{userId}")
+    public ResponseEntity<?> getHealthInfoHistory(@PathVariable Integer userId) {
+        return userService.getHealthInfoHistory(userId);
     }
 
 }
