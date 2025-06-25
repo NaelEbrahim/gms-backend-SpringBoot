@@ -189,7 +189,10 @@ public class UserService {
         authTokenRepository.flush();
     }
 
-
+    public ResponseEntity<?> getUserProfile() {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", UserResponse.mapToUserResponse(HandleCurrentUserSession.getCurrentUser())));
+    }
 
 
 }

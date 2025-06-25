@@ -15,7 +15,7 @@ public class Generators {
         String lower = "abcdefghijklmnopqrstuvwxyz";
         String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         String digits = "0123456789";
-        String special = "!@#$%^&*";
+        String special = "@#$&*";
         Random random = new Random();
         char[] password = new char[8];
         password[0] = lower.charAt(random.nextInt(lower.length()));

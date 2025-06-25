@@ -45,4 +45,9 @@ public class UserController {
         return userService.logout();
     }
 
+    @GetMapping("/profile")
+    public ResponseEntity<?> userProfile() {
+        return userService.getUserProfile();
+    }
+
 }
