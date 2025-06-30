@@ -27,4 +27,6 @@ public class UpdateProfileRequest {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dob;
 
+    private Gender gender;
+
 }

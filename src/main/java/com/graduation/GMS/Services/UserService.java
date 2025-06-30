@@ -126,23 +126,19 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> updateProfile(Integer userId, UpdateProfileRequest userRequest) {
-        if (userRequest.getEmail() != null && userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message:", "email already exist"));
-        }
-        if (userRequest.getPhoneNumber() != null && userRepository.findByPhoneNumber(userRequest.getPhoneNumber()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message:", "phone number already exist"));
-        }
         var user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message:", "user not found"));
         }
-        if (userRequest.getFirstName() != null) {
+        if (userRequest.getFirstName() != null && !userRequest.getFirstName().equalsIgnoreCase(user.getFirstName())) {
             user.setFirstName(userRequest.getFirstName());
         }
-        if (userRequest.getLastName() != null) {
+        if (userRequest.getLastName() != null && !userRequest.getLastName().equalsIgnoreCase(user.getLastName())) {
             user.setLastName(userRequest.getLastName());
         }
-        if (userRequest.getEmail() != null) {
+        if (userRequest.getEmail() != null && !userRequest.getEmail().equals(user.getEmail())) {
+            if (userRepository.findByEmail(userRequest.getEmail()).isPresent())
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message:", "email already exist"));
             user.setEmail(userRequest.getEmail());
             try {
                 user.setQr(Generators.generateQRCode(userRequest.getEmail()));
@@ -151,11 +147,16 @@ public class UserService {
                         .body(Map.of("message:", e.getMessage()));
             }
         }
-        if (userRequest.getPhoneNumber() != null) {
+        if (userRequest.getPhoneNumber() != null && !userRequest.getPhoneNumber().equals(user.getPhoneNumber())) {
+            if (userRepository.findByPhoneNumber(userRequest.getPhoneNumber()).isPresent())
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message:", "phone number already exist"));
             user.setPhoneNumber(userRequest.getPhoneNumber());
         }
-        if (userRequest.getDob() != null) {
+        if (userRequest.getDob() != null && !userRequest.getDob().equals(user.getDob())) {
             user.setDob(userRequest.getDob());
+        }
+        if (userRequest.getGender() != null && !userRequest.getGender().equals(user.getGender())) {
+            user.setGender(userRequest.getGender());
         }
         userRepository.save(user);
         return ResponseEntity.status(HttpStatus.OK)
@@ -517,7 +518,6 @@ public class UserService {
     public ResponseEntity<?> getUserProfile() {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", UserResponse.mapToUserResponse(HandleCurrentUserSession.getCurrentUser())));
-
     }
 
 
