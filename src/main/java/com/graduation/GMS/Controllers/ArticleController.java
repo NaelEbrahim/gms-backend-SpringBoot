@@ -1,6 +1,7 @@
 package com.graduation.GMS.Controllers;
 
 import com.graduation.GMS.DTO.Request.ArticleRequest;
+import com.graduation.GMS.Models.Enums.Wiki;
 import com.graduation.GMS.Services.ArticleService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -44,9 +45,15 @@ public class ArticleController {
     @GetMapping("/show/all")
     public ResponseEntity<?> getAllArticles(@RequestParam String wiki) {
         if (wiki.equalsIgnoreCase("Health")) {
-            return articleService.getAllHealthArticles();        }
+            return articleService.getAllArticlesByWikiType(Wiki.Health);        }
         else if (wiki.equalsIgnoreCase("Sport")) {
-            return articleService.getAllSportArticles();        }
+            return articleService.getAllArticlesByWikiType(Wiki.Sport);        }
+        else if (wiki.equalsIgnoreCase("Food")) {
+            return articleService.getAllArticlesByWikiType(Wiki.Food);        }
+        else if (wiki.equalsIgnoreCase("Fitness")) {
+            return articleService.getAllArticlesByWikiType(Wiki.Fitness);        }
+        else if (wiki.equalsIgnoreCase("Supplements")) {
+            return articleService.getAllArticlesByWikiType(Wiki.Supplements);        }
         else {
             return articleService.getAllArticles();
         }

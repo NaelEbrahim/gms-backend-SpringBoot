@@ -4,5 +4,6 @@ public enum Wiki {
     Health,
     Sport,
     Food,
-    FirstAid
+    Fitness,
+    Supplements
 }

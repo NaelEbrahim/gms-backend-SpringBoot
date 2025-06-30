@@ -140,32 +140,8 @@ public class ArticleService {
         return ResponseEntity.status(HttpStatus.OK).body(articleResponses);
     }
 
-    public ResponseEntity<?> getAllHealthArticles() {
-        List<Article> articles = articleRepository.findByWikiType(Wiki.Health);
-
-        if (articles.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No Articles found"));
-        }
-
-        List<ArticleResponse> articleResponses = articles.stream()
-                .map(c -> new ArticleResponse(
-                        c.getId(),
-                        mapToUserResponse(c.getAdmin()),
-                        c.getTitle(),
-                        c.getContent(),
-                        c.getWikiType(),
-                        c.getCreatedAt(),
-                        c.getLastModifiedAt()
-                ))
-                .toList();
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(articleResponses);
-    }
-
-    public ResponseEntity<?> getAllSportArticles() {
-        List<Article> articles = articleRepository.findByWikiType(Wiki.Sport);
+    public ResponseEntity<?> getAllArticlesByWikiType(Wiki type) {
+        List<Article> articles = articleRepository.findByWikiType(type);
 
         if (articles.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
