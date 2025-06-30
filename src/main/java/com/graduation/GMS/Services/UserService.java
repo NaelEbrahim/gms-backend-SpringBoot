@@ -6,6 +6,7 @@ import com.google.zxing.common.HybridBinarizer;
 import com.graduation.GMS.Config.SecurityConfig;
 import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.DTO.Response.HealthInfoResponse;
+import com.graduation.GMS.DTO.Response.ProfileResponse;
 import com.graduation.GMS.DTO.Response.UserResponse;
 import com.graduation.GMS.DTO.Response.UserWithPasswordResponse;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
@@ -116,7 +117,7 @@ public class UserService {
             cookie.setMaxAge(259200);
             cookie.setPath("/auth/refresh");
             response.addCookie(cookie);
-            UserResponse userResponse = new UserResponse(user, null, accessToken);
+            ProfileResponse userResponse = new ProfileResponse(user,null, accessToken);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("message", userResponse));
         } else
@@ -209,9 +210,9 @@ public class UserService {
         Role role = roleOptional.get();
 
         // Fetch User_Role records and map to UserResponse
-        List<UserResponse> userResponses = userRoleRepository.findByRoleId(role.getId())
+        List<ProfileResponse> userResponses = userRoleRepository.findByRoleId(role.getId())
                 .stream()
-                .map(ur -> UserResponse.mapToUserResponse(ur.getUser()))
+                .map(ur -> ProfileResponse.mapToProfileResponse(ur.getUser()))
                 .toList();
 
         // Build a structured response object (optional wrapper)
@@ -225,9 +226,9 @@ public class UserService {
 
     @PreAuthorize("hasAnyAuthority('Admin')")
     public ResponseEntity<?> getAll() {
-        List<UserResponse> userResponses = userRepository.findAll()
+        List<ProfileResponse> userResponses = userRepository.findAll()
                 .stream()
-                .map(u -> UserResponse.mapToUserResponse(u))
+                .map(u -> ProfileResponse.mapToProfileResponse(u))
                 .toList();
         Map<String, Object> response = Map.of(
                 "count", userResponses.size(),
@@ -517,7 +518,7 @@ public class UserService {
 
     public ResponseEntity<?> getUserProfile() {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("message", UserResponse.mapToUserResponse(HandleCurrentUserSession.getCurrentUser())));
+                .body(Map.of("message", ProfileResponse.mapToProfileResponse(HandleCurrentUserSession.getCurrentUser())));
     }
 
 

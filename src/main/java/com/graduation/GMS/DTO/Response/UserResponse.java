@@ -21,51 +21,14 @@ public class UserResponse {
 
     private String email;
 
-    private String phoneNumber;
 
-    private Gender gender;
-
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate dob;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdAt;
-
-    private String qr;
-
-    private String accessToken;
-
-
-    public UserResponse(User user, String password, String accessToken) {
-        this(user.getId(), user.getFirstName(), user.getLastName(),
-                user.getEmail(), user.getPhoneNumber(), user.getGender(), user.getDob(),
-                user.getCreatedAt(), user.getQr());
-        this.accessToken = accessToken;
-    }
-
-    public UserResponse(Integer id, String firstName, String lastName, String email, String phoneNumber, Gender gender, LocalDate dob, LocalDateTime createdAt, String qr) {
-        this.id = id;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.gender = gender;
-        this.dob = dob;
-        this.createdAt = createdAt;
-        this.qr = qr;
-    }
 
     public static UserResponse mapToUserResponse(User user) {
         return new UserResponse(
                 user.getId(),
                 user.getFirstName(),
                 user.getLastName(),
-                user.getEmail(),
-                user.getPhoneNumber(),
-                user.getGender(),
-                user.getDob(),
-                user.getCreatedAt(),
-                user.getQr()
+                user.getEmail()
         );
     }
 
