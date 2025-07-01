@@ -17,12 +17,7 @@ public class ParticipantResponse extends UserResponse {
         super(user.getId(),
                 user.getFirstName(),
                 user.getLastName(),
-                user.getEmail(),
-                user.getPhoneNumber(),
-                user.getGender(),
-                user.getDob(),
-                user.getCreatedAt(),
-                user.getQr());
+                user.getEmail());
         this.score = score;
     }
 }

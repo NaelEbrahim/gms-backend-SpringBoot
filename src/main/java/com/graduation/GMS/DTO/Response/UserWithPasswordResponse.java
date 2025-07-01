@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserWithPasswordResponse extends UserResponse{
+public class UserWithPasswordResponse extends ProfileResponse{
     private String password;
 
     public UserWithPasswordResponse(User user, String password) {
