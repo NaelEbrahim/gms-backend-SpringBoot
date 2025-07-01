@@ -1,5 +1,6 @@
 package com.graduation.GMS.DTO.Response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,8 @@ public class EventResponse {
     private String description;
 
     private LocalDateTime startedAt;
+
+    private LocalDateTime endedAt;
 
     private List<PrizeResponse> prizes;
 

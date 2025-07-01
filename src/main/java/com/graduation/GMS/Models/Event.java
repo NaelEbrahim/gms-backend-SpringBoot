@@ -28,6 +28,9 @@ public class Event {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startedAt;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime endedAt;
+
     @ManyToOne
     @JoinColumn(name = "admin_id")
     private User admin;

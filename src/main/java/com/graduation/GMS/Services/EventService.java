@@ -55,6 +55,7 @@ public class EventService {
         eventEntity.setTitle(request.getTitle());
         eventEntity.setDescription(request.getDescription());
         eventEntity.setStartedAt(request.getStartedAt());
+        eventEntity.setEndedAt(request.getEndedAt());
         // Save the event to the database
         eventRepository.save(eventEntity);
         // Return the response with the saved event details
@@ -82,6 +83,9 @@ public class EventService {
         }
         if (!existingEvent.getStartedAt().equals(request.getStartedAt())&&request.getStartedAt()!=null) {
             existingEvent.setStartedAt(request.getStartedAt());
+        }
+        if (!existingEvent.getEndedAt().equals(request.getEndedAt())&&request.getEndedAt()!=null) {
+            existingEvent.setEndedAt(request.getEndedAt());
         }
         eventRepository.save(existingEvent);
 
@@ -145,6 +149,7 @@ public class EventService {
                 event.getTitle(),
                 event.getDescription(),
                 event.getStartedAt(),
+                event.getEndedAt(),
                 prizeResponses
         );
     }
