@@ -103,4 +103,9 @@ public class UserController {
         return userService.getUserProfile();
     }
 
+    @GetMapping("/qr")
+    public ResponseEntity<?> userQR(){
+        return userService.getUserQR();
+    }
+
 }

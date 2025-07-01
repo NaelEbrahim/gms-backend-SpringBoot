@@ -520,5 +520,10 @@ public class UserService {
                 .body(Map.of("message", UserResponse.mapToUserResponse(HandleCurrentUserSession.getCurrentUser())));
     }
 
+    public ResponseEntity<?> getUserQR() {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", HandleCurrentUserSession.getCurrentUser().getQr()));
+    }
+
 
 }
