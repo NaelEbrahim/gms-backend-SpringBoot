@@ -3,8 +3,12 @@ package com.graduation.GMS.Services.GeneralServices;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.graduation.GMS.DTO.Request.MessageRequest;
+import com.graduation.GMS.DTO.Response.ConversationDTO;
+import com.graduation.GMS.DTO.Response.MessageResponse;
+import com.graduation.GMS.DTO.Response.UserResponse;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Models.Message;
+import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.MessageRepository;
 import com.graduation.GMS.Repositories.UserRepository;
 import com.pusher.rest.Pusher;
@@ -15,8 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -61,6 +65,7 @@ public class ChatService {
         message.setSender(sender);
         message.setReceiver(receiver.get());
         message.setContent(chatMessage.getContent());
+        message.setType(chatMessage.getType());
         message.setDate(LocalDateTime.now());
         messageRepository.save(message);
 
@@ -77,5 +82,37 @@ public class ChatService {
         return userId.equals(Integer.parseInt(parts[0])) || userId.equals(Integer.parseInt(parts[1]));
     }
 
+    public List<ConversationDTO> getGroupedConversations() {
+        // Convert current user to UserResponse once
+        UserResponse currentUserResponse = UserResponse.mapToUserResponse(HandleCurrentUserSession.getCurrentUser());
+
+        return messageRepository.findDistinctConversationPartnerIds(HandleCurrentUserSession.getCurrentUser().getId())
+                .stream()
+                .map(partnerId -> {
+                    User partner = userRepository.findById(partnerId)
+                            .orElseThrow(() -> new RuntimeException("User not found"));
+
+                    List<Message> messages = messageRepository.findConversationBetweenUsers(HandleCurrentUserSession.getCurrentUser(), partner);
+
+                    if (messages.isEmpty()) return null;
+
+                    // Convert all messages to MessageResponse
+                    List<MessageResponse> messageResponses = messages.stream()
+                            .map(MessageResponse::mapToMessageResponse)
+                            .collect(Collectors.toList());
+
+                    return new ConversationDTO(
+                            UserResponse.mapToUserResponse(partner),
+                            messageResponses,
+                            messageResponses.get(messageResponses.size() - 1)
+                    );
+                })
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(
+                        dto -> dto.getLastMessage().getDate(),
+                        Comparator.reverseOrder()
+                ))
+                .collect(Collectors.toList());
+    }
 
 }

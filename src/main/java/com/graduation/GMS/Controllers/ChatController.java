@@ -13,6 +13,7 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/chat")
+@CrossOrigin("http://localhost:63342")
 public class ChatController {
 
     private final ChatService chatService;
@@ -31,6 +32,11 @@ public class ChatController {
     public ResponseEntity<?> sendMessage(@RequestBody @Valid MessageRequest messageRequest) {
 
         return chatService.sendMessage(messageRequest);
+    }
+
+    @GetMapping("/conversations")
+    public ResponseEntity<?> getConversations() {
+        return ResponseEntity.ok(chatService.getGroupedConversations());
     }
 
 //    @GetMapping("/getMessages")

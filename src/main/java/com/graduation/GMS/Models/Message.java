@@ -1,12 +1,14 @@
 package com.graduation.GMS.Models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.graduation.GMS.Models.Enums.MessageType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.awt.*;
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,6 +22,8 @@ public class Message {
     private Integer id;
 
     private String content;
+
+    private MessageType type;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime date;

@@ -1,5 +1,6 @@
 package com.graduation.GMS.DTO.Request;
 
+import com.graduation.GMS.Models.Enums.MessageType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,6 +19,8 @@ public class MessageRequest {
     private String receiverId;
 
     private String content;
+
+    private MessageType type;
 
     private Instant timeStamp;
 
