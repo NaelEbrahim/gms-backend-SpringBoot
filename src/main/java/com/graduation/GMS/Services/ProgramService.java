@@ -486,7 +486,7 @@ public class ProgramService {
 
         if (userPrograms.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No diets assigned to this user"));
+                    .body(Map.of("message", "No Programms assigned to this user"));
         }
 
         List<ProgramResponse> programResponses = userPrograms.stream()
@@ -521,7 +521,7 @@ public class ProgramService {
 
         if (userPrograms.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No diets assigned to this user"));
+                    .body(Map.of("message", "No Programs assigned to this user"));
         }
 
         List<ProgramResponse> programResponses = userPrograms.stream()

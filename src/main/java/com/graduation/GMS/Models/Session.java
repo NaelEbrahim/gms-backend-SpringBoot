@@ -2,6 +2,7 @@ package com.graduation.GMS.Models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.graduation.GMS.Models.Enums.Day;
+import com.graduation.GMS.Models.Enums.WeekDay;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +31,7 @@ public class Session {
     private Integer maxNumber;
 
     private String days;
+
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;

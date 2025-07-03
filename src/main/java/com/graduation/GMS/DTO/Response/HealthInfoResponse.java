@@ -54,8 +54,8 @@ public class HealthInfoResponse {
           float bmi = calculateBMI(weightKg, heightCm);
           if (bmi == 0.0f) return "--";
           if (bmi < 18.5f) return "Weight loss";
-          if (bmi < 25f) return "normal weight";
-          if (bmi < 30f) return "weight gain";
-          return "corpulence";
+          if (bmi < 25f) return "normal Weight";
+          if (bmi < 30f) return "Weight gain";
+          return "Corpulence";
     }
 }
