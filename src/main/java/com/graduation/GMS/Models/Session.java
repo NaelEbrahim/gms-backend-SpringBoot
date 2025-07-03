@@ -27,8 +27,9 @@ public class Session {
 
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    private Day days;
+    private Integer maxNumber;
+
+    private String days;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;

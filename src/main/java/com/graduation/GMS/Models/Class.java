@@ -23,6 +23,9 @@ public class Class {
 
     private String description;
 
+    @Column(nullable = true)
+    private String ImagePath;
+
     private Float price;
 
     @ManyToOne

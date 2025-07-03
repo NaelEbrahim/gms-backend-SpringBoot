@@ -1,7 +1,6 @@
 package com.graduation.GMS.DTO.Response;
 
 
-import com.graduation.GMS.Models.Message;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
