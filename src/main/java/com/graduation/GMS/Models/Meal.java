@@ -25,6 +25,9 @@ public class Meal {
 
     private String description;
 
+    @Column(nullable = true)
+    private String ImagePath;
+
     @OneToMany(mappedBy = "meal", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Plan_Meal> planMealList;
 

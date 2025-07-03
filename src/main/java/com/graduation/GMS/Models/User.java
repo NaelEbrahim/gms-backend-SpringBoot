@@ -46,6 +46,9 @@ public class User {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dob;
 
+    @Column(nullable = true)
+    private String profileImagePath;
+
     @Column(updatable = false, nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
