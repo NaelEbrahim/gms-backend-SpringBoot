@@ -1,5 +1,6 @@
 package com.graduation.GMS.Controllers;
 
+import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.Services.WorkoutService;
 import jakarta.validation.Valid;
@@ -24,6 +25,11 @@ public class WorkoutController {
     public ResponseEntity<?> updateWorkout(@PathVariable Integer id,
                                            @Valid @RequestBody WorkoutRequest request) {
         return workoutService.updateWorkout(id, request);
+    }
+
+    @PutMapping("upload-image")
+    public ResponseEntity<?> uploadWorkoutImage(@ModelAttribute ImageRequest request){
+        return workoutService.uploadWorkoutImage(request);
     }
 
     @DeleteMapping("/delete/{id}")

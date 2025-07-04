@@ -15,6 +15,8 @@ public class MealResponse {
 
     private String title;
 
+    private String imagePath;
+
     private Float baseCalories;  // per 100g
 
     private Float quantity;      // in grams

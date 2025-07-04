@@ -564,6 +564,7 @@ public class ProgramService {
                                                 String.join(", ", pw.getWorkout().getSecondary_muscles().name()),
                                                 pw.getWorkout().getAvg_calories() * pw.getSets(),
                                                 pw.getWorkout().getDescription(),
+                                                pw.getWorkout().getImagePath(),
                                                 pw.getReps(),
                                                 pw.getSets()
                                         ),Collectors.toList())

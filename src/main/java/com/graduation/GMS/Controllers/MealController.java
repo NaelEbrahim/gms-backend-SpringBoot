@@ -1,4 +1,5 @@
 package com.graduation.GMS.Controllers;
+import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.MealRequest;
 import com.graduation.GMS.Services.MealService;
 import jakarta.validation.Valid;
@@ -24,6 +25,11 @@ public class MealController {
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateMeal(@PathVariable Integer id, @Valid @RequestBody MealRequest request) {
         return mealService.updateMeal(id, request);
+    }
+
+    @PutMapping("upload-image")
+    public ResponseEntity<?> uploadMealImage(@ModelAttribute ImageRequest request){
+        return mealService.uploadMealImage(request);
     }
 
     // Endpoint to delete an Meal

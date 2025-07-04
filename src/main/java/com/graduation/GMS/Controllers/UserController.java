@@ -28,6 +28,10 @@ public class UserController {
         return userService.createUser(userRequest);
     }
 
+    @PutMapping("upload-profile-image")
+    public ResponseEntity<?> uploadUserProfileImage(@ModelAttribute ImageRequest request){
+        return userService.uploadUserProfileImage(request);
+    }
     @PutMapping("/updateProfile/{userId}")
     public ResponseEntity<?> updateUserProfile(@PathVariable Integer userId, @Valid @RequestBody UpdateProfileRequest profileRequest) {
         return userService.updateProfile(userId, profileRequest);

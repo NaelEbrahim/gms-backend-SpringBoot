@@ -18,6 +18,7 @@ public class UserWithPasswordResponse extends ProfileResponse{
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
+                user.getProfileImagePath(),
                 user.getPhoneNumber(),
                 user.getGender(),
                 user.getDob(),

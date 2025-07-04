@@ -14,6 +14,7 @@ import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Services.GeneralServices.JwtService;
+import com.graduation.GMS.Tools.FilesManagement;
 import com.graduation.GMS.Tools.Generators;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -524,6 +525,30 @@ public class UserService {
     public ResponseEntity<?> getUserQR() {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", HandleCurrentUserSession.getCurrentUser().getQr()));
+    }
+
+
+    public ResponseEntity<?> uploadUserProfileImage(ImageRequest request) {
+        Optional<User> user = userRepository.findById(request.getId());
+        if (user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
+        if(!request.getId().equals(HandleCurrentUserSession.getCurrentUser().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "User not authorized to do this operation"));
+        }
+
+        String imagePath = FilesManagement.upload(request.getImage(), request.getId(), "user-profile");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        user.get().setProfileImagePath(imagePath);
+        userRepository.save(user.get());
+
+        return ResponseEntity.ok(Map.of("message", "Profile image uploaded", "imageUrl", imagePath));
     }
 
 

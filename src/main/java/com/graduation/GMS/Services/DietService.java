@@ -139,6 +139,7 @@ public class DietService {
                                     Collectors.mapping(pm -> new MealResponse(
                                             pm.getMeal().getId(),
                                             pm.getMeal().getTitle(),
+                                            pm.getMeal().getImagePath(),
                                             pm.getMeal().getCalories(),
                                             pm.getQuantity(),
                                             pm.getMeal().getDescription(),
@@ -564,6 +565,7 @@ public class DietService {
                                 return new MealResponse(
                                         meal.getId(),
                                         meal.getTitle(),
+                                        meal.getImagePath(),
                                         meal.getCalories(),
                                         pm.getQuantity(),
                                         meal.getDescription(),

@@ -1,9 +1,11 @@
 package com.graduation.GMS.Services;
 
+import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.MealRequest;
 import com.graduation.GMS.DTO.Response.MealResponse;
 import com.graduation.GMS.Models.Meal;
 import com.graduation.GMS.Repositories.MealRepository;
+import com.graduation.GMS.Tools.FilesManagement;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -94,6 +96,7 @@ public class MealService {
         MealResponse response = new MealResponse(
                 meal.getId(),
                 meal.getTitle(),
+                meal.getImagePath(),
                 meal.getCalories(),
                 null,
                 meal.getDescription(),
@@ -116,6 +119,7 @@ public class MealService {
                 .map(w -> new MealResponse(
                         w.getId(),
                         w.getTitle(),
+                        w.getImagePath(),
                         w.getCalories(),
                         null,
                         w.getDescription(),
@@ -127,4 +131,24 @@ public class MealService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(mealResponses);
     }
+
+    public ResponseEntity<?> uploadMealImage(ImageRequest request) {
+        Optional<Meal> meal = mealRepository.findById(request.getId());
+        if (meal.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Meal not found"));
+        }
+
+        String imagePath = FilesManagement.upload(request.getImage(), request.getId(), "meals");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        meal.get().setImagePath(imagePath);
+        mealRepository.save(meal.get());
+
+        return ResponseEntity.ok(Map.of("message", "Meal image uploaded", "imageUrl", imagePath));
+    }
+
 }

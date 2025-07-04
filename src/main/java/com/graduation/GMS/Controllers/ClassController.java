@@ -1,9 +1,6 @@
 package com.graduation.GMS.Controllers;
 
-import com.graduation.GMS.DTO.Request.AssignProgramToClassRequest;
-import com.graduation.GMS.DTO.Request.ClassRequest;
-import com.graduation.GMS.DTO.Request.ClassSubscriptionRequest;
-import com.graduation.GMS.DTO.Request.FeedBackClassRequest;
+import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.Services.ClassService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -28,6 +25,11 @@ public class ClassController {
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateClass(@PathVariable Integer id, @Valid @RequestBody ClassRequest classRequest) {
         return classService.updateClass(id, classRequest);
+    }
+
+    @PutMapping("upload-image")
+    public ResponseEntity<?> uploadClassImage(@ModelAttribute ImageRequest request){
+        return classService.uploadClassImage(request);
     }
 
     // Endpoint to delete a class

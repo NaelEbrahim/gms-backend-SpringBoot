@@ -1,5 +1,6 @@
 package com.graduation.GMS.Services;
 
+import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.DTO.Response.WorkoutResponse;
 import com.graduation.GMS.Models.User;
@@ -8,6 +9,7 @@ import com.graduation.GMS.Models.Workout;
 import com.graduation.GMS.Repositories.User_Workout_FavoriteRepository;
 import com.graduation.GMS.Repositories.WorkoutRepository;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
+import com.graduation.GMS.Tools.FilesManagement;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -118,6 +120,7 @@ public class WorkoutService {
                 workout.getSecondary_muscles().name(),
                 workout.getAvg_calories(),
                 workout.getDescription(),
+                workout.getImagePath(),
                 0,
                 0
         );
@@ -143,6 +146,7 @@ public class WorkoutService {
                         w.getSecondary_muscles().name(),
                         w.getAvg_calories(),
                         w.getDescription(),
+                        w.getImagePath(),
                         0,
                         0
                 ))
@@ -216,6 +220,7 @@ public class WorkoutService {
                             w.getSecondary_muscles().name(),
                             w.getAvg_calories(),
                             w.getDescription(),
+                            w.getImagePath(),
                             0,
                             0
                     );
@@ -225,5 +230,24 @@ public class WorkoutService {
         return ResponseEntity.status(HttpStatus.OK).body(responseList);
     }
 
+
+    public ResponseEntity<?> uploadWorkoutImage(ImageRequest request) {
+        Optional<Workout> workout = workoutRepository.findById(request.getId());
+        if (workout.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Workout not found"));
+        }
+
+        String imagePath = FilesManagement.upload(request.getImage(), request.getId(), "workouts");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        workout.get().setImagePath(imagePath);
+        workoutRepository.save(workout.get());
+
+        return ResponseEntity.ok(Map.of("message", "workout image uploaded", "imageUrl", imagePath));
+    }
 
 }

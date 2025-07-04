@@ -25,6 +25,8 @@ public class WorkoutResponse {
 
     private String description;
 
+    private String imagePath;
+
     private Integer reps;
 
     private Integer sets;

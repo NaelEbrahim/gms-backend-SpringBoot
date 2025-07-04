@@ -1,9 +1,6 @@
 package com.graduation.GMS.Services;
 
-import com.graduation.GMS.DTO.Request.AssignProgramToClassRequest;
-import com.graduation.GMS.DTO.Request.ClassRequest;
-import com.graduation.GMS.DTO.Request.ClassSubscriptionRequest;
-import com.graduation.GMS.DTO.Request.FeedBackClassRequest;
+import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
@@ -11,6 +8,7 @@ import com.graduation.GMS.Models.Enums.Day;
 import com.graduation.GMS.Models.Enums.Muscle;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
+import com.graduation.GMS.Tools.FilesManagement;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -141,6 +139,7 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
+                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 programResponses,
                 null,
@@ -183,6 +182,7 @@ public class ClassService {
                             classEntity.getId(),
                             classEntity.getName(),
                             classEntity.getDescription(),
+                            classEntity.getImagePath(),
                             classEntity.getPrice(),
                             programResponses,
                             null,
@@ -394,6 +394,7 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
+                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 null,
                 subscribers,
@@ -428,6 +429,7 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
+                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 null,
                 activeSubscribers,
@@ -460,6 +462,7 @@ public class ClassService {
                             classEntity.getId(),
                             classEntity.getName(),
                             classEntity.getDescription(),
+                            classEntity.getImagePath(),
                             classEntity.getPrice(),
                             null,
                             null,  // subscribers
@@ -522,6 +525,7 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
+                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 null,
                 null,
@@ -551,6 +555,7 @@ public class ClassService {
                                             String.join(", ", pw.getWorkout().getSecondary_muscles().name()),
                                             pw.getWorkout().getAvg_calories() * pw.getSets(),
                                             pw.getWorkout().getDescription(),
+                                            pw.getWorkout().getImagePath(),
                                             pw.getReps(),
                                             pw.getSets()
                                     ),Collectors.toList())
@@ -572,6 +577,25 @@ public class ClassService {
                 });
 
         return new ProgramScheduleResponse(schedule);
+    }
+
+    public ResponseEntity<?> uploadClassImage(ImageRequest request) {
+        Optional<Class> classOptional = classRepository.findById(request.getId());
+        if (classOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Class not found"));
+        }
+
+        String imagePath = FilesManagement.upload(request.getImage(), request.getId(), "classes");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        classOptional.get().setImagePath(imagePath);
+        classRepository.save(classOptional.get());
+
+        return ResponseEntity.ok(Map.of("message", "Class image uploaded", "imageUrl", imagePath));
     }
 
 }

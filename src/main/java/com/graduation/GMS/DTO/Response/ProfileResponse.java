@@ -24,6 +24,8 @@ public class ProfileResponse {
 
     private String email;
 
+    private String profileImagePath;
+
     private String phoneNumber;
 
     private Gender gender;
@@ -41,16 +43,20 @@ public class ProfileResponse {
 
     public ProfileResponse(User user, String password, String accessToken) {
         this(user.getId(), user.getFirstName(), user.getLastName(),
-                user.getEmail(), user.getPhoneNumber(), user.getGender(), user.getDob(),
+                user.getEmail(),user.getProfileImagePath(), user.getPhoneNumber(), user.getGender(), user.getDob(),
                 user.getCreatedAt(), user.getQr());
         this.accessToken = accessToken;
     }
 
-    public ProfileResponse(Integer id, String firstName, String lastName, String email, String phoneNumber, Gender gender, LocalDate dob, LocalDateTime createdAt, String qr) {
+    public ProfileResponse(Integer id, String firstName, String lastName,
+                           String email,String profileImagePath,
+                           String phoneNumber, Gender gender,
+                           LocalDate dob, LocalDateTime createdAt, String qr) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.profileImagePath = profileImagePath;
         this.phoneNumber = phoneNumber;
         this.gender = gender;
         this.dob = dob;
@@ -64,6 +70,7 @@ public class ProfileResponse {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
+                user.getProfileImagePath(),
                 user.getPhoneNumber(),
                 user.getGender(),
                 user.getDob(),
