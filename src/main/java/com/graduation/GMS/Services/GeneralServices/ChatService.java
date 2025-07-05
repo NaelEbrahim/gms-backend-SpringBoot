@@ -2,15 +2,18 @@ package com.graduation.GMS.Services.GeneralServices;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.graduation.GMS.DTO.Request.ImageChatRequest;
 import com.graduation.GMS.DTO.Request.MessageRequest;
 import com.graduation.GMS.DTO.Response.ConversationDTO;
 import com.graduation.GMS.DTO.Response.MessageResponse;
 import com.graduation.GMS.DTO.Response.UserResponse;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
+import com.graduation.GMS.Models.Enums.MessageType;
 import com.graduation.GMS.Models.Message;
 import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.MessageRepository;
 import com.graduation.GMS.Repositories.UserRepository;
+import com.graduation.GMS.Tools.FilesManagement;
 import com.pusher.rest.Pusher;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,11 +43,13 @@ public class ChatService {
                     .body(Map.of("message", "you are not belong to this chat"));
         }
         String authJson = pusher.authenticate(messageRequest.getSocket_id(), messageRequest.getChannel_name());
+        System.out.println(messageRequest.getSocket_id());
         return ResponseEntity.ok().body(new ObjectMapper().readValue(authJson, Map.class));
     }
 
     @Transactional
     public ResponseEntity<?> sendMessage(MessageRequest chatMessage) {
+
         var sender = HandleCurrentUserSession.getCurrentUser();
         var receiver = userRepository.findById(Integer.parseInt(chatMessage.getReceiverId()));
         if (receiver.isEmpty()) {
@@ -65,12 +70,49 @@ public class ChatService {
         message.setSender(sender);
         message.setReceiver(receiver.get());
         message.setContent(chatMessage.getContent());
-        message.setType(chatMessage.getType());
+        message.setType(MessageType.TEXT);
         message.setDate(LocalDateTime.now());
         messageRepository.save(message);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "message sent"));
+    }
+
+    @Transactional
+    public ResponseEntity<?> sendImage(ImageChatRequest chatImage) {
+
+        var sender = HandleCurrentUserSession.getCurrentUser();
+        var receiver = userRepository.findById(Integer.parseInt(chatImage.getReceiverId()));
+        if (receiver.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "receiver not found"));
+        }
+
+        String channelName = "private-chat-" + Math.min(sender.getId(), receiver.get().getId()) + "-" + Math.max(sender.getId(), receiver.get().getId());
+
+        String imagePath = FilesManagement.uploadChatImage(chatImage.getContent(),sender.getId(),receiver.get().getId());
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        Map<String, String> payload = new HashMap<>();
+        payload.put("senderId", sender.getId().toString());
+        payload.put("receiverId", receiver.get().getId().toString());
+        payload.put("message", imagePath);
+        payload.put("timeStamp", LocalDateTime.now().toString());
+        pusher.trigger(channelName, "new-message", payload);
+
+        Message message = new Message();
+        message.setSender(sender);
+        message.setReceiver(receiver.get());
+        message.setContent(imagePath);
+        message.setType(MessageType.IMAGE);
+        message.setDate(LocalDateTime.now());
+        messageRepository.save(message);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "Image sent"));
     }
 
 

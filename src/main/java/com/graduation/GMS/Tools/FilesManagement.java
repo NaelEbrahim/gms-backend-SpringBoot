@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.Objects;
+
 public class FilesManagement {
 
     public static final String UPLOAD_DIR = "uploads";
@@ -46,4 +49,35 @@ public class FilesManagement {
             return null;
         }
     }
+    public static String uploadChatImage(MultipartFile file, int senderId, int receiverId) {
+        if (file == null || file.isEmpty()) return null;
+
+        try {
+            int first = Math.min(senderId, receiverId);
+            int second = Math.max(senderId, receiverId);
+
+            String timestamp = LocalDateTime.now().toString().replace(":", "-");
+            String extension = Objects.requireNonNull(file.getOriginalFilename())
+                    .substring(file.getOriginalFilename().lastIndexOf("."));
+
+            String fileName = senderId + "_" + timestamp + extension;
+            Path projectRoot = Paths.get("").toAbsolutePath();
+            Path chatDir = projectRoot.resolve("uploads/chats/" + first + "_" + second);
+
+            if (!Files.exists(chatDir)) {
+                Files.createDirectories(chatDir);
+            }
+
+            Path filePath = chatDir.resolve(fileName);
+            file.transferTo(filePath.toFile());
+
+            // Return relative path
+            return "/uploads/chats/" + first + "_" + second + "/" + fileName;
+
+        } catch (IOException e) {
+            System.err.println("Error saving chat image: " + e.getMessage());
+            return null;
+        }
+    }
+
 }

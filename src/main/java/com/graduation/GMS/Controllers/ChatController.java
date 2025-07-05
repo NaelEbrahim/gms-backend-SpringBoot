@@ -1,6 +1,7 @@
 package com.graduation.GMS.Controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.graduation.GMS.DTO.Request.ImageChatRequest;
 import com.graduation.GMS.DTO.Request.MessageRequest;
 import com.graduation.GMS.Services.GeneralServices.ChatService;
 import jakarta.validation.Valid;
@@ -33,21 +34,17 @@ public class ChatController {
 
         return chatService.sendMessage(messageRequest);
     }
+    @PostMapping("/sendImage")
+    public ResponseEntity<?> sendImage(@ModelAttribute @Valid ImageChatRequest imageChatRequestRequest) {
+
+        return chatService.sendImage(imageChatRequestRequest);
+    }
 
     @GetMapping("/conversations")
     public ResponseEntity<?> getConversations() {
         return ResponseEntity.ok(chatService.getGroupedConversations());
     }
 
-//    @GetMapping("/getMessages")
-//    public ResponseEntity<?> getMessages(@RequestParam String userId, @RequestParam String coachId) {
-//        try {
-//            List<Message> messages = chatService.getMessages(userId, coachId);
-//            return ResponseEntity.ok(messages);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(500).body("Error: " + e.getMessage());
-//        }
-//    }
 
 
 }

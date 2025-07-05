@@ -1,19 +1,16 @@
 package com.graduation.GMS.DTO.Request;
 
-import com.graduation.GMS.Models.Enums.MessageType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
-
-@Setter
 @Getter
-@AllArgsConstructor
+@Setter
 @NoArgsConstructor
-public class MessageRequest {
-
+@AllArgsConstructor
+public class ImageChatRequest {
     private String socket_id;
 
     private String channel_name;
@@ -22,6 +19,5 @@ public class MessageRequest {
 
     private String receiverId;
 
-    private String content;
-
+    private MultipartFile content;
 }
