@@ -44,7 +44,6 @@ public class SessionService {
 
     private Session_AttendanceRepository sessionAttendanceRepository;
 
-
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createSession(SessionRequest request) {
@@ -69,9 +68,9 @@ public class SessionService {
                     .toList();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Invalid day name. Expected values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday"));
+                    .body(Map.of("message",
+                            "Invalid day name. Expected values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday"));
         }
-
 
         // Create and save new session
         Session session = new Session();
@@ -122,7 +121,8 @@ public class SessionService {
                     .toList();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Invalid day name. Expected values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday"));
+                    .body(Map.of("message",
+                            "Invalid day name. Expected values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday"));
         }
 
         if (!session.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
@@ -167,6 +167,7 @@ public class SessionService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Session deleted successfully"));
     }
+
     public ResponseEntity<?> getSessionById(Integer id) {
         Optional<Session> sessionOptional = sessionRepository.findById(id);
         if (sessionOptional.isEmpty()) {
@@ -196,12 +197,10 @@ public class SessionService {
                 session.getEndTime(),
                 session.getMaxNumber(),
                 userSessionRepository.countBySession(session),
-                null
-        );
+                null);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-
 
     public ResponseEntity<?> getAllSessions() {
         List<Session> sessions = sessionRepository.findAll();
@@ -210,7 +209,6 @@ public class SessionService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "No sessions found"));
         }
-
 
         List<SessionResponse> sessionResponses = sessions.stream()
                 .map(session -> {
@@ -236,8 +234,47 @@ public class SessionService {
                             session.getEndTime(),
                             session.getMaxNumber(),
                             userSessionRepository.countBySession(session),
-                            null
-                    );
+                            null);
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.status(HttpStatus.OK).body(sessionResponses);
+    }
+
+    public ResponseEntity<?> getAllSessionsByClassId(int classId) {
+        List<Session> sessions = sessionRepository.findAll();
+
+        if (sessions.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "No sessions found"));
+        }
+
+        List<SessionResponse> sessionResponses = sessions.stream()
+                .filter(session -> session.getAClass().getId() == classId)
+                .map(session -> {
+                    // Get workouts for each session
+
+                    List<String> days = new ArrayList<>();
+                    if (session.getDays() != null && !session.getDays().isEmpty()) {
+                        days = Arrays.stream(session.getDays().split(","))
+                                .map(String::trim)
+                                .toList();
+                    }
+
+                    return new SessionResponse(
+                            session.getId(),
+                            session.getTitle(),
+                            session.getDescription(),
+                            session.getAClass().getId(),
+                            UserResponse.mapToUserResponse(session.getCoach()),
+                            calculateRate(session.getId()),
+                            days,
+                            session.getCreatedAt(),
+                            session.getStartTime(),
+                            session.getEndTime(),
+                            session.getMaxNumber(),
+                            userSessionRepository.countBySession(session),
+                            null);
                 })
                 .collect(Collectors.toList());
 
@@ -260,12 +297,12 @@ public class SessionService {
 
         // Calculate average rating using stream API
         Double average = userSessions.stream()
-                .filter(up -> up.getRate() != null)  // Filter out null ratings
-                .mapToDouble(User_Session::getRate)  // Convert to double for calculation
-                .average()                           // Calculate average
-                .orElse(0.0);                        // Default to 0.0 if no ratings
+                .filter(up -> up.getRate() != null) // Filter out null ratings
+                .mapToDouble(User_Session::getRate) // Convert to double for calculation
+                .average() // Calculate average
+                .orElse(0.0); // Default to 0.0 if no ratings
 
-        return average.floatValue();  // Convert back to Float
+        return average.floatValue(); // Convert back to Float
     }
 
     @Transactional
@@ -378,7 +415,6 @@ public class SessionService {
         userSession.setRate(request.getRate());
         userSessionRepository.save(userSession);
 
-
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Session rated successfully"));
     }
@@ -459,12 +495,10 @@ public class SessionService {
                 session.getEndTime(),
                 session.getMaxNumber(),
                 userSessionRepository.countBySession(session),
-                feedBacks
-        );
+                feedBacks);
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
-
 
     @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> getMyAssignedSessions() {
@@ -501,8 +535,7 @@ public class SessionService {
                             session.getEndTime(),
                             session.getMaxNumber(),
                             userSessionRepository.countBySession(session),
-                            null
-                    );
+                            null);
                 })
                 .toList();
 
@@ -549,8 +582,7 @@ public class SessionService {
                             session.getEndTime(),
                             session.getMaxNumber(),
                             userSessionRepository.countBySession(session),
-                            null
-                    );
+                            null);
                 })
                 .toList();
 
@@ -572,7 +604,7 @@ public class SessionService {
             }
 
             Optional<Session> session = sessionRepository.findById(request.getSessionId());
-            if(session.isEmpty()){
+            if (session.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "Session not found"));
             }
@@ -584,7 +616,8 @@ public class SessionService {
             LocalDateTime startOfDay = today.atStartOfDay();
             LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
 
-            boolean attendanceExists = sessionAttendanceRepository.existsByUserAndDateBetween(user, startOfDay, endOfDay);
+            boolean attendanceExists = sessionAttendanceRepository.existsByUserAndDateBetween(user, startOfDay,
+                    endOfDay);
             if (attendanceExists) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(Map.of("message", "Attendance for today is already recorded"));
@@ -625,7 +658,7 @@ public class SessionService {
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
-    public ResponseEntity<?> getUserAttendanceById(Integer userId ,Integer sessionId) {
+    public ResponseEntity<?> getUserAttendanceById(Integer userId, Integer sessionId) {
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -654,8 +687,7 @@ public class SessionService {
 
         Map<String, Object> response = Map.of(
                 "user", userResponse,
-                "attendances", attendanceDates
-        );
+                "attendances", attendanceDates);
 
         return ResponseEntity.ok(response);
     }

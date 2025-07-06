@@ -36,6 +36,12 @@ public class SessionController {
         return sessionService.getSessionById(id);
     }
 
+    @GetMapping("/byclassid/{id}")
+    public ResponseEntity<?> getSessionByClassId(@PathVariable Integer id) {
+        return sessionService.getAllSessionsByClassId(id);
+    }
+
+
     @GetMapping("/show/all")
     public ResponseEntity<?> getAllSessions() {
         return sessionService.getAllSessions();
