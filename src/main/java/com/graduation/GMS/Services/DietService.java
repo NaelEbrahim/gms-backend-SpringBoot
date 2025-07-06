@@ -47,8 +47,14 @@ public class DietService {
         // Convert the DTO to entity and save
         DietPlan dietPlanEntity = new DietPlan();
 
+        Optional<User> userOptional = userRepository.findById(request.getCoachId());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
+
         dietPlanEntity.setTitle(request.getTitle());
-        dietPlanEntity.setCoach(HandleCurrentUserSession.getCurrentUser());
+        dietPlanEntity.setCoach(userOptional.get());
         dietPlanEntity.setCreatedAt(LocalDateTime.now());
         dietPlanEntity.setLastModifiedAt(LocalDateTime.now());
         // Save the dietPlan to the database
@@ -69,6 +75,14 @@ public class DietService {
 
         DietPlan existingDietPlan = optionalDietPlan.get();
 
+        Optional<User> userOptional = userRepository.findById(request.getCoachId());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
+        if(!existingDietPlan.getCoach().getId().equals(request.getCoachId())) {
+            existingDietPlan.setCoach(userOptional.get());
+        }
 
         if (!existingDietPlan.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
             existingDietPlan.setTitle(request.getTitle());

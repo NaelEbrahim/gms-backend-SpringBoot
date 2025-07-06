@@ -72,6 +72,11 @@ public class SessionService {
                     .body(Map.of("message", "Invalid day name. Expected values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday"));
         }
 
+        Optional<User> userOptional = userRepository.findById(request.getCoachId());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
 
         // Create and save new session
         Session session = new Session();
@@ -81,7 +86,7 @@ public class SessionService {
         session.setStartTime(request.getStartTime());
         session.setEndTime(request.getEndTime());
         session.setCreatedAt(LocalDateTime.now());
-        session.setCoach(HandleCurrentUserSession.getCurrentUser());
+        session.setCoach(userOptional.get());
         session.setAClass(classOptional.get());
         if (!weekDays.isEmpty()) {
             String daysString = weekDays.stream()
@@ -112,6 +117,16 @@ public class SessionService {
         if (classOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Class not found"));
+        }
+
+        Optional<User> userOptional = userRepository.findById(request.getCoachId());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
+
+        if(!session.getCoach().getId().equals(request.getCoachId())) {
+            session.setCoach(userOptional.get());
         }
 
         // 🔁 Convert input strings to WeekDay enum safely

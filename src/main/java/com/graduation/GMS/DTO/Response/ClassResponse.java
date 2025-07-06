@@ -20,8 +20,6 @@ public class ClassResponse {
 
     private String description;
 
-    private String imagePath;
-
     private Float price;
 
     private List<ProgramResponse> programs;

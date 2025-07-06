@@ -54,8 +54,13 @@ public class ClassService {
         }
         // Convert the DTO to entity and save
         Class classEntity = new Class();
+        Optional<User> userOptional = userRepository.findById(request.getCoachId());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
 
-        classEntity.setAuditCoach(HandleCurrentUserSession.getCurrentUser());
+        classEntity.setAuditCoach(userOptional.get());
         classEntity.setName(request.getName());
         classEntity.setDescription(request.getDescription());
         classEntity.setPrice(request.getPrice());
@@ -79,6 +84,14 @@ public class ClassService {
 
         Class existingClass = optionalClass.get();
 
+        Optional<User> userOptional = userRepository.findById(request.getCoachId());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
+        if(!existingClass.getAuditCoach().getId().equals(request.getCoachId())) {
+            existingClass.setAuditCoach(userOptional.get());
+        }
 
         if (!existingClass.getName().equals(request.getName()) && !request.getName().isEmpty()) {
             existingClass.setName(request.getName());
@@ -139,7 +152,6 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
-                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 programResponses,
                 null,
@@ -182,7 +194,6 @@ public class ClassService {
                             classEntity.getId(),
                             classEntity.getName(),
                             classEntity.getDescription(),
-                            classEntity.getImagePath(),
                             classEntity.getPrice(),
                             programResponses,
                             null,
@@ -394,7 +405,6 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
-                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 null,
                 subscribers,
@@ -429,7 +439,6 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
-                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 null,
                 activeSubscribers,
@@ -462,7 +471,6 @@ public class ClassService {
                             classEntity.getId(),
                             classEntity.getName(),
                             classEntity.getDescription(),
-                            classEntity.getImagePath(),
                             classEntity.getPrice(),
                             null,
                             null,  // subscribers
@@ -525,7 +533,6 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
-                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 null,
                 null,
@@ -579,23 +586,5 @@ public class ClassService {
         return new ProgramScheduleResponse(schedule);
     }
 
-    public ResponseEntity<?> uploadClassImage(ImageRequest request) {
-        Optional<Class> classOptional = classRepository.findById(request.getId());
-        if (classOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Class not found"));
-        }
-
-        String imagePath = FilesManagement.upload(request.getImage(), request.getId(), "classes");
-        if (imagePath == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Upload failed"));
-        }
-
-        classOptional.get().setImagePath(imagePath);
-        classRepository.save(classOptional.get());
-
-        return ResponseEntity.ok(Map.of("message", "Class image uploaded", "imageUrl", imagePath));
-    }
 
 }

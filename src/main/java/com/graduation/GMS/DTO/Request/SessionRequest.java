@@ -19,6 +19,8 @@ import java.util.List;
 @AllArgsConstructor
 public class SessionRequest {
 
+    private Integer coachId;
+
     private Integer classId;
     @NotBlank(message = "Program title is required")
     @Size(max = 100, message = "Program title must not exceed 100 characters")

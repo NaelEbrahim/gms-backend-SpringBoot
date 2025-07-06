@@ -13,6 +13,8 @@ import java.util.List;
 
 public class ClassRequest {
 
+    private Integer coachId;
+
     @NotBlank(message = "Class name is required")
     @Size(max = 100, message = "Class name must not exceed 100 characters")
     private String name;

@@ -27,11 +27,6 @@ public class ClassController {
         return classService.updateClass(id, classRequest);
     }
 
-    @PutMapping("upload-image")
-    public ResponseEntity<?> uploadClassImage(@ModelAttribute ImageRequest request){
-        return classService.uploadClassImage(request);
-    }
-
     // Endpoint to delete a class
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteClass(@PathVariable Integer id) {
