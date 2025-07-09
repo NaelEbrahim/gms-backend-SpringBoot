@@ -4,9 +4,15 @@ import com.graduation.GMS.DTO.Request.ArticleRequest;
 import com.graduation.GMS.DTO.Response.ArticleResponse;
 import com.graduation.GMS.DTO.Response.UserResponse;
 import com.graduation.GMS.Models.Article;
+import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Models.Enums.Wiki;
+import com.graduation.GMS.Models.Notification;
+import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.ArticleRepository;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
+import com.graduation.GMS.Repositories.NotificationRepository;
+import com.graduation.GMS.Repositories.UserRepository;
+import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +34,11 @@ public class ArticleService {
 
     private ArticleRepository articleRepository;
 
+    private NotificationService notificationService;
+
+    private NotificationRepository notificationRepository;
+
+    private UserRepository userRepository;
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin')")
@@ -48,6 +59,21 @@ public class ArticleService {
         article.setAdmin(HandleCurrentUserSession.getCurrentUser());
         article.setLastModifiedAt(LocalDateTime.now());
         articleRepository.save(article);
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Article: " + article.getTitle());
+        notification.setContent("A new article has been published: " + article.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+        List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
+
+
+        notificationService.sendNotificationToUsers(
+                usersWithUserRole,
+                notification
+        );
         // Return the response with the saved article details
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Article created successfully"));

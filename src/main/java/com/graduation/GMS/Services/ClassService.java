@@ -43,6 +43,8 @@ public class ClassService {
 
     private SubscriptionHistoryRepository subscriptionHistoryRepository;
 
+    private User_ProgramRepository userProgramRepository;
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createClass(ClassRequest request) {
@@ -140,7 +142,7 @@ public class ClassService {
                             program.getTitle(),
                             program.getLevel(),
                             program.getIsPublic(),
-                            null,
+                            calculateRate(program.getId()),
                             buildProgramScheduleResponse(program),
                             null
                     );
@@ -161,6 +163,29 @@ public class ClassService {
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
 
+    private  Float calculateRate(int programId) {
+        // First check if the program exists
+        Optional<Program> programOptional = programRepository.findById(programId);
+        if (programOptional.isEmpty()) {
+            return 0.0F;
+        }
+
+        // Get all User_Program entries for this program
+        List<User_Program> userPrograms = userProgramRepository.findByProgram(programOptional.get());
+
+        if (userPrograms.isEmpty()) {
+            return 0.0F;
+        }
+
+        // Calculate average rating using stream API
+        Double average = userPrograms.stream()
+                .filter(up -> up.getRate() != null)  // Filter out null ratings
+                .mapToDouble(User_Program::getRate)  // Convert to double for calculation
+                .average()                           // Calculate average
+                .orElse(0.0);                        // Default to 0.0 if no ratings
+
+        return average.floatValue();  // Convert back to Float
+    }
     public ResponseEntity<?> getAllClasses() {
         List<Class> classes = classRepository.findAll();
 
@@ -182,7 +207,7 @@ public class ClassService {
                                         program.getTitle(),
                                         program.getLevel(),
                                         program.getIsPublic(),
-                                        null,
+                                        calculateRate(program.getId()),
                                         buildProgramScheduleResponse(program),
                                         null
                                 );
@@ -316,7 +341,7 @@ public class ClassService {
         subscription.setAClass(classOptional.get());
         subscription.setJoinedAt(LocalDateTime.now());
         subscription.setIsActive(true);
-        Subscription savedSubscription = subscriptionRepository.save(subscription);
+        subscriptionRepository.save(subscription);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Subscription created successfully"));

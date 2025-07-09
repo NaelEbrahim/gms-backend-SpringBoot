@@ -155,7 +155,7 @@ public class ProgramService {
         return ResponseEntity.status(HttpStatus.OK).body(programResponses);
     }
 
-    private Float calculateRate(int programId) {
+    private  Float calculateRate(int programId) {
         // First check if the program exists
         Optional<Program> programOptional = programRepository.findById(programId);
         if (programOptional.isEmpty()) {
@@ -498,7 +498,7 @@ public class ProgramService {
                             program.getTitle(),
                             program.getLevel(),
                             program.getIsPublic(),
-                            up.getRate(),
+                            calculateRate(program.getId()),
                             buildProgramScheduleResponse(program),
                             null
                     );
@@ -533,7 +533,7 @@ public class ProgramService {
                             program.getTitle(),
                             program.getLevel(),
                             program.getIsPublic(),
-                            up.getRate(),
+                            calculateRate(program.getId()),
                             buildProgramScheduleResponse(program),
                             null
                     );

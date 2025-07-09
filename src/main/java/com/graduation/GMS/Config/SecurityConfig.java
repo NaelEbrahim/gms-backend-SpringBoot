@@ -30,7 +30,9 @@ public class SecurityConfig {
                 }).csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/user/login"
+                                "/api/user/login",
+                                "/images/**",
+                                "/websocket/**"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))

@@ -19,12 +19,12 @@ public class User_Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime readAt;
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime sendAt;
 
     @ManyToOne
     @JoinColumn(name = "notification_id")
