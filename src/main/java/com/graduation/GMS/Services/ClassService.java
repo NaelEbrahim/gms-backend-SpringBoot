@@ -6,8 +6,10 @@ import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
 import com.graduation.GMS.Models.Enums.Day;
 import com.graduation.GMS.Models.Enums.Muscle;
+import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
+import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import com.graduation.GMS.Tools.FilesManagement;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -45,6 +47,11 @@ public class ClassService {
 
     private User_ProgramRepository userProgramRepository;
 
+    private NotificationService notificationService;
+
+    private NotificationRepository notificationRepository;
+
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createClass(ClassRequest request) {
@@ -69,6 +76,20 @@ public class ClassService {
 
         // Save the class to the database
         classRepository.save(classEntity);
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Class: " + classEntity.getName());
+        notification.setContent("A new class has been published: " + classEntity.getName());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+        List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
+
+        notificationService.sendNotificationToUsers(
+                usersWithUserRole,
+                notification
+        );
         // Return the response with the saved class details
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Class created successfully"));
@@ -343,6 +364,19 @@ public class ClassService {
         subscription.setIsActive(true);
         subscriptionRepository.save(subscription);
 
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Subscription");
+        notification.setContent("New Subscription has been made in Class:" + subscription.getAClass().getName());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Subscription created successfully"));
     }
@@ -376,6 +410,19 @@ public class ClassService {
         // Record payment if provided
         processPayment(request, userOptional.get(), classOptional.get());
 
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("Update Subscription");
+        notification.setContent("Update Subscription has been made in Class:" + existingSubscription.get().getAClass().getName());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Subscription updated successfully"));
     }
@@ -396,6 +443,19 @@ public class ClassService {
             history.setPaymentAmount(request.getPaymentAmount());
             history.setDiscountPercentage(request.getDiscountPercentage());
             subscriptionHistoryRepository.save(history);
+
+            // Create and send notification
+            Notification notification = new Notification();
+            notification.setTitle("Payment Acknowledgment");
+            notification.setContent("Payment Successfully....to class:" + classEntity.getName());
+            notification.setCreatedAt(LocalDateTime.now());
+            // Persist notification first
+            notification = notificationRepository.save(notification); // Save and get managed instance
+
+            notificationService.sendNotification(
+                    user,
+                    notification
+            );
         }
     }
 

@@ -14,6 +14,7 @@ import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Services.GeneralServices.JwtService;
+import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import com.graduation.GMS.Tools.FilesManagement;
 import com.graduation.GMS.Tools.Generators;
 import jakarta.servlet.http.Cookie;
@@ -55,6 +56,10 @@ public class UserService {
     private final AttendanceRepository attendanceRepository;
 
     private final HealthInfoRepository healthInfoRepository;
+
+    private final NotificationRepository notificationRepository;
+
+    private final NotificationService notificationService;
 
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> createUser(UserRequest createRequest) throws Exception {
@@ -285,6 +290,20 @@ public class UserService {
 
         privateCoachRepository.save(userCoach);
 
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("Private Coach Assigned");
+        notification.setContent("New Private Coach has been assigned to monitor you...Coach" +
+                coach.getFirstName() + " " + coach.getLastName());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Coach successfully assigned to user"));
     }
@@ -327,6 +346,20 @@ public class UserService {
 
         privateCoachRepository.save(userCoach);
 
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("Update Private Coach Assigned");
+        notification.setContent("Private Coach has been assigned to monitor you...Coach" +
+                coach.getFirstName() + " " + coach.getLastName());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Coach successfully Update assigned to user"));
     }
@@ -363,6 +396,20 @@ public class UserService {
 
         // Delete the assignment
         privateCoachRepository.delete(userCoachOptional.get());
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("Private Coach UnAssigned");
+        notification.setContent("Private Coach has been Un assigned from you...Coach" +
+                coach.getFirstName() + " " + coach.getLastName());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Coach successfully unassigned from user"));
@@ -402,6 +449,19 @@ public class UserService {
             attendance.setDate(LocalDateTime.now());
 
             attendanceRepository.save(attendance);
+
+            // Create and send notification
+            Notification notification = new Notification();
+            notification.setTitle("Attendance Notification");
+            notification.setContent("Thank you for your attendance");
+            notification.setCreatedAt(LocalDateTime.now());
+            // Persist notification first
+            notification = notificationRepository.save(notification); // Save and get managed instance
+
+            notificationService.sendNotification(
+                    userOptional.get(),
+                    notification
+            );
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of("message", "Attendance recorded successfully"));
@@ -485,6 +545,7 @@ public class UserService {
         healthInfo.setRecordedAt(LocalDateTime.now());
 
         healthInfoRepository.save(healthInfo);
+
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Health info saved successfully"));

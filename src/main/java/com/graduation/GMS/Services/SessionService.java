@@ -11,8 +11,10 @@ import com.graduation.GMS.DTO.Response.UserResponse;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
+import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Models.Enums.WeekDay;
 import com.graduation.GMS.Repositories.*;
+import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +45,10 @@ public class SessionService {
     private User_SessionRepository userSessionRepository;
 
     private Session_AttendanceRepository sessionAttendanceRepository;
+
+    private NotificationRepository notificationRepository;
+
+    private NotificationService notificationService;
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
@@ -95,7 +101,21 @@ public class SessionService {
             session.setDays(daysString);
         }
 
-        // ✅ Set the parsed enum days here
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Session has been created");
+        notification.setContent("Hurry up to join us in the new Session :" +session.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
+
+        notificationService.sendNotificationToUsers(
+                usersWithUserRole,
+                notification
+        );
 
         sessionRepository.save(session);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -359,6 +379,19 @@ public class SessionService {
         userSession.setUser(user);
         userSession.setJoinedAt(LocalDateTime.now());
         userSessionRepository.save(userSession);
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Subscription");
+        notification.setContent("New Subscription has been made in Session:" + userSession.getSession().getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "session successfully assigned to user"));

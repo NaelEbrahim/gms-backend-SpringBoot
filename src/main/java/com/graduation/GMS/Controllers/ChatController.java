@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/chat")
-@CrossOrigin("http://localhost:63342")
+@CrossOrigin("http://localhost:56181")
 public class ChatController {
 
     private final ChatService chatService;

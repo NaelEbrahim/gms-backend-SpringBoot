@@ -6,8 +6,10 @@ import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.DietPlan;
 import com.graduation.GMS.Models.Enums.Day;
 import com.graduation.GMS.Models.Enums.MealTime;
+import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
+import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,6 +37,10 @@ public class DietService {
 
     private User_DietRepository userDietRepository;
 
+    private NotificationService notificationService;
+
+    private NotificationRepository notificationRepository;
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createDiet(DietRequest request) {
@@ -59,6 +65,23 @@ public class DietService {
         dietPlanEntity.setLastModifiedAt(LocalDateTime.now());
         // Save the dietPlan to the database
         dietPlanRepository.save(dietPlanEntity);
+
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Diet Plan");
+        notification.setContent("New Diet Plan has been made :" + dietPlanEntity.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
+
+        notificationService.sendNotificationToUsers(
+                usersWithUserRole,
+                notification
+        );
+
         // Return the response with the saved dietPlan details
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Diet Plan created successfully"));
@@ -377,6 +400,19 @@ public class DietService {
         userDiet.setStartedAt(LocalDateTime.now());
         userDietRepository.save(userDiet);
 
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Assignment");
+        notification.setContent("New Diet Plan has been assigned to You:" + dietPlan.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Diet Plan successfully assigned to user"));
     }
@@ -408,6 +444,19 @@ public class DietService {
 
         // Delete the assignment
         userDietRepository.delete(userProgramOptional.get());
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Assignment");
+        notification.setContent("Diet Plan has been Un assigned to You:" + dietPlan.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Diet Plan successfully unassigned from user"));

@@ -59,13 +59,6 @@ public class ChatService {
 
         String channelName = "private-chat-" + Math.min(sender.getId(), receiver.get().getId()) + "-" + Math.max(sender.getId(), receiver.get().getId());
 
-        Map<String, String> payload = new HashMap<>();
-        payload.put("senderId", sender.getId().toString());
-        payload.put("receiverId", receiver.get().getId().toString());
-        payload.put("message", chatMessage.getContent());
-        payload.put("timeStamp", LocalDateTime.now().toString());
-        pusher.trigger(channelName, "new-message", payload);
-
         Message message = new Message();
         message.setSender(sender);
         message.setReceiver(receiver.get());
@@ -73,6 +66,16 @@ public class ChatService {
         message.setType(MessageType.TEXT);
         message.setDate(LocalDateTime.now());
         messageRepository.save(message);
+
+        Map<String, String> payload = new HashMap<>();
+        payload.put("senderId", sender.getId().toString());
+        payload.put("receiverId", receiver.get().getId().toString());
+        payload.put("messageId", message.getId().toString());
+        payload.put("messageType", message.getType().toString());
+        payload.put("message", chatMessage.getContent());
+        payload.put("timeStamp", LocalDateTime.now().toString());
+        pusher.trigger(channelName, "new-message", payload);
+
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "message sent"));
@@ -96,13 +99,6 @@ public class ChatService {
                     .body(Map.of("message", "Upload failed"));
         }
 
-        Map<String, String> payload = new HashMap<>();
-        payload.put("senderId", sender.getId().toString());
-        payload.put("receiverId", receiver.get().getId().toString());
-        payload.put("message", imagePath);
-        payload.put("timeStamp", LocalDateTime.now().toString());
-        pusher.trigger(channelName, "new-message", payload);
-
         Message message = new Message();
         message.setSender(sender);
         message.setReceiver(receiver.get());
@@ -110,6 +106,16 @@ public class ChatService {
         message.setType(MessageType.IMAGE);
         message.setDate(LocalDateTime.now());
         messageRepository.save(message);
+
+        Map<String, String> payload = new HashMap<>();
+        payload.put("senderId", sender.getId().toString());
+        payload.put("receiverId", receiver.get().getId().toString());
+        payload.put("messageId", message.getId().toString());
+        payload.put("messageType", message.getType().toString());
+        payload.put("message", imagePath);
+        payload.put("timeStamp", LocalDateTime.now().toString());
+        pusher.trigger(channelName, "new-message", payload);
+
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Image sent"));

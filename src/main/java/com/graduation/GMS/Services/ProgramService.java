@@ -6,8 +6,10 @@ import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Enums.Day;
 import com.graduation.GMS.Models.Enums.MealTime;
 import com.graduation.GMS.Models.Enums.Muscle;
+import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
+import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,10 @@ public class ProgramService {
 
     private UserRepository userRepository;
 
+    private NotificationService notificationService;
+
+    private NotificationRepository notificationRepository;
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createProgram(ProgramRequest request) {
@@ -54,6 +60,21 @@ public class ProgramService {
         } else {
             program.setIsPublic(false);
         }
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Program");
+        notification.setContent("New Program has been made :" + program.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
+
+        notificationService.sendNotificationToUsers(
+                usersWithUserRole,
+                notification
+        );
         programRepository.save(program);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Program created successfully"));
@@ -332,6 +353,19 @@ public class ProgramService {
 
         userProgramRepository.save(userProgram);
 
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Assignment");
+        notification.setContent("New Program has been assigned to You:" + program.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "program successfully assigned to user"));
     }
@@ -363,6 +397,19 @@ public class ProgramService {
 
         // Delete the assignment
         userProgramRepository.delete(userProgramOptional.get());
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("Assignment Updated");
+        notification.setContent("Program has been Unassigned from You:" + program.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                userOptional.get(),
+                notification
+        );
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Program successfully unassigned from user"));

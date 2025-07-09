@@ -3,14 +3,14 @@ package com.graduation.GMS.Services;
 import com.graduation.GMS.DTO.Request.EventRequest;
 import com.graduation.GMS.DTO.Request.UpdateScoreRequest;
 import com.graduation.GMS.DTO.Response.*;
+import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Models.Event;
 import com.graduation.GMS.Models.Event_Participant;
+import com.graduation.GMS.Models.Notification;
 import com.graduation.GMS.Models.User;
-import com.graduation.GMS.Repositories.EventRepository;
-import com.graduation.GMS.Repositories.Event_ParticipantRepository;
-import com.graduation.GMS.Repositories.PrizeRepository;
-import com.graduation.GMS.Repositories.UserRepository;
+import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
+import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +38,10 @@ public class EventService {
 
     private UserRepository userRepository;
 
+    private NotificationService notificationService;
+
+    private NotificationRepository notificationRepository;
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> createEvent(EventRequest request) {
@@ -58,6 +62,22 @@ public class EventService {
         eventEntity.setEndedAt(request.getEndedAt());
         // Save the event to the database
         eventRepository.save(eventEntity);
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("New Event");
+        notification.setContent("New Event has been made :" + eventEntity.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
+
+        notificationService.sendNotificationToUsers(
+                usersWithUserRole,
+                notification
+        );
+
         // Return the response with the saved event details
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Event created successfully"));
@@ -185,6 +205,19 @@ public class EventService {
 
         eventParticipantRepository.save(participation);
 
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("Event Subscribed");
+        notification.setContent("You just Subscribed Event :" + event.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                HandleCurrentUserSession.getCurrentUser(),
+                notification
+        );
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Successfully subscribed to the event"));
     }
@@ -216,6 +249,20 @@ public class EventService {
         }
 
         eventParticipantRepository.delete(participation.get());
+
+        // Create and send notification
+        Notification notification = new Notification();
+        notification.setTitle("Event Un Subscribed");
+        notification.setContent("You just Un Subscribed Event :" + event.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+        // Persist notification first
+        notification = notificationRepository.save(notification); // Save and get managed instance
+
+        notificationService.sendNotification(
+                HandleCurrentUserSession.getCurrentUser(),
+                notification
+        );
+
 
         return ResponseEntity.ok(Map.of("message", "Successfully unsubscribed from the event"));
     }
