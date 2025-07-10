@@ -2,7 +2,7 @@ package com.graduation.GMS.Services.GeneralServices;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.graduation.GMS.DTO.Request.ImageChatRequest;
+import com.graduation.GMS.DTO.Request.FileChatRequest;
 import com.graduation.GMS.DTO.Request.MessageRequest;
 import com.graduation.GMS.DTO.Response.ConversationDTO;
 import com.graduation.GMS.DTO.Response.MessageResponse;
@@ -82,19 +82,35 @@ public class ChatService {
     }
 
     @Transactional
-    public ResponseEntity<?> sendImage(ImageChatRequest chatImage) {
+    public ResponseEntity<?> sendFile(FileChatRequest chatFile) {
 
         var sender = HandleCurrentUserSession.getCurrentUser();
-        var receiver = userRepository.findById(Integer.parseInt(chatImage.getReceiverId()));
+        var receiver = userRepository.findById(Integer.parseInt(chatFile.getReceiverId()));
         if (receiver.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "receiver not found"));
         }
 
         String channelName = "private-chat-" + Math.min(sender.getId(), receiver.get().getId()) + "-" + Math.max(sender.getId(), receiver.get().getId());
+        String filePath = null;
+        if(chatFile.getMessageType().equals(MessageType.IMAGE)) {
+             filePath=FilesManagement.uploadChatFile(chatFile.getContent(),sender.getId(),
+                                            receiver.get().getId(),"images");
+        }
+        else if(chatFile.getMessageType().equals(MessageType.VIDEO)) {
+            filePath=FilesManagement.uploadChatFile(chatFile.getContent(),sender.getId(),
+                                            receiver.get().getId(),"videos");
+        }
+        else if(chatFile.getMessageType().equals(MessageType.AUDIO)) {
+            filePath=FilesManagement.uploadChatFile(chatFile.getContent(),sender.getId(),
+                                            receiver.get().getId(),"audios");
+        }
+        else if(chatFile.getMessageType().equals(MessageType.DOCUMENT)) {
+            filePath=FilesManagement.uploadChatFile(chatFile.getContent(),sender.getId(),
+                                            receiver.get().getId(),"documents");
+        }
 
-        String imagePath = FilesManagement.uploadChatImage(chatImage.getContent(),sender.getId(),receiver.get().getId());
-        if (imagePath == null) {
+        if (filePath == null) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Upload failed"));
         }
@@ -102,8 +118,8 @@ public class ChatService {
         Message message = new Message();
         message.setSender(sender);
         message.setReceiver(receiver.get());
-        message.setContent(imagePath);
-        message.setType(MessageType.IMAGE);
+        message.setContent(filePath);
+        message.setType(chatFile.getMessageType());
         message.setDate(LocalDateTime.now());
         messageRepository.save(message);
 
@@ -112,13 +128,13 @@ public class ChatService {
         payload.put("receiverId", receiver.get().getId().toString());
         payload.put("messageId", message.getId().toString());
         payload.put("messageType", message.getType().toString());
-        payload.put("message", imagePath);
+        payload.put("message", filePath);
         payload.put("timeStamp", LocalDateTime.now().toString());
         pusher.trigger(channelName, "new-message", payload);
 
 
         return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("message", "Image sent"));
+                .body(Map.of("message", "File sent"));
     }
 
 

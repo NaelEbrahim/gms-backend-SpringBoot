@@ -50,7 +50,7 @@ public class FilesManagement {
             return null;
         }
     }
-    public static String uploadChatImage(MultipartFile file, int senderId, int receiverId) {
+    public static String uploadChatFile(MultipartFile file, int senderId, int receiverId, String folderName) {
         if (file == null || file.isEmpty()) return null;
 
         try {
@@ -63,7 +63,9 @@ public class FilesManagement {
 
             String fileName = senderId + "_" + timestamp + extension;
             Path projectRoot = Paths.get("").toAbsolutePath();
-            Path chatDir = projectRoot.resolve("uploads/chats/" + first + "_" + second);
+
+            // Create the directory structure: chats/{first}_{second}/{folderName}/
+            Path chatDir = projectRoot.resolve("uploads/chats/" + first + "_" + second + "/" + folderName);
 
             if (!Files.exists(chatDir)) {
                 Files.createDirectories(chatDir);
@@ -72,12 +74,11 @@ public class FilesManagement {
             Path filePath = chatDir.resolve(fileName);
             file.transferTo(filePath.toFile());
 
-            // Return relative path
-            return "/images/chats/" + first + "_" + second + "/" + fileName;
-
+            // Return relative path including the folderName
+            return "/chats/" + first + "_" + second + "/" + folderName + "/" + fileName;
 
         } catch (IOException e) {
-            System.err.println("Error saving chat image: " + e.getMessage());
+            System.err.println("Error saving chat File: " + e.getMessage());
             return null;
         }
     }

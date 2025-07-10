@@ -32,6 +32,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/user/login",
                                 "/images/**",
+                                "/chats/**",
+                                "/uploads/**",
                                 "/websocket/**"
                         ).permitAll()
                         .anyRequest().authenticated())

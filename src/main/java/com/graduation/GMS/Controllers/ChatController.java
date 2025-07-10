@@ -1,15 +1,13 @@
 package com.graduation.GMS.Controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.graduation.GMS.DTO.Request.ImageChatRequest;
+import com.graduation.GMS.DTO.Request.FileChatRequest;
 import com.graduation.GMS.DTO.Request.MessageRequest;
 import com.graduation.GMS.Services.GeneralServices.ChatService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @AllArgsConstructor
@@ -34,10 +32,10 @@ public class ChatController {
 
         return chatService.sendMessage(messageRequest);
     }
-    @PostMapping("/sendImage")
-    public ResponseEntity<?> sendImage(@ModelAttribute @Valid ImageChatRequest imageChatRequestRequest) {
+    @PostMapping("/sendFile")
+    public ResponseEntity<?> sendFile(@ModelAttribute FileChatRequest fileChatRequest) {
 
-        return chatService.sendImage(imageChatRequestRequest);
+        return chatService.sendFile(fileChatRequest);
     }
 
     @GetMapping("/conversations")

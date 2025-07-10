@@ -1,5 +1,6 @@
 package com.graduation.GMS.DTO.Request;
 
+import com.graduation.GMS.Models.Enums.MessageType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ImageChatRequest {
+public class FileChatRequest {
     private String socket_id;
 
     private String channel_name;
@@ -18,6 +19,8 @@ public class ImageChatRequest {
     private String senderId;
 
     private String receiverId;
+
+    private MessageType messageType;
 
     private MultipartFile content;
 }
