@@ -1,5 +1,6 @@
 package com.graduation.GMS.Services;
 
+import com.graduation.GMS.DTO.Request.CreateWorkoutRequest;
 import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.DTO.Response.WorkoutResponse;
@@ -33,7 +34,7 @@ public class WorkoutService {
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
-    public ResponseEntity<?> createWorkout(WorkoutRequest request) {
+    public ResponseEntity<?> createWorkout(CreateWorkoutRequest request) {
         // Check if workout title already exists
         Optional<Workout> existingWorkout = workoutRepository.findByTitle(request.getTitle());
         if (existingWorkout.isPresent()) {
@@ -50,6 +51,16 @@ public class WorkoutService {
         workout.setDescription(request.getDescription());
 
         workoutRepository.save(workout);
+
+        String imagePath = FilesManagement.upload(request.getImage(), workout.getId(), "workouts");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        workout.setImagePath(imagePath);
+        workoutRepository.save(workout);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Workout created successfully"));
     }

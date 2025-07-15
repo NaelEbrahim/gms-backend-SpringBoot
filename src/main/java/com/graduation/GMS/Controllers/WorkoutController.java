@@ -1,5 +1,6 @@
 package com.graduation.GMS.Controllers;
 
+import com.graduation.GMS.DTO.Request.CreateWorkoutRequest;
 import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.Services.WorkoutService;
@@ -17,7 +18,7 @@ public class WorkoutController {
     private WorkoutService workoutService;
 
     @PostMapping("create")
-    public ResponseEntity<?> createWorkout(@Valid @RequestBody WorkoutRequest request) {
+    public ResponseEntity<?> createWorkout(@Valid @ModelAttribute CreateWorkoutRequest request) {
         return workoutService.createWorkout(request);
     }
 

@@ -1,5 +1,6 @@
 package com.graduation.GMS.Services;
 
+import com.graduation.GMS.DTO.Request.CreateMealRequest;
 import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.MealRequest;
 import com.graduation.GMS.DTO.Response.MealResponse;
@@ -26,7 +27,7 @@ public class MealService {
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
-    public ResponseEntity<?> createMeal(MealRequest request) {
+    public ResponseEntity<?> createMeal(CreateMealRequest request) {
         // Check if meal title already exists
         Optional<Meal> existingMeal = mealRepository.findByTitle(request.getTitle());
         if (existingMeal.isPresent()) {
@@ -40,6 +41,14 @@ public class MealService {
         meal.setDescription(request.getDescription());
         meal.setCalories(request.getCalories());
 
+        mealRepository.save(meal);
+        String imagePath = FilesManagement.upload(request.getImage(), meal.getId(), "meals");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        meal.setImagePath(imagePath);
         mealRepository.save(meal);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Meal created successfully"));

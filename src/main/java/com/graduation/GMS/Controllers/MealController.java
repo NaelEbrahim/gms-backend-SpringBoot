@@ -1,4 +1,5 @@
 package com.graduation.GMS.Controllers;
+import com.graduation.GMS.DTO.Request.CreateMealRequest;
 import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.MealRequest;
 import com.graduation.GMS.Services.MealService;
@@ -17,7 +18,7 @@ public class MealController {
 
     // Endpoint to create a new Meal
     @PostMapping("/create")
-    public ResponseEntity<?> createMeal(@Valid @RequestBody MealRequest request) {
+    public ResponseEntity<?> createMeal(@Valid @ModelAttribute CreateMealRequest request) {
         return mealService.createMeal(request);
     }
 
