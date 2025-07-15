@@ -15,11 +15,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ArticleRequest {
 
-    @NotBlank(message = "Title is required")
+    @NotBlank(message = "title is required")
     @Size(max = 100, message = "Title name must not exceed 100 characters")
     private String title;
 
-    @Size(max = 1000, message = "Description must not exceed 1000 characters")
+    @NotBlank(message = "content is required")
     private String content;
 
     private Wiki wikiType;
