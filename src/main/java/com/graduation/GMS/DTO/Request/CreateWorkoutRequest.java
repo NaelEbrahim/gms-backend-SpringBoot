@@ -15,7 +15,6 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 public class CreateWorkoutRequest {
     @NotBlank(message = "Workout title is required")
-    @Size(max = 100, message = "Workout title must not exceed 100 characters")
     private String title;
 
     private Muscle primaryMuscle;

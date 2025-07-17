@@ -4,6 +4,7 @@ import com.graduation.GMS.DTO.Request.CreateWorkoutRequest;
 import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.DTO.Response.WorkoutResponse;
+import com.graduation.GMS.Models.Enums.Muscle;
 import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Models.User_Workout_favorite;
 import com.graduation.GMS.Models.Workout;
@@ -12,12 +13,15 @@ import com.graduation.GMS.Repositories.WorkoutRepository;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Tools.FilesManagement;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -140,32 +144,51 @@ public class WorkoutService {
                 .body(response);
     }
 
-    public ResponseEntity<?> getAllWorkouts() {
-        List<Workout> workouts = workoutRepository.findAll();
+    public ResponseEntity<?> searchWorkouts(String keyword, String muscleStr, Pageable pageable) {
+        Muscle muscle = null;
 
-        if (workouts.isEmpty()) {
+        try {
+            if (muscleStr != null && !muscleStr.isBlank()) {
+                muscle = Muscle.valueOf(muscleStr.trim());
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Invalid muscle group: " + muscleStr));
+        }
+
+        Page<Workout> workoutsPage = workoutRepository.searchWorkoutsByMuscleAndKeyword(
+                keyword, muscle, pageable
+        );
+
+        if (workoutsPage.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "No workouts found"));
         }
 
-        List<WorkoutResponse> workoutResponses = workouts.stream()
+        List<WorkoutResponse> workoutResponses = workoutsPage.stream()
                 .map(w -> new WorkoutResponse(
                         w.getId(),
                         w.getTitle(),
                         0.0f,
                         w.getPrimary_muscle().name(),
-                        w.getSecondary_muscles().name(),
+                        w.getSecondary_muscles() != null ? w.getSecondary_muscles().name() : null,
                         w.getAvg_calories(),
                         w.getDescription(),
                         w.getImagePath(),
                         0,
                         0
                 ))
-                .collect(Collectors.toList());
+                .toList();
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(workoutResponses);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("count", workoutsPage.getTotalElements());
+        response.put("totalPages", workoutsPage.getTotalPages());
+        response.put("currentPage", workoutsPage.getNumber());
+        response.put("workouts", workoutResponses);
+
+        return ResponseEntity.ok(response);
     }
+
 
     //add to favorite
     @PreAuthorize("hasAnyAuthority('User')")

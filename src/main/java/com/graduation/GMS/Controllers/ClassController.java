@@ -17,7 +17,7 @@ public class ClassController {
 
     // Endpoint to create a new class
     @PostMapping("/create")
-    public ResponseEntity<?> createClass(@Valid @RequestBody ClassRequest classRequest) {
+    public ResponseEntity<?> createClass(@Valid @ModelAttribute CreateClassRequest classRequest) {
         return classService.createClass(classRequest);
     }
 
@@ -31,6 +31,11 @@ public class ClassController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteClass(@PathVariable Integer id) {
         return classService.deleteClass(id);
+    }
+
+    @PutMapping("upload-image")
+    public ResponseEntity<?> uploadClassImage(@ModelAttribute ImageRequest request){
+        return classService.uploadClassImage(request);
     }
 
     // Endpoint to get details of a specific class by ID

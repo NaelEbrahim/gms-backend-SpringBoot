@@ -6,8 +6,13 @@ import com.graduation.GMS.Services.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
@@ -48,17 +53,24 @@ public class UserController {
     }
 
     @GetMapping("/by-role")
-    public ResponseEntity<?> getUsersByRole(@RequestParam String role) {
+    public ResponseEntity<?> getUsersByRole(
+            @RequestParam String role,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
         if (role.equalsIgnoreCase("Admin")) {
-            return userService.getUsersByRole(Roles.Admin);
+            return userService.getUsersByRoleWithSearch(Roles.Admin, keyword, pageable);
         } else if (role.equalsIgnoreCase("Secretary")) {
-            return userService.getUsersByRole(Roles.Secretary);
+            return userService.getUsersByRoleWithSearch(Roles.Secretary, keyword, pageable);
         } else if (role.equalsIgnoreCase("User")) {
-            return userService.getUsersByRole(Roles.User);
+            return userService.getUsersByRoleWithSearch(Roles.User, keyword, pageable);
         } else if (role.equalsIgnoreCase("Coach")) {
-            return userService.getUsersByRole(Roles.Coach);
+            return userService.getUsersByRoleWithSearch(Roles.Coach, keyword, pageable);
         } else
-            return userService.getAll();
+            return userService.getUsersByRoleWithSearch(Roles.User, keyword, pageable);
     }
 
     // --- Private Coach Assignment APIs ---

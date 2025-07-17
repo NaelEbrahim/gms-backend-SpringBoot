@@ -1,6 +1,8 @@
 package com.graduation.GMS.Controllers;
 
+import com.graduation.GMS.DTO.Request.CreateEventRequest;
 import com.graduation.GMS.DTO.Request.EventRequest;
+import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.UpdateScoreRequest;
 import com.graduation.GMS.Services.EventService;
 import jakarta.validation.Valid;
@@ -15,7 +17,7 @@ public class EventController {
     private EventService eventService;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createEvent(@Valid @RequestBody EventRequest request) {
+    public ResponseEntity<?> createEvent(@Valid @ModelAttribute CreateEventRequest request) {
         return eventService.createEvent(request);
     }
 
@@ -28,6 +30,11 @@ public class EventController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteEvent(@PathVariable Integer id) {
         return eventService.deleteEvent(id);
+    }
+
+    @PutMapping("upload-image")
+    public ResponseEntity<?> uploadEventImage(@ModelAttribute ImageRequest request){
+        return eventService.uploadEventImage(request);
     }
 
     @GetMapping("/show/{id}")

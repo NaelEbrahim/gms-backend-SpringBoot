@@ -20,6 +20,8 @@ import com.graduation.GMS.Tools.Generators;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -205,30 +207,24 @@ public class UserService {
 
 
     @PreAuthorize("hasAnyAuthority('Admin')")
-    public ResponseEntity<?> getUsersByRole(Roles roleName) {
-        Optional<Role> roleOptional = roleRepository.findByRoleName(roleName);
+    public ResponseEntity<?> getUsersByRoleWithSearch(Roles roleName, String keyword, Pageable pageable) {
+        Page<User> usersPage = userRepository.searchByRoleAndKeyword(roleName, keyword, pageable);
 
-        if (roleOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Role not found"));
-        }
-
-        Role role = roleOptional.get();
-
-        // Fetch User_Role records and map to UserResponse
-        List<ProfileResponse> userResponses = userRoleRepository.findByRoleId(role.getId())
+        List<ProfileResponse> userResponses = usersPage
                 .stream()
-                .map(ur -> ProfileResponse.mapToProfileResponse(ur.getUser()))
+                .map(ProfileResponse::mapToProfileResponse)
                 .toList();
 
-        // Build a structured response object (optional wrapper)
-        Map<String, Object> response = Map.of(
-                "role", role.getRoleName(),
-                "count", userResponses.size(),
-                "users", userResponses
-        );
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("role", roleName);
+        response.put("count", usersPage.getTotalElements());
+        response.put("totalPages", usersPage.getTotalPages());
+        response.put("currentPage", usersPage.getNumber());
+        response.put("articles", userResponses);
+
         return ResponseEntity.ok(response);
     }
+
 
     @PreAuthorize("hasAnyAuthority('Admin')")
     public ResponseEntity<?> getAll() {

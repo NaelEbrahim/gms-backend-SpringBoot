@@ -1,16 +1,16 @@
 package com.graduation.GMS.Services;
 
+import com.graduation.GMS.DTO.Request.CreateEventRequest;
 import com.graduation.GMS.DTO.Request.EventRequest;
+import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.UpdateScoreRequest;
 import com.graduation.GMS.DTO.Response.*;
+import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Enums.Roles;
-import com.graduation.GMS.Models.Event;
-import com.graduation.GMS.Models.Event_Participant;
-import com.graduation.GMS.Models.Notification;
-import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
+import com.graduation.GMS.Tools.FilesManagement;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +44,7 @@ public class EventService {
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
-    public ResponseEntity<?> createEvent(EventRequest request) {
+    public ResponseEntity<?> createEvent(CreateEventRequest request) {
 
         // Check if the event title already exists (optional validation)
         Optional<Event> existingEvent = eventRepository.findByTitle(request.getTitle());
@@ -61,6 +61,15 @@ public class EventService {
         eventEntity.setStartedAt(request.getStartedAt());
         eventEntity.setEndedAt(request.getEndedAt());
         // Save the event to the database
+        eventRepository.save(eventEntity);
+
+        String imagePath = FilesManagement.upload(request.getImage(), eventEntity.getId(), "events");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        eventEntity.setImagePath(imagePath);
         eventRepository.save(eventEntity);
 
         // Create and send notification
@@ -126,6 +135,25 @@ public class EventService {
                 .body(Map.of("message", "Event deleted successfully"));
     }
 
+    public ResponseEntity<?> uploadEventImage(ImageRequest request) {
+        Optional<Event> event = eventRepository.findById(request.getId());
+        if (event.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Event not found"));
+        }
+
+        String imagePath = FilesManagement.upload(request.getImage(), request.getId(), "events");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        event.get().setImagePath(imagePath);
+        eventRepository.save(event.get());
+
+        return ResponseEntity.ok(Map.of("message", "Event image uploaded", "imageUrl", imagePath));
+    }
+
     public ResponseEntity<?> getEventById(Integer id) {
         Optional<Event> eventOptional = eventRepository.findById(id);
         if (eventOptional.isEmpty()) {
@@ -168,6 +196,7 @@ public class EventService {
                 adminResponse,
                 event.getTitle(),
                 event.getDescription(),
+                event.getImagePath(),
                 event.getStartedAt(),
                 event.getEndedAt(),
                 prizeResponses

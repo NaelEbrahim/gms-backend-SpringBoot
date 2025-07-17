@@ -6,6 +6,8 @@ import com.graduation.GMS.DTO.Request.WorkoutRequest;
 import com.graduation.GMS.Services.WorkoutService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,10 +45,17 @@ public class WorkoutController {
         return workoutService.getWorkoutById(id);
     }
 
-    @GetMapping("show/all")
-    public ResponseEntity<?> getAllWorkouts() {
-        return workoutService.getAllWorkouts();
+    @GetMapping("/show/all")
+    public ResponseEntity<?> getAllWorkouts(
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(required = false) String muscle,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return workoutService.searchWorkouts(keyword, muscle, pageable);
     }
+
 
     // Add to favorites
     @PostMapping("/{id}/add-to-favorite")

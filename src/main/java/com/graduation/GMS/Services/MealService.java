@@ -9,11 +9,15 @@ import com.graduation.GMS.Repositories.MealRepository;
 import com.graduation.GMS.Tools.FilesManagement;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -116,15 +120,22 @@ public class MealService {
                 .body(response);
     }
 
-    public ResponseEntity<?> getAllMeals() {
-        List<Meal> meals = mealRepository.findAll();
+    public ResponseEntity<?> getAllMeals(int page, int size, String title) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Meal> meals;
+
+        if (title != null && !title.isBlank()) {
+            meals = mealRepository.searchByTitle(title, pageable);
+        } else {
+            meals = mealRepository.findAll(pageable);
+        }
 
         if (meals.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "No meals found"));
         }
 
-        List<MealResponse> mealResponses = meals.stream()
+        List<MealResponse> mealResponses = meals.getContent().stream()
                 .map(w -> new MealResponse(
                         w.getId(),
                         w.getTitle(),
@@ -133,13 +144,18 @@ public class MealService {
                         null,
                         w.getDescription(),
                         null
-
                 ))
-                .collect(Collectors.toList());
+                .toList();
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(mealResponses);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("count", meals.getTotalElements());
+        response.put("totalPages", meals.getTotalPages());
+        response.put("currentPage", meals.getNumber());
+        response.put("meals", mealResponses);
+
+        return ResponseEntity.ok(response);
     }
+
 
     public ResponseEntity<?> uploadMealImage(ImageRequest request) {
         Optional<Meal> meal = mealRepository.findById(request.getId());

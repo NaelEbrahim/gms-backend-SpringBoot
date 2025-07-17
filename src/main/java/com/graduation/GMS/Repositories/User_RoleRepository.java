@@ -1,6 +1,10 @@
 package com.graduation.GMS.Repositories;
 
+import com.graduation.GMS.Models.Enums.Roles;
+import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Models.User_Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +17,5 @@ public interface User_RoleRepository extends JpaRepository<User_Role,Integer> {
     List<User_Role> findByUserId(Integer userId);
 
     List<User_Role> findByRoleId(Integer id);
+
 }

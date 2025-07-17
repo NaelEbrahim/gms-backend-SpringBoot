@@ -45,11 +45,16 @@ public class MealController {
         return mealService.getMealById(id);
     }
 
-    // Endpoint to get all Meals
+    // Endpoint to get paginated and searchable Meals
     @GetMapping("/show/all")
-    public ResponseEntity<?> getAllMeals() {
-        return mealService.getAllMeals();
+    public ResponseEntity<?> getAllMeals(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword
+    ) {
+        return mealService.getAllMeals(page, size, keyword);
     }
+
 
 }
 
