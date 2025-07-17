@@ -145,5 +145,4 @@ public class UserController {
         return userService.getUserProgressDashboard(userProgressRequest);
     }
 
-
 }
