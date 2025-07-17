@@ -24,6 +24,10 @@ public class Program_Workout {
 
     private Integer sets;
 
+    private Float startingWeight;
+
+    private Integer startingDuration;
+
     @Enumerated(EnumType.STRING)
     private Day day;
 
@@ -38,8 +42,7 @@ public class Program_Workout {
     @JoinColumn(name = "workout_id")
     private Workout workout;
 
-    @OneToMany(mappedBy = "program_workout", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<User_Progress> userProgresses;
-
+    @OneToMany(mappedBy = "programWorkout", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserProgress> userProgresses;
 
 }

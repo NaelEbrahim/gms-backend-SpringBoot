@@ -46,7 +46,7 @@ public class FilesManagement {
 
 
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return null;
         }
     }

@@ -7,29 +7,27 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class User_Progress {
+public class UserProgress {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(updatable = false, nullable = false)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime recordedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate recordedAt;
 
-    private Integer currentSets;
+    private Float weight;
 
-    private Integer currentReps;
+    private Integer duration;
 
-    private Integer weightKg;
-
-    private Integer durationMin;
+    private String note;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -37,6 +35,6 @@ public class User_Progress {
 
     @ManyToOne
     @JoinColumn(name = "program_workout_id")
-    private Program_Workout program_workout;
+    private Program_Workout programWorkout;
 
 }

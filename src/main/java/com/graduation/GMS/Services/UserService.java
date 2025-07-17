@@ -5,10 +5,7 @@ import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.graduation.GMS.Config.SecurityConfig;
 import com.graduation.GMS.DTO.Request.*;
-import com.graduation.GMS.DTO.Response.HealthInfoResponse;
-import com.graduation.GMS.DTO.Response.ProfileResponse;
-import com.graduation.GMS.DTO.Response.UserResponse;
-import com.graduation.GMS.DTO.Response.UserWithPasswordResponse;
+import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Enums.Roles;
@@ -60,6 +57,15 @@ public class UserService {
     private final NotificationRepository notificationRepository;
 
     private final NotificationService notificationService;
+
+    private final Program_WorkoutRepository programWorkoutRepository;
+
+    private final UserProgressRepository userProgressRepository;
+
+    private final ProgramRepository programRepository;
+
+    private final WorkoutRepository workoutRepository;
+
 
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> createUser(UserRequest createRequest) throws Exception {
@@ -123,7 +129,7 @@ public class UserService {
             cookie.setMaxAge(259200);
             cookie.setPath("/auth/refresh");
             response.addCookie(cookie);
-            ProfileResponse userResponse = new ProfileResponse(user,null, accessToken);
+            ProfileResponse userResponse = new ProfileResponse(user, null, accessToken);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("message", userResponse));
         } else
@@ -203,7 +209,6 @@ public class UserService {
         authTokenRepository.flush();
     }
 
-
     @PreAuthorize("hasAnyAuthority('Admin')")
     public ResponseEntity<?> getUsersByRole(Roles roleName) {
         Optional<Role> roleOptional = roleRepository.findByRoleName(roleName);
@@ -249,7 +254,6 @@ public class UserService {
         return userRoleRepository.findByUserId(user.getId()).stream()
                 .anyMatch(ur -> roleName.name().equalsIgnoreCase(String.valueOf(ur.getRole().getRoleName())));
     }
-
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
@@ -414,7 +418,6 @@ public class UserService {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Coach successfully unassigned from user"));
     }
-
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
@@ -588,14 +591,13 @@ public class UserService {
                 .body(Map.of("message", HandleCurrentUserSession.getCurrentUser().getQr()));
     }
 
-
     public ResponseEntity<?> uploadUserProfileImage(ImageRequest request) {
         Optional<User> user = userRepository.findById(request.getId());
         if (user.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "User not found"));
         }
-        if(!request.getId().equals(HandleCurrentUserSession.getCurrentUser().getId())) {
+        if (!request.getId().equals(HandleCurrentUserSession.getCurrentUser().getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "User not authorized to do this operation"));
         }
@@ -610,6 +612,108 @@ public class UserService {
         userRepository.save(user.get());
 
         return ResponseEntity.ok(Map.of("message", "Profile image uploaded", "imageUrl", imagePath));
+    }
+
+    public ResponseEntity<?> logUserProgressInProgram(UserProgressRequest userProgressRequest) {
+        var user = HandleCurrentUserSession.getCurrentUser();
+        System.out.println(userProgressRequest.getWeight());
+        var programWorkout = programWorkoutRepository.findById(userProgressRequest.getProgram_workout_id()).orElse(null);
+        if (programWorkout == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "program_workout not found"));
+        UserProgress userProgress = new UserProgress();
+        userProgress.setUser(user);
+        userProgress.setProgramWorkout(programWorkout);
+        userProgress.setRecordedAt(LocalDate.now());
+        if (userProgressRequest.getWeight() != null)
+            userProgress.setWeight(userProgressRequest.getWeight());
+        if (userProgressRequest.getDuration() != null)
+            userProgress.setDuration(userProgressRequest.getDuration());
+        if (userProgressRequest.getNote() != null)
+            userProgress.setNote(userProgressRequest.getNote());
+        userProgressRepository.save(userProgress);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "progress recorded successfully"));
+    }
+
+    public ResponseEntity<?> getUserProgressInProgram(UserProgressRequest userProgressRequest) {
+        var user = HandleCurrentUserSession.getCurrentUser();
+        var programWorkout = programWorkoutRepository.findById(userProgressRequest.getProgram_workout_id()).orElse(null);
+        if (programWorkout == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "program_workout not found"));
+        LocalDate startDate = userProgressRequest.getStartDate();
+        LocalDate endDate = userProgressRequest.getEndDate();
+        if (startDate == null || endDate == null) {
+            endDate = LocalDate.now();
+            startDate = endDate.minusDays(30);
+        }
+        var userProgress = userProgressRepository.findByUserIdAndProgramWorkoutIdAndRecordedAtBetween(
+                user.getId(),
+                programWorkout.getId(),
+                startDate,
+                endDate
+        );
+        return ResponseEntity.ok(buildProgressResponse(userProgress));
+    }
+
+    public ResponseEntity<?> deleteRecodedProgressInProgram(Integer userProgressId) {
+        var userProgress = userProgressRepository.findById(userProgressId).orElse(null);
+        if (userProgress == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "user progress not found"));
+        userProgressRepository.deleteById(userProgress.getId());
+        userProgressRepository.flush();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "recorded progress deleted"));
+    }
+
+    @PreAuthorize("hasAnyAuthority('Admin','Coach')")
+    public ResponseEntity<?> getUserProgressDashboard(UserProgressRequest userProgressRequest) {
+        var user = userRepository.findById(userProgressRequest.getUserId()).orElse(null);
+        var program = programRepository.findById(userProgressRequest.getProgramId()).orElse(null);
+        var workout = workoutRepository.findById(userProgressRequest.getWorkoutId()).orElse(null);
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "user not found"));
+        if (program == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "program not found"));
+        if (workout == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "workout not found"));
+        var programWorkout = programWorkoutRepository.findByProgramIdAndWorkoutId(program.getId(), workout.getId()).orElse(null);
+        if (programWorkout == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "program workout not found"));
+
+        LocalDate startDate = userProgressRequest.getStartDate();
+        LocalDate endDate = userProgressRequest.getEndDate();
+        if (startDate == null || endDate == null) {
+            endDate = LocalDate.now();
+            startDate = endDate.minusDays(30);
+        }
+        var userProgress = userProgressRepository.findByUserIdAndProgramWorkoutIdAndRecordedAtBetween(
+                user.getId(),
+                programWorkout.getId(),
+                startDate,
+                endDate
+        );
+        return ResponseEntity.ok(buildProgressResponse(userProgress));
+    }
+
+    private List<UserProgressResponse> buildProgressResponse(List<UserProgress> userProgress) {
+        List<UserProgressResponse> response = new ArrayList<>();
+        for (UserProgress item : userProgress) {
+            UserProgressResponse element = new UserProgressResponse();
+            element.setId(item.getId());
+            element.setWeight(item.getWeight());
+            element.setDuration(item.getDuration());
+            element.setRecordedAt(item.getRecordedAt());
+            element.setNote(item.getNote());
+            response.add(element);
+        }
+        return response;
     }
 
 

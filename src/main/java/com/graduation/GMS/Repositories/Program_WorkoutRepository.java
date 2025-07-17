@@ -17,4 +17,6 @@ public interface Program_WorkoutRepository extends JpaRepository<Program_Workout
     List<Program_Workout> findByProgram(Program program);
 
     Optional<Program_Workout> findByProgramAndWorkoutAndDay(Program program, Workout workout, Day day);
+
+    Optional<Program_Workout> findByProgramIdAndWorkoutId (Integer programId, Integer workoutId);
 }

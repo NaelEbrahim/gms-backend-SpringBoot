@@ -7,5 +7,5 @@ public enum WeekDay {
     Wednesday,
     Thursday,
     Friday,
-    Saturday,;
+    Saturday,
 }

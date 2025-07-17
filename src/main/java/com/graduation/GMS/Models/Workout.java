@@ -22,7 +22,6 @@ public class Workout {
     @Column(nullable = false, unique = true)
     private String title;
 
-    @Column(nullable = true)
     private String ImagePath;
 
     @Column(nullable = false)

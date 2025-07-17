@@ -613,7 +613,8 @@ public class ProgramService {
                                                 pw.getWorkout().getDescription(),
                                                 pw.getWorkout().getImagePath(),
                                                 pw.getReps(),
-                                                pw.getSets()
+                                                pw.getSets(),
+                                                pw.getId()
                                         ),Collectors.toList())
                             ));
 

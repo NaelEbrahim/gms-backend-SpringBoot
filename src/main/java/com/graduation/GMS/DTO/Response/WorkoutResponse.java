@@ -30,4 +30,20 @@ public class WorkoutResponse {
     private Integer reps;
 
     private Integer sets;
+
+    private Integer program_workout_id;
+
+    public WorkoutResponse(Integer id, String title, Float baseAvgCalories, String primaryMuscle, String secondaryMuscles, Float totalBurnedCalories, String description, String imagePath, Integer reps, Integer sets) {
+        this.id = id;
+        this.title = title;
+        this.baseAvgCalories = baseAvgCalories;
+        this.primaryMuscle = primaryMuscle;
+        this.secondaryMuscles = secondaryMuscles;
+        this.totalBurnedCalories = totalBurnedCalories;
+        this.description = description;
+        this.imagePath = imagePath;
+        this.reps = reps;
+        this.sets = sets;
+    }
+
 }

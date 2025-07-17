@@ -29,9 +29,10 @@ public class UserController {
     }
 
     @PutMapping("upload-profile-image")
-    public ResponseEntity<?> uploadUserProfileImage(@ModelAttribute ImageRequest request){
+    public ResponseEntity<?> uploadUserProfileImage(@ModelAttribute ImageRequest request) {
         return userService.uploadUserProfileImage(request);
     }
+
     @PutMapping("/updateProfile/{userId}")
     public ResponseEntity<?> updateUserProfile(@PathVariable Integer userId, @Valid @RequestBody UpdateProfileRequest profileRequest) {
         return userService.updateProfile(userId, profileRequest);
@@ -108,8 +109,29 @@ public class UserController {
     }
 
     @GetMapping("/qr")
-    public ResponseEntity<?> userQR(){
+    public ResponseEntity<?> userQR() {
         return userService.getUserQR();
     }
+
+    @PostMapping("/logProgress")
+    public ResponseEntity<?> addProgressInProgram(@Valid @RequestBody UserProgressRequest userProgressRequest) {
+        return userService.logUserProgressInProgram(userProgressRequest);
+    }
+
+    @GetMapping("/getProgressByRange")
+    public ResponseEntity<?> getProgressInProgramByRange(@Valid @RequestBody UserProgressRequest userProgressRequest) {
+        return userService.getUserProgressInProgram(userProgressRequest);
+    }
+
+    @DeleteMapping("/deleteProgress/{progressId}")
+    public ResponseEntity<?> deleteProgressInProgram(@PathVariable Integer progressId) {
+        return userService.deleteRecodedProgressInProgram(progressId);
+    }
+
+    @GetMapping("/getUserProgressDashboard")
+    public ResponseEntity<?> getUserProgressForDashboard(@Valid @RequestBody UserProgressRequest userProgressRequest) {
+        return userService.getUserProgressDashboard(userProgressRequest);
+    }
+
 
 }
