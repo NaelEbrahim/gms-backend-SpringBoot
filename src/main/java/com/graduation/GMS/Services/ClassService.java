@@ -54,7 +54,7 @@ public class ClassService {
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
-    public ResponseEntity<?> createClass(ClassRequest request) {
+    public ResponseEntity<?> createClass(CreateClassRequest request) {
         // Check if the class title already exists (optional validation)
         Optional<Class> existingClass = classRepository.findByName(request.getName());
         if (existingClass.isPresent()) {
@@ -75,6 +75,14 @@ public class ClassService {
         classEntity.setPrice(request.getPrice());
 
         // Save the class to the database
+        classRepository.save(classEntity);
+
+        String imagePath = FilesManagement.upload(request.getImage(), classEntity.getId(), "Classes");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+        classEntity.setImagePath(imagePath);
         classRepository.save(classEntity);
 
         // Create and send notification
@@ -144,6 +152,25 @@ public class ClassService {
                 .body(Map.of("message", "Class deleted successfully"));
     }
 
+    public ResponseEntity<?> uploadClassImage(ImageRequest request) {
+        Optional<Class> classOptional = classRepository.findById(request.getId());
+        if (classOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Class not found"));
+        }
+
+        String imagePath = FilesManagement.upload(request.getImage(), request.getId(), "classes");
+        if (imagePath == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Upload failed"));
+        }
+
+        classOptional.get().setImagePath(imagePath);
+        classRepository.save(classOptional.get());
+
+        return ResponseEntity.ok(Map.of("message", "Class image uploaded", "imageUrl", imagePath));
+    }
+
     public ResponseEntity<?> getClassById(Integer classId) {
         Optional<Class> classOptional = classRepository.findById(classId);
         if (classOptional.isEmpty()) {
@@ -175,6 +202,7 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
+                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 programResponses,
                 null,
@@ -240,6 +268,7 @@ public class ClassService {
                             classEntity.getId(),
                             classEntity.getName(),
                             classEntity.getDescription(),
+                            classEntity.getImagePath(),
                             classEntity.getPrice(),
                             programResponses,
                             null,
@@ -490,6 +519,7 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
+                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 null,
                 subscribers,
@@ -524,6 +554,7 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
+                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 null,
                 activeSubscribers,
@@ -556,6 +587,7 @@ public class ClassService {
                             classEntity.getId(),
                             classEntity.getName(),
                             classEntity.getDescription(),
+                            classEntity.getImagePath(),
                             classEntity.getPrice(),
                             null,
                             null,  // subscribers
@@ -618,6 +650,7 @@ public class ClassService {
                 classEntity.getId(),
                 classEntity.getName(),
                 classEntity.getDescription(),
+                classEntity.getImagePath(),
                 classEntity.getPrice(),
                 null,
                 null,

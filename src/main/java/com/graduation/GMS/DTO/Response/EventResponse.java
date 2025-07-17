@@ -23,6 +23,8 @@ public class EventResponse {
 
     private String description;
 
+    private String imagePath;
+
     private LocalDateTime startedAt;
 
     private LocalDateTime endedAt;

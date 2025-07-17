@@ -25,6 +25,9 @@ public class Class {
 
     private Float price;
 
+    @Column(nullable = true)
+    private String ImagePath;
+
     @ManyToOne
     @JoinColumn(name = "coach_id")
     private User auditCoach;

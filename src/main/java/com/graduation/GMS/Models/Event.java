@@ -25,6 +25,9 @@ public class Event {
 
     private String description;
 
+    @Column(nullable = true)
+    private String ImagePath;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startedAt;
 

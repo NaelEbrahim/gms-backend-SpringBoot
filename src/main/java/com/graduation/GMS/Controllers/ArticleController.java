@@ -5,6 +5,8 @@ import com.graduation.GMS.Models.Enums.Wiki;
 import com.graduation.GMS.Services.ArticleService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,19 +45,31 @@ public class ArticleController {
 
     // Endpoint to get all Articles
     @GetMapping("/show/all")
-    public ResponseEntity<?> getAllArticles(@RequestParam String wiki) {
+    public ResponseEntity<?> getAllArticles(
+            @RequestParam(required = false) String wiki,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
         if (wiki.equalsIgnoreCase("Health")) {
-            return articleService.getAllArticlesByWikiType(Wiki.Health);        }
+            return articleService.searchArticles(Wiki.Health, keyword, pageable);
+        }
         else if (wiki.equalsIgnoreCase("Sport")) {
-            return articleService.getAllArticlesByWikiType(Wiki.Sport);        }
+            return articleService.searchArticles(Wiki.Sport, keyword, pageable);
+        }
         else if (wiki.equalsIgnoreCase("Food")) {
-            return articleService.getAllArticlesByWikiType(Wiki.Food);        }
+            return articleService.searchArticles(Wiki.Food, keyword, pageable);
+        }
         else if (wiki.equalsIgnoreCase("Fitness")) {
-            return articleService.getAllArticlesByWikiType(Wiki.Fitness);        }
+            return articleService.searchArticles(Wiki.Fitness, keyword, pageable);
+        }
         else if (wiki.equalsIgnoreCase("Supplements")) {
-            return articleService.getAllArticlesByWikiType(Wiki.Supplements);        }
+            return articleService.searchArticles(Wiki.Supplements, keyword, pageable);
+        }
         else {
-            return articleService.getAllArticles();
+            return articleService.searchArticles(null, keyword, pageable);
         }
     }
 

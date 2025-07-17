@@ -14,6 +14,8 @@ import com.graduation.GMS.Repositories.NotificationRepository;
 import com.graduation.GMS.Repositories.UserRepository;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -143,15 +146,16 @@ public class ArticleService {
     }
 
 
-    public ResponseEntity<?> getAllArticles() {
-        List<Article> articles = articleRepository.findAll();
+    public ResponseEntity<?> searchArticles(Wiki wikiParam, String keyword, Pageable pageable) {
 
-        if (articles.isEmpty()) {
+        Page<Article> articlesPage = articleRepository.searchArticlesByWikiAndKeyword(wikiParam, keyword, pageable);
+
+        if (articlesPage.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "No Articles found"));
         }
 
-        List<ArticleResponse> articleResponses = articles.stream()
+        List<ArticleResponse> articleResponses = articlesPage.stream()
                 .map(article -> new ArticleResponse(
                         article.getId(),
                         mapToUserResponse(article.getAdmin()),
@@ -160,34 +164,17 @@ public class ArticleService {
                         article.getWikiType(),
                         article.getCreatedAt(),
                         article.getLastModifiedAt()
-                ))
-                .toList();
+                )).toList();
 
-        return ResponseEntity.status(HttpStatus.OK).body(articleResponses);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("count", articlesPage.getTotalElements());
+        response.put("totalPages", articlesPage.getTotalPages());
+        response.put("currentPage", articlesPage.getNumber());
+        response.put("articles", articleResponses);
+
+
+        return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<?> getAllArticlesByWikiType(Wiki type) {
-        List<Article> articles = articleRepository.findByWikiType(type);
-
-        if (articles.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No Articles found"));
-        }
-
-        List<ArticleResponse> articleResponses = articles.stream()
-                .map(c -> new ArticleResponse(
-                        c.getId(),
-                        mapToUserResponse(c.getAdmin()),
-                        c.getTitle(),
-                        c.getContent(),
-                        c.getWikiType(),
-                        c.getCreatedAt(),
-                        c.getLastModifiedAt()
-                ))
-                .toList();
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(articleResponses);
-    }
 
 }

@@ -16,7 +16,6 @@ import lombok.Setter;
 public class ArticleRequest {
 
     @NotBlank(message = "title is required")
-    @Size(max = 100, message = "Title name must not exceed 100 characters")
     private String title;
 
     @NotBlank(message = "content is required")
