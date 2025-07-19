@@ -225,7 +225,7 @@ public class UserService {
         response.put("count", usersPage.getTotalElements());
         response.put("totalPages", usersPage.getTotalPages());
         response.put("currentPage", usersPage.getNumber());
-        response.put("articles", userResponses);
+        response.put("users", userResponses);
 
         return ResponseEntity.ok(response);
     }
