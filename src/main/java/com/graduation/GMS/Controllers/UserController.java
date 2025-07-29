@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/user")
@@ -145,6 +147,11 @@ public class UserController {
     @GetMapping("/getUserProgressDashboard")
     public ResponseEntity<?> getUserProgressForDashboard(@Valid @RequestBody UserProgressRequest userProgressRequest) {
         return userService.getUserProgressDashboard(userProgressRequest);
+    }
+
+    @PostMapping("/saveFcmToken")
+    public ResponseEntity<?> saveFcmToken(@RequestBody Map<String, String> body) {
+        return userService.saveUserFcmToken(body.get("fcmToken"));
     }
 
 }

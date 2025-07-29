@@ -56,6 +56,8 @@ public class User {
     @Column(unique = true, nullable = false, length = 512)
     private String qr;
 
+    private String FcmToken;
+
     // Relations
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

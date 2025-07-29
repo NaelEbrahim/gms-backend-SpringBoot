@@ -771,5 +771,15 @@ public class UserService {
                 .body(Map.of("message", "recorded health info deleted"));
     }
 
+    public ResponseEntity<?> saveUserFcmToken(String token) {
+        var user = HandleCurrentUserSession.getCurrentUser();
+        if (token == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "FCM is null"));
+        user.setFcmToken(token);
+        userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "FCM token saved successfully"));
+    }
 
 }
