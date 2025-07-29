@@ -8,11 +8,8 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 
 @RestController
@@ -105,14 +102,19 @@ public class UserController {
 
     // --- Health Info APIs ---
 
-    @PostMapping("/healthInfo")
-    public ResponseEntity<?> createOrUpdateHealthInfo(@Valid @RequestBody HealthInfoRequest request) {
-        return userService.createOrUpdateHealthInfo(request);
+    @PostMapping("/logHealthInfo")
+    public ResponseEntity<?> logHealthInfo(@Valid @RequestBody HealthInfoRequest request) {
+        return userService.logHealthInfo(request);
     }
 
-    @GetMapping("/healthInfo/history/{userId}")
-    public ResponseEntity<?> getHealthInfoHistory(@PathVariable Integer userId) {
-        return userService.getHealthInfoHistory(userId);
+    @GetMapping("/getHealthInfoByRange")
+    public ResponseEntity<?> getHealthInfoHistory(@Valid @RequestBody HealthInfoRequest request) {
+        return userService.getUserHealthInfo(request);
+    }
+
+    @DeleteMapping("/deleteHealthInfo/{healthInfoId}")
+    public ResponseEntity<?> deleteUserHealthInfo(@PathVariable Integer healthInfoId) {
+        return userService.deleteHealthInfo(healthInfoId);
     }
 
     @GetMapping("/profile")

@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -19,14 +19,18 @@ public class HealthInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime recordedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate recordedAt;
 
     private Float weightKg;
 
     private Float heightCm;
 
-    private Float improvementPercentage;
+    private Float waistCircumference;
+
+    private Float armCircumference;
+
+    private Float thighCircumference;
 
     private String notes;
 

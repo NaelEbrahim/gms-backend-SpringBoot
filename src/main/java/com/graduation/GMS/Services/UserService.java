@@ -12,6 +12,7 @@ import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Services.GeneralServices.JwtService;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
+import com.graduation.GMS.Tools.BMI_Calculator;
 import com.graduation.GMS.Tools.FilesManagement;
 import com.graduation.GMS.Tools.Generators;
 import jakarta.servlet.http.Cookie;
@@ -518,65 +519,6 @@ public class UserService {
         return ResponseEntity.ok(response);
     }
 
-    @Transactional
-    @PreAuthorize("hasAnyAuthority('User','Coach')")
-    public ResponseEntity<?> createOrUpdateHealthInfo(HealthInfoRequest request) {
-        Optional<User> userOpt = userRepository.findById(request.getUserId());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "User not found"));
-        }
-        User user = userOpt.get();
-        HealthInfo healthInfo = new HealthInfo();
-        if (request.getWeightKg() != null && request.getWeightKg() > 0) {
-            healthInfo.setWeightKg(request.getWeightKg());
-        }
-        healthInfo.setUser(user);
-        if (request.getHeightCm() != null && request.getHeightCm() > 0) {
-            healthInfo.setHeightCm(request.getHeightCm());
-        }
-        if (request.getImprovementPercentage() != null && request.getImprovementPercentage() > 0) {
-            healthInfo.setImprovementPercentage(request.getImprovementPercentage());
-        }
-        if (!request.getNotes().isEmpty()) {
-            healthInfo.setNotes(request.getNotes());
-        }
-        healthInfo.setRecordedAt(LocalDateTime.now());
-
-        healthInfoRepository.save(healthInfo);
-
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("message", "Health info saved successfully"));
-    }
-
-    @PreAuthorize("hasAnyAuthority('User','Coach')")
-    public ResponseEntity<?> getHealthInfoHistory(Integer userId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "User not found"));
-        }
-
-        User user = userOpt.get();
-
-        List<HealthInfo> history = healthInfoRepository.findByUserOrderByRecordedAtDesc(user);
-
-        // Map HealthInfo to DTOs
-        List<HealthInfoResponse> healthInfoDTOs = history.stream()
-                .map(HealthInfoResponse::fromEntity)
-                .toList();
-
-        UserResponse userResponse = UserResponse.mapToUserResponse(user);
-
-        Map<String, Object> response = Map.of(
-                "user", userResponse,
-                "healthInfoHistory", healthInfoDTOs
-        );
-
-        return ResponseEntity.ok(response);
-    }
-
     public ResponseEntity<?> getUserProfile() {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", ProfileResponse.mapToProfileResponse(HandleCurrentUserSession.getCurrentUser())));
@@ -587,6 +529,7 @@ public class UserService {
                 .body(Map.of("message", HandleCurrentUserSession.getCurrentUser().getQr()));
     }
 
+    @Transactional
     public ResponseEntity<?> uploadUserProfileImage(ImageRequest request) {
         Optional<User> user = userRepository.findById(request.getId());
         if (user.isEmpty()) {
@@ -610,9 +553,10 @@ public class UserService {
         return ResponseEntity.ok(Map.of("message", "Profile image uploaded", "imageUrl", imagePath));
     }
 
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> logUserProgressInProgram(UserProgressRequest userProgressRequest) {
         var user = HandleCurrentUserSession.getCurrentUser();
-        System.out.println(userProgressRequest.getWeight());
         var programWorkout = programWorkoutRepository.findById(userProgressRequest.getProgram_workout_id()).orElse(null);
         if (programWorkout == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -632,6 +576,7 @@ public class UserService {
                 .body(Map.of("message", "progress recorded successfully"));
     }
 
+    @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> getUserProgressInProgram(UserProgressRequest userProgressRequest) {
         var user = HandleCurrentUserSession.getCurrentUser();
         var programWorkout = programWorkoutRepository.findById(userProgressRequest.getProgram_workout_id()).orElse(null);
@@ -653,6 +598,8 @@ public class UserService {
         return ResponseEntity.ok(buildProgressResponse(userProgress));
     }
 
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> deleteRecodedProgressInProgram(Integer userProgressId) {
         var userProgress = userProgressRepository.findById(userProgressId).orElse(null);
         if (userProgress == null)
@@ -710,6 +657,118 @@ public class UserService {
             response.add(element);
         }
         return response;
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> logHealthInfo(HealthInfoRequest healthInfoRequest) {
+        var user = HandleCurrentUserSession.getCurrentUser();
+        var previousInfo = healthInfoRepository.findTopByUserIdOrderByRecordedAtDesc(user.getId()).orElse(null);
+
+        if (previousInfo == null)
+            return logHealthInfoFirstTime(healthInfoRequest);
+
+        var newHealthInfo = new HealthInfo();
+
+        newHealthInfo.setUser(user);
+        newHealthInfo.setRecordedAt(LocalDate.now());
+
+        // Use previous values if current request is null
+        newHealthInfo.setHeightCm(
+                healthInfoRequest.getHeightCm() != null ? healthInfoRequest.getHeightCm() : previousInfo.getHeightCm()
+        );
+        newHealthInfo.setWeightKg(
+                healthInfoRequest.getWeightKg() != null ? healthInfoRequest.getWeightKg() : previousInfo.getWeightKg()
+        );
+        newHealthInfo.setArmCircumference(
+                healthInfoRequest.getArmCircumference() != null ? healthInfoRequest.getArmCircumference() : previousInfo.getArmCircumference()
+        );
+        newHealthInfo.setThighCircumference(
+                healthInfoRequest.getThighCircumference() != null ? healthInfoRequest.getThighCircumference() : previousInfo.getThighCircumference()
+        );
+        newHealthInfo.setWaistCircumference(
+                healthInfoRequest.getWaistCircumference() != null ? healthInfoRequest.getWaistCircumference() : previousInfo.getWaistCircumference()
+        );
+        if (healthInfoRequest.getNotes() != null)
+            newHealthInfo.setNotes(healthInfoRequest.getNotes());
+
+        healthInfoRepository.save(newHealthInfo);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "health info recorded successfully"));
+    }
+
+    @Transactional
+    private ResponseEntity<?> logHealthInfoFirstTime(HealthInfoRequest healthInfoRequest) {
+        var newHealthInfo = new HealthInfo();
+        if (healthInfoRequest.getHeightCm() == null || healthInfoRequest.getWeightKg() == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "height and weight must not be null for the first time"));
+        newHealthInfo.setHeightCm(healthInfoRequest.getHeightCm());
+        newHealthInfo.setWeightKg(healthInfoRequest.getWeightKg());
+        if (healthInfoRequest.getArmCircumference() != null)
+            newHealthInfo.setArmCircumference(healthInfoRequest.getArmCircumference());
+        if (healthInfoRequest.getThighCircumference() != null)
+            newHealthInfo.setThighCircumference(healthInfoRequest.getThighCircumference());
+        if (healthInfoRequest.getWaistCircumference() != null)
+            newHealthInfo.setWaistCircumference(healthInfoRequest.getWaistCircumference());
+        if (healthInfoRequest.getNotes() != null)
+            newHealthInfo.setNotes(healthInfoRequest.getNotes());
+        newHealthInfo.setRecordedAt(LocalDate.now());
+        newHealthInfo.setUser(HandleCurrentUserSession.getCurrentUser());
+        healthInfoRepository.save(newHealthInfo);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "health info recorded successfully"));
+    }
+
+    public ResponseEntity<?> getUserHealthInfo(HealthInfoRequest healthInfoRequest) {
+        var user = userRepository.findById(healthInfoRequest.getUserId()).orElse(null);
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "user not found"));
+        LocalDate startDate = healthInfoRequest.getStartDate();
+        LocalDate endDate = healthInfoRequest.getEndDate();
+        if (startDate == null || endDate == null) {
+            endDate = LocalDate.now();
+            startDate = endDate.minusDays(30);
+        }
+        var userHealthInfo = healthInfoRepository.findByUserIdAndRecordedAtBetween(
+                user.getId(),
+                startDate,
+                endDate
+        );
+        return ResponseEntity.ok(buildHealthInfoResponse(userHealthInfo));
+    }
+
+    private List<HealthInfoResponse> buildHealthInfoResponse(List<HealthInfo> healthInfoList) {
+        List<HealthInfoResponse> response = new ArrayList<>();
+        for (HealthInfo item : healthInfoList) {
+            HealthInfoResponse element = new HealthInfoResponse();
+            element.setId(item.getId());
+            element.setHeightCm(item.getHeightCm());
+            element.setWeightKg(item.getWeightKg());
+            element.setArmCircumference(item.getArmCircumference());
+            element.setWaistCircumference(item.getWaistCircumference());
+            element.setThighCircumference(item.getThighCircumference());
+            element.setBMI(BMI_Calculator.calculateBMI(item.getWeightKg(), item.getHeightCm()));
+            element.setStatus(BMI_Calculator.calculateBMIStatus(item.getWeightKg(), item.getHeightCm()));
+            element.setRecordedAt(item.getRecordedAt());
+            element.setNotes(item.getNotes());
+            response.add(element);
+        }
+        return response;
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> deleteHealthInfo(Integer healthInfoId) {
+        var userHealthInfo = healthInfoRepository.findById(healthInfoId).orElse(null);
+        if (userHealthInfo == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "health info found"));
+        healthInfoRepository.deleteById(userHealthInfo.getId());
+        healthInfoRepository.flush();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "recorded health info deleted"));
     }
 
 
