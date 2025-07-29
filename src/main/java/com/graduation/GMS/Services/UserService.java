@@ -197,6 +197,7 @@ public class UserService {
     public ResponseEntity<?> logout() {
         var user = HandleCurrentUserSession.getCurrentUser();
         if (user != null) {
+            user.setFcmToken(null);
             invalidateUserToken(user.getId());
             SecurityContextHolder.clearContext();
             return ResponseEntity.status(HttpStatus.OK)

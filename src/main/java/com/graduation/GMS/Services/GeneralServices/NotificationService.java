@@ -28,29 +28,33 @@ public class NotificationService {
     private final User_NotificationRepository userNotificationRepository;
 
     public void sendNotification(User user, Notification notification) {
-        log.info("Sending Firebase notification to user {} with payload {}", user.getId(), notification);
-
-        sendFirebaseMessage(user.getFcmToken(), notification);
-
-        User_Notification user_notification = new User_Notification();
-        user_notification.setUser(user);
-        user_notification.setNotification(notification);
-        user_notification.setSendAt(LocalDateTime.now());
-        userNotificationRepository.save(user_notification);
-    }
-
-    public void sendNotificationToUsers(List<User> users, Notification notification) {
-        for (User user : users) {
+        if (user.getFcmToken() != null) {
             log.info("Sending Firebase notification to user {} with payload {}", user.getId(), notification);
 
             sendFirebaseMessage(user.getFcmToken(), notification);
 
-            User_Notification userNotification = new User_Notification();
-            userNotification.setUser(user);
-            userNotification.setNotification(notification);
-            userNotification.setSendAt(LocalDateTime.now());
+            User_Notification user_notification = new User_Notification();
+            user_notification.setUser(user);
+            user_notification.setNotification(notification);
+            user_notification.setSendAt(LocalDateTime.now());
+            userNotificationRepository.save(user_notification);
+        }
+    }
 
-            userNotificationRepository.save(userNotification);
+    public void sendNotificationToUsers(List<User> users, Notification notification) {
+        for (User user : users) {
+            if (user.getFcmToken() != null) {
+                log.info("Sending Firebase notification to user {} with payload {}", user.getId(), notification);
+
+                sendFirebaseMessage(user.getFcmToken(), notification);
+
+                User_Notification userNotification = new User_Notification();
+                userNotification.setUser(user);
+                userNotification.setNotification(notification);
+                userNotification.setSendAt(LocalDateTime.now());
+
+                userNotificationRepository.save(userNotification);
+            }
         }
     }
 
