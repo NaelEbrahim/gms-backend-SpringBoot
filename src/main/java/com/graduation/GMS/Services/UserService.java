@@ -699,7 +699,7 @@ public class UserService {
     }
 
     @Transactional
-    private ResponseEntity<?> logHealthInfoFirstTime(HealthInfoRequest healthInfoRequest) {
+    public ResponseEntity<?> logHealthInfoFirstTime(HealthInfoRequest healthInfoRequest) {
         var newHealthInfo = new HealthInfo();
         if (healthInfoRequest.getHeightCm() == null || healthInfoRequest.getWeightKg() == null)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
