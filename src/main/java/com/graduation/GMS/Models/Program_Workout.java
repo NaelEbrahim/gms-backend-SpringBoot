@@ -24,10 +24,6 @@ public class Program_Workout {
 
     private Integer sets;
 
-    private Float startingWeight;
-
-    private Integer startingDuration;
-
     @Enumerated(EnumType.STRING)
     private Day day;
 
