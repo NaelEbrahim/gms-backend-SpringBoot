@@ -124,8 +124,8 @@ public class UserService {
             // Tokens
             invalidateUserToken(user.getId());
             String accessToken = jwtService.generateAccessToken(user, userRoles);
-            authTokenRepository.save(AuthToken.builder().user(user).accessToken(accessToken).build());
             String refreshToken = jwtService.generateRefreshToken(user);
+            authTokenRepository.save(AuthToken.builder().user(user).accessToken(accessToken).refreshToken(refreshToken).build());
             var cookie = new Cookie("refreshToken", refreshToken);
             cookie.setSecure(true);
             cookie.setHttpOnly(true);
@@ -139,6 +139,33 @@ public class UserService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "invalid username or password"));
     }
+
+    @Transactional
+    public ResponseEntity<?> refreshAccessToken(String refreshToken) {
+        if (refreshToken == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Refresh token missing"));
+        System.out.println(refreshToken);
+        try {
+            String userEmail = jwtService.getEmailFromToken(refreshToken);
+            var user = userRepository.findByEmail(userEmail).orElse(null);
+            if (user == null || !jwtService.validateToken(refreshToken))
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid refresh token"));
+            //Fetch User Roles
+            var ur = userRoleRepository.findByUserId(user.getId());
+            List<Roles> userRoles = new ArrayList<>();
+            for (User_Role element : ur)
+                userRoles.add(element.getRole().getRoleName());
+            invalidateUserToken(user.getId());
+            // Generate new access token
+            String newAccessToken = jwtService.generateAccessToken(user, userRoles);
+            authTokenRepository.save(AuthToken.builder().user(user).accessToken(newAccessToken).build());
+
+            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
+        }
+    }
+
 
     @Transactional
     public ResponseEntity<?> updateProfile(Integer userId, UpdateProfileRequest userRequest) {
@@ -208,7 +235,7 @@ public class UserService {
     }
 
     @Transactional
-    public void invalidateUserToken(Integer userId) {
+    private void invalidateUserToken(Integer userId) {
         authTokenRepository.deleteByUserId(userId);
         authTokenRepository.flush();
     }

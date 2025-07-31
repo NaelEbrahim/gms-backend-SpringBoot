@@ -38,7 +38,6 @@ public class JwtService {
     }
 
     private String generateJwt(User user, Integer expirationTime, Map<String, Object> claims) {
-        System.out.println(user.getId().toString());
         return Jwts.builder()
                 .claims(claims)
                 .subject(user.getEmail())

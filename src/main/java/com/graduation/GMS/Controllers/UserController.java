@@ -27,6 +27,11 @@ public class UserController {
         return userService.userLogin(loginRequest, response);
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshAccessToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+        return userService.refreshAccessToken(refreshToken);
+    }
+
     @PostMapping("/createUser")
     public ResponseEntity<?> createUser(@Valid @RequestBody UserRequest userRequest) throws Exception {
         return userService.createUser(userRequest);
