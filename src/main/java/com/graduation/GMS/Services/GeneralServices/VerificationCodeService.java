@@ -22,9 +22,10 @@ public class VerificationCodeService {
 
     public void sendVerificationCode(String email, String userFirstName, String userLastName) {
         String code = generateRandomCode();
+        CodeEntry entry = new CodeEntry(code, LocalDateTime.now());
         Cache cache = cacheManager.getCache("passwordResetCodes");
         if (cache != null) {
-            cache.put(email, code);
+            cache.put(email, entry);
         }
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
@@ -36,8 +37,13 @@ public class VerificationCodeService {
 
     public boolean verifyCode(String email, String code) {
         Cache cache = cacheManager.getCache("passwordResetCodes");
-        String storedCode = cache != null ? cache.get(email, String.class) : null;
-        return code != null && code.equals(storedCode);
+        CodeEntry entry = cache != null ? cache.get(email, CodeEntry.class) : null;
+        if (entry == null) return false;
+        boolean isCodeValid = code != null && code.equals(entry.code());
+        boolean isNotExpired = entry.generatedAt().plusMinutes(10).isAfter(LocalDateTime.now());
+        if (!isNotExpired)
+            clearCode(email);
+        return isCodeValid && isNotExpired;
     }
 
     public void clearCode(String email) {
@@ -49,6 +55,9 @@ public class VerificationCodeService {
     private String generateRandomCode() {
         SecureRandom random = new SecureRandom();
         return String.valueOf(100000 + random.nextInt(900000));
+    }
+
+    private record CodeEntry(String code, LocalDateTime generatedAt) {
     }
 
 }
