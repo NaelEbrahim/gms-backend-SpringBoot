@@ -10,16 +10,17 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class LoginRequest {
+public class ForgetPasswordRequest {
 
-    @NotBlank(message = "email is required")
-    @Email(message = "invalid email format", regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$")
+    @Email(message = "Invalid email format", regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$")
     private String email;
 
-    @NotBlank(message = "password is required")
+    @Size(min = 6, max = 6, message = "verification code must be 6-digit")
+    private String code;
+
     @Size(min = 8, message = "must be at least 8 characters")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$&*])\\S{8}$",
             message = "password must contain 1 digit, 1 uppercase, 1 lowercase, and 1 special character")
-    private String password;
+    private String newPassword;
 
 }

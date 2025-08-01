@@ -12,6 +12,7 @@ import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Services.GeneralServices.JwtService;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
+import com.graduation.GMS.Services.GeneralServices.VerificationCodeService;
 import com.graduation.GMS.Tools.BMI_Calculator;
 import com.graduation.GMS.Tools.FilesManagement;
 import com.graduation.GMS.Tools.Generators;
@@ -68,6 +69,8 @@ public class UserService {
     private final ProgramRepository programRepository;
 
     private final WorkoutRepository workoutRepository;
+
+    private final VerificationCodeService verificationCodeService;
 
 
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
@@ -148,8 +151,10 @@ public class UserService {
         try {
             String userEmail = jwtService.getEmailFromToken(refreshToken);
             var user = userRepository.findByEmail(userEmail).orElse(null);
-            if (user == null || !jwtService.validateToken(refreshToken))
+            if (user == null || !jwtService.validateToken(refreshToken)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid refresh token"));
+            }
+
             //Fetch User Roles
             var ur = userRoleRepository.findByUserId(user.getId());
             List<Roles> userRoles = new ArrayList<>();
@@ -808,6 +813,41 @@ public class UserService {
         userRepository.save(user);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "FCM token saved successfully"));
+    }
+
+    public ResponseEntity<?> forgotPassword(ForgetPasswordRequest request) {
+        var user = userRepository.findByEmail(request.getEmail()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "email not found"));
+        }
+        verificationCodeService.sendVerificationCode(request.getEmail(), user.getFirstName(), user.getLastName());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "verification code sent to your email"));
+    }
+
+    public ResponseEntity<?> verifyResetCode(ForgetPasswordRequest request) {
+        boolean isValid = verificationCodeService.verifyCode(request.getEmail(), request.getCode());
+        if (isValid) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(Map.of("message", "code verified"));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "invalid code"));
+        }
+    }
+
+    public ResponseEntity<?> resetForgotPassword(ForgetPasswordRequest request) {
+        var user = userRepository.findByEmail(request.getEmail());
+        if (user.isPresent() && request.getNewPassword() != null) {
+            user.get().setPassword(securityConfig.passwordEncoder().encode(request.getNewPassword()));
+            userRepository.save(user.get());
+            verificationCodeService.clearCode(request.getEmail());
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(Map.of("message", "password reset successfully"));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "user not found or new password is invalid"));
     }
 
 }

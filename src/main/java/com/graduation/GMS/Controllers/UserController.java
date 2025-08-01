@@ -159,4 +159,19 @@ public class UserController {
         return userService.saveUserFcmToken(body.get("fcmToken"));
     }
 
+    @PostMapping("/forgotPassword")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgetPasswordRequest request) {
+        return userService.forgotPassword(request);
+    }
+
+    @PostMapping("/verifyResetCode")
+    public ResponseEntity<?> verifyResetCode(@Valid @RequestBody ForgetPasswordRequest request) {
+        return userService.verifyResetCode(request);
+    }
+
+    @PutMapping("/resetForgotPassword")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ForgetPasswordRequest request) {
+        return userService.resetForgotPassword(request);
+    }
+
 }
