@@ -16,8 +16,6 @@ import com.graduation.GMS.Services.GeneralServices.VerificationCodeService;
 import com.graduation.GMS.Tools.BMI_Calculator;
 import com.graduation.GMS.Tools.FilesManagement;
 import com.graduation.GMS.Tools.Generators;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
