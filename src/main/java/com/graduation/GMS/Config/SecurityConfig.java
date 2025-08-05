@@ -36,8 +36,7 @@ public class SecurityConfig {
                                 "/api/user/verifyResetCode",
                                 "/api/user/resetForgotPassword",
                                 "/images/**",
-                                "/chats/**",
-                                "/websocket/**"
+                                "/chats/**"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))

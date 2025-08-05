@@ -40,16 +40,19 @@ public class ProfileResponse {
 
     private String accessToken;
 
+    private String refreshToken;
 
-    public ProfileResponse(User user, String password, String accessToken) {
+
+    public ProfileResponse(User user, String refreshToken, String accessToken) {
         this(user.getId(), user.getFirstName(), user.getLastName(),
-                user.getEmail(),user.getProfileImagePath(), user.getPhoneNumber(), user.getGender(), user.getDob(),
+                user.getEmail(), user.getProfileImagePath(), user.getPhoneNumber(), user.getGender(), user.getDob(),
                 user.getCreatedAt(), user.getQr());
         this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
     }
 
     public ProfileResponse(Integer id, String firstName, String lastName,
-                           String email,String profileImagePath,
+                           String email, String profileImagePath,
                            String phoneNumber, Gender gender,
                            LocalDate dob, LocalDateTime createdAt, String qr) {
         this.id = id;

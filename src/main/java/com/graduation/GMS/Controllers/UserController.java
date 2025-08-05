@@ -23,13 +23,13 @@ public class UserController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
-        return userService.userLogin(loginRequest, response);
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+        return userService.userLogin(loginRequest);
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshAccessToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
-        return userService.refreshAccessToken(refreshToken);
+    public ResponseEntity<?> refreshAccessToken(@RequestBody Map<String, String> body) {
+        return userService.refreshAccessToken(body.get("refreshToken"));
     }
 
     @PostMapping("/createUser")

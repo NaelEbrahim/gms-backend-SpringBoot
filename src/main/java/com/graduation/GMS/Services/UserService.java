@@ -116,7 +116,7 @@ public class UserService {
     }
 
     @Transactional
-    public ResponseEntity<?> userLogin(LoginRequest loginRequest, HttpServletResponse response) {
+    public ResponseEntity<?> userLogin(LoginRequest loginRequest) {
         var user = userRepository.findByEmail(loginRequest.getEmail()).orElse(null);
         if (user != null && securityConfig.passwordEncoder().matches(loginRequest.getPassword(), user.getPassword())) {
             //Fetch User Roles
@@ -129,13 +129,7 @@ public class UserService {
             String accessToken = jwtService.generateAccessToken(user, userRoles);
             String refreshToken = jwtService.generateRefreshToken(user);
             authTokenRepository.save(AuthToken.builder().user(user).accessToken(accessToken).refreshToken(refreshToken).build());
-            var cookie = new Cookie("refreshToken", refreshToken);
-            cookie.setSecure(true);
-            cookie.setHttpOnly(true);
-            cookie.setMaxAge(259200);
-            cookie.setPath("/auth/refresh");
-            response.addCookie(cookie);
-            ProfileResponse userResponse = new ProfileResponse(user, null, accessToken);
+            ProfileResponse userResponse = new ProfileResponse(user, refreshToken, accessToken);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("message", userResponse));
         } else
@@ -145,32 +139,29 @@ public class UserService {
 
     @Transactional
     public ResponseEntity<?> refreshAccessToken(String refreshToken) {
-        if (refreshToken == null)
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Refresh token missing"));
-        System.out.println(refreshToken);
-        try {
-            String userEmail = jwtService.getEmailFromToken(refreshToken);
-            var user = userRepository.findByEmail(userEmail).orElse(null);
-            if (user == null || !jwtService.validateToken(refreshToken)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid refresh token"));
+        if (refreshToken != null && authTokenRepository.findByRefreshToken(refreshToken).isPresent() && jwtService.validateToken(refreshToken)) {
+            try {
+                String userId = jwtService.extractId(refreshToken);
+                var user = userRepository.findById(Integer.parseInt(userId)).orElse(null);
+                if (user == null)
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid refresh token"));
+                //Fetch User Roles
+                var ur = userRoleRepository.findByUserId(user.getId());
+                List<Roles> userRoles = new ArrayList<>();
+                for (User_Role element : ur)
+                    userRoles.add(element.getRole().getRoleName());
+                invalidateUserToken(user.getId());
+                // Generate new access token
+                String newAccessToken = jwtService.generateAccessToken(user, userRoles);
+                authTokenRepository.save(AuthToken.builder().user(user).accessToken(newAccessToken).refreshToken(refreshToken).build());
+                return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
             }
-
-            //Fetch User Roles
-            var ur = userRoleRepository.findByUserId(user.getId());
-            List<Roles> userRoles = new ArrayList<>();
-            for (User_Role element : ur)
-                userRoles.add(element.getRole().getRoleName());
-            invalidateUserToken(user.getId());
-            // Generate new access token
-            String newAccessToken = jwtService.generateAccessToken(user, userRoles);
-            authTokenRepository.save(AuthToken.builder().user(user).accessToken(newAccessToken).build());
-
-            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid Refresh token"));
         }
     }
-
 
     @Transactional
     public ResponseEntity<?> updateProfile(Integer userId, UpdateProfileRequest userRequest) {
@@ -187,9 +178,10 @@ public class UserService {
         if (userRequest.getEmail() != null && !userRequest.getEmail().equals(user.getEmail())) {
             if (userRepository.findByEmail(userRequest.getEmail()).isPresent())
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message:", "email already exist"));
-            user.setEmail(userRequest.getEmail());
             try {
+                user.setEmail(userRequest.getEmail());
                 user.setQr(Generators.generateQRCode(userRequest.getEmail()));
+                userRepository.save(user);
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of("message:", e.getMessage()));

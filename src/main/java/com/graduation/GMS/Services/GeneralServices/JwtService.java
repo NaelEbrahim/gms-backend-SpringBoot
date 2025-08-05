@@ -34,7 +34,9 @@ public class JwtService {
     }
 
     public String generateRefreshToken(User user) {
-        return generateJwt(user, jwtConfig.getRefreshTokenExpiration(), null);
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", user.getId().toString());
+        return generateJwt(user, jwtConfig.getRefreshTokenExpiration(), claims);
     }
 
     private String generateJwt(User user, Integer expirationTime, Map<String, Object> claims) {
