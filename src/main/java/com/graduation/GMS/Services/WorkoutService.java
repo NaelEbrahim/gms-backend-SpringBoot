@@ -137,6 +137,7 @@ public class WorkoutService {
                 workout.getDescription(),
                 workout.getImagePath(),
                 0,
+                0,
                 0
         );
 
@@ -175,6 +176,7 @@ public class WorkoutService {
                         w.getAvg_calories(),
                         w.getDescription(),
                         w.getImagePath(),
+                        0,
                         0,
                         0
                 ))
@@ -255,6 +257,7 @@ public class WorkoutService {
                             w.getAvg_calories(),
                             w.getDescription(),
                             w.getImagePath(),
+                            0,
                             0,
                             0
                     );

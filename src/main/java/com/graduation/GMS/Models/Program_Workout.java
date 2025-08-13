@@ -22,7 +22,11 @@ public class Program_Workout {
 
     private Integer reps;
 
-    private Integer sets;
+    @Column(nullable = false)
+    private Integer sets = 1;
+
+    @Column(nullable = false)
+    private Integer duration = 1;
 
     @Enumerated(EnumType.STRING)
     private Day day;

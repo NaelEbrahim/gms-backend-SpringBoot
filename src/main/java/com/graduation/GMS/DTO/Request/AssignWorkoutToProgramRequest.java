@@ -19,4 +19,6 @@ public class AssignWorkoutToProgramRequest {
     private Integer reps;
 
     private Integer sets;
+
+    private Integer duration;
 }

@@ -4,7 +4,6 @@ import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Enums.Day;
-import com.graduation.GMS.Models.Enums.MealTime;
 import com.graduation.GMS.Models.Enums.Muscle;
 import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.*;
@@ -21,7 +20,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
 
 @Service
 @AllArgsConstructor
@@ -176,7 +174,7 @@ public class ProgramService {
         return ResponseEntity.status(HttpStatus.OK).body(programResponses);
     }
 
-    private  Float calculateRate(int programId) {
+    private Float calculateRate(int programId) {
         // First check if the program exists
         Optional<Program> programOptional = programRepository.findById(programId);
         if (programOptional.isEmpty()) {
@@ -220,7 +218,7 @@ public class ProgramService {
         Workout workout = workoutOptional.get();
 
         // Check if already assigned
-        Optional<Program_Workout> exists = programWorkoutRepository.findByProgramAndWorkoutAndDay(program, workout,request.getDay());
+        Optional<Program_Workout> exists = programWorkoutRepository.findByProgramAndWorkoutAndDay(program, workout, request.getDay());
         if (exists.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Workout is already assigned to this program"));
@@ -233,13 +231,17 @@ public class ProgramService {
         programWorkout.setDay(request.getDay());
         programWorkout.setMuscle(workout.getPrimary_muscle());
         programWorkout.setReps(request.getReps());
-        programWorkout.setSets(request.getSets());
+        if (request.getSets() != null)
+            programWorkout.setSets(request.getSets());
+        if (request.getDuration() != null)
+            programWorkout.setDuration(request.getDuration());
 
         programWorkoutRepository.save(programWorkout);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Workout successfully assigned to program"));
     }
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> updateAssignedWorkoutToProgram(AssignWorkoutToProgramRequest request) {
@@ -277,6 +279,10 @@ public class ProgramService {
 
         if (request.getReps() != null && !request.getReps().equals(pw.getReps())) {
             pw.setReps(request.getReps());
+        }
+
+        if (request.getDuration() != null && !request.getDuration().equals(pw.getDuration())) {
+            pw.setReps(request.getDuration());
         }
 
         programWorkoutRepository.save(pw);
@@ -604,18 +610,19 @@ public class ProgramService {
                             .collect(Collectors.groupingBy(
                                     Program_Workout::getMuscle,
                                     Collectors.mapping(pw -> new WorkoutResponse(
-                                                pw.getWorkout().getId(),
-                                                pw.getWorkout().getTitle(),
-                                                pw.getWorkout().getAvg_calories(),
-                                                pw.getWorkout().getPrimary_muscle().name(),
-                                                String.join(", ", pw.getWorkout().getSecondary_muscles().name()),
-                                                pw.getWorkout().getAvg_calories() * pw.getSets(),
-                                                pw.getWorkout().getDescription(),
-                                                pw.getWorkout().getImagePath(),
-                                                pw.getReps(),
-                                                pw.getSets(),
-                                                pw.getId()
-                                        ),Collectors.toList())
+                                            pw.getWorkout().getId(),
+                                            pw.getWorkout().getTitle(),
+                                            pw.getWorkout().getAvg_calories(),
+                                            pw.getWorkout().getPrimary_muscle().name(),
+                                            String.join(", ", pw.getWorkout().getSecondary_muscles() != null ? pw.getWorkout().getSecondary_muscles().name() : null),
+                                            pw.getWorkout().getAvg_calories() * pw.getSets() * pw.getDuration(),
+                                            pw.getWorkout().getDescription(),
+                                            pw.getWorkout().getImagePath(),
+                                            pw.getReps(),
+                                            pw.getSets(),
+                                            pw.getDuration(),
+                                            pw.getId()
+                                    ), Collectors.toList())
                             ));
 
                     schedule.put(day, new WorkoutDayResponse(

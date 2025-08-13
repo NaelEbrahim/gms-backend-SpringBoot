@@ -677,12 +677,13 @@ public class ClassService {
                                             pw.getWorkout().getTitle(),
                                             pw.getWorkout().getAvg_calories(),
                                             pw.getWorkout().getPrimary_muscle().name(),
-                                            String.join(", ", pw.getWorkout().getSecondary_muscles().name()),
+                                            String.join(", ", pw.getWorkout().getSecondary_muscles() != null ? pw.getWorkout().getSecondary_muscles().name() : null),
                                             pw.getWorkout().getAvg_calories() * pw.getSets(),
                                             pw.getWorkout().getDescription(),
                                             pw.getWorkout().getImagePath(),
                                             pw.getReps(),
-                                            pw.getSets()
+                                            pw.getSets(),
+                                            pw.getDuration()
                                     ),Collectors.toList())
                             ));
 
