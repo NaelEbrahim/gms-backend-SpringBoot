@@ -1,13 +1,12 @@
 package com.graduation.GMS.Models;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -19,18 +18,13 @@ public class HealthInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate recordedAt;
+    private LocalDateTime recordedAt;
 
     private Float weightKg;
 
     private Float heightCm;
 
-    private Float waistCircumference;
-
-    private Float armCircumference;
-
-    private Float thighCircumference;
+    private Float improvementPercentage;
 
     private String notes;
 

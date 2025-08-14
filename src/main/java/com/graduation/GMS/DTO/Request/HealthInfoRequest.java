@@ -1,13 +1,11 @@
 package com.graduation.GMS.DTO.Request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -15,28 +13,22 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class HealthInfoRequest {
 
+    @NotNull(message = "User ID must not be null")
     private Integer userId;
 
+    @NotNull(message = "Weight must not be null")
     @DecimalMin(value = "0.0", inclusive = false, message = "Weight must be greater than 0")
     private Float weightKg;
 
+    @NotNull(message = "Height must not be null")
     @DecimalMin(value = "0.0", inclusive = false, message = "Height must be greater than 0")
     private Float heightCm;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "waist circumference must be greater than 0")
-    private Float waistCircumference;
+    @DecimalMin(value = "0.0", message = "Improvement percentage must be at least 0")
+    @DecimalMax(value = "100.0", message = "Improvement percentage cannot exceed 100")
+    private Float improvementPercentage;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "arm circumference must be greater than 0")
-    private Float armCircumference;
-
-    @DecimalMin(value = "0.0", inclusive = false, message = "thigh circumference must be greater than 0")
-    private Float thighCircumference;
-
+    @Size(max = 500, message = "Notes must not exceed 500 characters")
     private String notes;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate startDate;
-
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate endDate;
 }

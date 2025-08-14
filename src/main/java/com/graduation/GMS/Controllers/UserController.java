@@ -108,19 +108,14 @@ public class UserController {
 
     // --- Health Info APIs ---
 
-    @PostMapping("/logHealthInfo")
-    public ResponseEntity<?> logHealthInfo(@Valid @RequestBody HealthInfoRequest request) {
-        return userService.logHealthInfo(request);
+    @PostMapping("/healthInfo")
+    public ResponseEntity<?> createOrUpdateHealthInfo(@Valid @RequestBody HealthInfoRequest request) {
+        return userService.createOrUpdateHealthInfo(request);
     }
 
-    @GetMapping("/getHealthInfoByRange")
-    public ResponseEntity<?> getHealthInfoHistory(@Valid @RequestBody HealthInfoRequest request) {
-        return userService.getUserHealthInfo(request);
-    }
-
-    @DeleteMapping("/deleteHealthInfo/{healthInfoId}")
-    public ResponseEntity<?> deleteUserHealthInfo(@PathVariable Integer healthInfoId) {
-        return userService.deleteHealthInfo(healthInfoId);
+    @GetMapping("/healthInfo/history/{userId}")
+    public ResponseEntity<?> getHealthInfoHistory(@PathVariable Integer userId) {
+        return userService.getHealthInfoHistory(userId);
     }
 
     @GetMapping("/profile")

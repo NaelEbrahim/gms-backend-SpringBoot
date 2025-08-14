@@ -1,12 +1,13 @@
 package com.graduation.GMS.DTO.Response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.graduation.GMS.Models.HealthInfo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -15,23 +16,25 @@ import java.time.LocalDate;
 public class HealthInfoResponse {
     private Integer id;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate recordedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime recordedAt;
 
     private Float weightKg;
 
     private Float heightCm;
 
+    private Float improvementPercentage;
+
     private String notes;
 
-    private Float waistCircumference;
-
-    private Float armCircumference;
-
-    private Float thighCircumference;
-
-    private Float BMI;
-
-    private String Status;
+    public static HealthInfoResponse fromEntity(HealthInfo healthInfo) {
+        return new HealthInfoResponse(
+                healthInfo.getId(),
+                healthInfo.getRecordedAt(),
+                healthInfo.getWeightKg(),
+                healthInfo.getHeightCm(),
+                healthInfo.getImprovementPercentage(),
+                healthInfo.getNotes());
+    }
 
 }
