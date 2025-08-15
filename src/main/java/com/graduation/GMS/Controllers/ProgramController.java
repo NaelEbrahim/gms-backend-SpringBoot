@@ -100,6 +100,11 @@ public class ProgramController {
         return programService.getAssignedProgramsByUserId(userId);
     }
 
+    @GetMapping("/checkUserInProgram/{programId}")
+    public ResponseEntity<?> checkIfUserInProgram(@PathVariable Integer programId) {
+        return programService.checkIfUserInProgram(programId);
+    }
+
 
 
 }

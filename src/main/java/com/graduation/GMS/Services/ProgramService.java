@@ -644,4 +644,20 @@ public class ProgramService {
     }
 
 
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> checkIfUserInProgram(Integer programId) {
+        var program = programRepository.findById(programId).orElse(null);
+        if (program != null) {
+            var isExist = userProgramRepository.existsByUserAndProgram(HandleCurrentUserSession.getCurrentUser(), program);
+            return isExist ? ResponseEntity.status(HttpStatus.OK)
+                    .body(Map.of("message", "user registered in this program")) :
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(Map.of("message", "user not registered in this program"));
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", "program with this id not found"));
+    }
+
+
+
 }
