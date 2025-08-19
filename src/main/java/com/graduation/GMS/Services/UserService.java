@@ -13,7 +13,6 @@ import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Services.GeneralServices.JwtService;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import com.graduation.GMS.Services.GeneralServices.VerificationCodeService;
-import com.graduation.GMS.Tools.BMI_Calculator;
 import com.graduation.GMS.Tools.FilesManagement;
 import com.graduation.GMS.Tools.Generators;
 import lombok.AllArgsConstructor;
