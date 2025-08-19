@@ -23,9 +23,6 @@ public class AuthToken {
 
     private String refreshToken;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime RT_EXP;
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     @JsonIgnore
