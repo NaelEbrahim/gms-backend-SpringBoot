@@ -650,9 +650,9 @@ public class ProgramService {
         if (program != null) {
             var isExist = userProgramRepository.existsByUserAndProgram(HandleCurrentUserSession.getCurrentUser(), program);
             return isExist ? ResponseEntity.status(HttpStatus.OK)
-                    .body(Map.of("message", "user registered in this program")) :
+                    .body(Map.of("message", "true")) :
                     ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(Map.of("message", "user not registered in this program"));
+                            .body(Map.of("message", "false"));
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("message", "program with this id not found"));
