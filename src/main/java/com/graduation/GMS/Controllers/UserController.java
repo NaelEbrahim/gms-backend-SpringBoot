@@ -133,7 +133,7 @@ public class UserController {
         return userService.logUserProgressInProgram(userProgressRequest);
     }
 
-    @GetMapping("/getProgressByRange")
+    @PostMapping("/getProgressByRange")
     public ResponseEntity<?> getProgressInProgramByRange(@Valid @RequestBody UserProgressRequest userProgressRequest) {
         return userService.getUserProgressInProgram(userProgressRequest);
     }
