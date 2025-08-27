@@ -1,12 +1,8 @@
 package com.graduation.GMS.DTO.Response;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.graduation.GMS.Models.Enums.Gender;
 import com.graduation.GMS.Models.User;
 import lombok.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
