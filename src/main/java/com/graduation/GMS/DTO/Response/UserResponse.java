@@ -31,7 +31,8 @@ public class UserResponse {
                 user.getId(),
                 user.getFirstName(),
                 user.getLastName(),
-                user.getEmail()
+                user.getEmail(),
+                user.getProfileImagePath()
         );
     }
 
