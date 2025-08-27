@@ -683,7 +683,8 @@ public class ClassService {
                                             pw.getWorkout().getImagePath(),
                                             pw.getReps(),
                                             pw.getSets(),
-                                            pw.getDuration()
+                                            pw.getDuration(),
+                                            pw.getId()
                                     ),Collectors.toList())
                             ));
 
