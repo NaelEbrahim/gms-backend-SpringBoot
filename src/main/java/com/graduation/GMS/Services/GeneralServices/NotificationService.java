@@ -14,6 +14,7 @@ import com.google.firebase.messaging.Message;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,6 +28,7 @@ public class NotificationService {
 
     private final User_NotificationRepository userNotificationRepository;
 
+    @Transactional
     public void sendNotification(User user, Notification notification) {
         if (user.getFcmToken() != null) {
             log.info("Sending Firebase notification to user {} with payload {}", user.getId(), notification);
@@ -41,6 +43,7 @@ public class NotificationService {
         }
     }
 
+    @Transactional
     public void sendNotificationToUsers(List<User> users, Notification notification) {
         for (User user : users) {
             if (user.getFcmToken() != null) {
@@ -52,7 +55,6 @@ public class NotificationService {
                 userNotification.setUser(user);
                 userNotification.setNotification(notification);
                 userNotification.setSendAt(LocalDateTime.now());
-
                 userNotificationRepository.save(userNotification);
             }
         }
@@ -102,6 +104,5 @@ public class NotificationService {
 
         return ResponseEntity.ok(response);
     }
-
 
 }
