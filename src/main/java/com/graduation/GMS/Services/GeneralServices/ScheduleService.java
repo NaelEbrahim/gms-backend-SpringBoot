@@ -20,7 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class TriggerService {
+public class ScheduleService {
 
     private final NotificationService notificationService;
 
