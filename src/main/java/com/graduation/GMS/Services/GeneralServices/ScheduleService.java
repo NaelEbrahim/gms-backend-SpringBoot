@@ -6,7 +6,7 @@ import com.graduation.GMS.Models.SubscriptionHistory;
 import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.NotificationRepository;
 import com.graduation.GMS.Repositories.SubscriptionHistoryRepository;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +19,7 @@ import java.util.List;
 
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class ScheduleService {
 
     private final NotificationService notificationService;
