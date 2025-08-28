@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/chat")
-@CrossOrigin("http://localhost:56181")
+@CrossOrigin("http://localhost:63342")
 public class ChatController {
 
     private final ChatService chatService;

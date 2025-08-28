@@ -30,7 +30,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthenticationEntryPoint entryPoint) throws Exception {
        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000")); // Allow all origins
+        configuration.setAllowedOrigins(List.of("http://localhost:3000","http://localhost:63342")); // Allow all origins
         configuration.setAllowedMethods(List.of("*")); // Allow all HTTP methods
         configuration.setAllowedHeaders(List.of("*")); // Allow all headers
         configuration.setAllowCredentials(false); // Adjust based on your requirements
