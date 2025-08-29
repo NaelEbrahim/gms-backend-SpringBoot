@@ -71,7 +71,7 @@ public class ScheduleService {
     }
 
     @Transactional
-    private Notification initializeSubscriptionNotifications(String title, String content) {
+    public Notification initializeSubscriptionNotifications(String title, String content) {
         Notification notification = new Notification();
         notification.setTitle(title);
         notification.setContent(content);

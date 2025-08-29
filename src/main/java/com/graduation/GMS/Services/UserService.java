@@ -229,12 +229,11 @@ public class UserService {
     }
 
     @Transactional
-    private void invalidateUserToken(Integer userId) {
+    public void invalidateUserToken(Integer userId) {
         authTokenRepository.deleteByUserId(userId);
         authTokenRepository.flush();
     }
 
-    @PreAuthorize("hasAnyAuthority('Admin')")
     public ResponseEntity<?> getUsersByRoleWithSearch(Roles roleName, String keyword, Pageable pageable) {
         Page<User> usersPage = userRepository.searchByRoleAndKeyword(roleName, keyword, pageable);
 
@@ -254,7 +253,6 @@ public class UserService {
     }
 
 
-    @PreAuthorize("hasAnyAuthority('Admin')")
     public ResponseEntity<?> getAll() {
         List<ProfileResponse> userResponses = userRepository.findAll()
                 .stream()
