@@ -85,11 +85,11 @@ public class WorkoutService {
             workout.setTitle(request.getTitle());
         }
 
-        if (request.getPrimaryMuscle()!=null && !workout.getPrimary_muscle().equals(request.getPrimaryMuscle())) {
+        if (request.getPrimaryMuscle() != null && !workout.getPrimary_muscle().equals(request.getPrimaryMuscle())) {
             workout.setPrimary_muscle(request.getPrimaryMuscle());
         }
 
-        if (request.getSecondaryMuscles()!=null && !workout.getSecondary_muscles().equals(request.getSecondaryMuscles())) {
+        if (request.getSecondaryMuscles() != null && !workout.getSecondary_muscles().equals(request.getSecondaryMuscles())) {
             workout.setSecondary_muscles(request.getSecondaryMuscles());
         }
 
@@ -132,7 +132,7 @@ public class WorkoutService {
                 workout.getTitle(),
                 0.0f,
                 workout.getPrimary_muscle().name(),
-                workout.getSecondary_muscles().name(),
+                workout.getSecondary_muscles() != null ? workout.getSecondary_muscles().name() : null,
                 workout.getAvg_calories(),
                 workout.getDescription(),
                 workout.getImagePath(),
@@ -253,7 +253,7 @@ public class WorkoutService {
                             w.getTitle(),
                             0.0f,
                             w.getPrimary_muscle().name(),
-                            w.getSecondary_muscles().name(),
+                            w.getSecondary_muscles() != null ? w.getSecondary_muscles().name() : null,
                             w.getAvg_calories(),
                             w.getDescription(),
                             w.getImagePath(),
