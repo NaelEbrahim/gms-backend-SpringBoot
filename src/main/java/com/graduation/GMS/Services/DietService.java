@@ -581,9 +581,16 @@ public class DietService {
                     .body(Map.of("message", "No diets assigned to the current user"));
         }
 
+
         List<DietResponse> dietResponses = userDiets.stream()
                 .map(ud -> {
                     DietPlan dietPlan = ud.getDiet_plan();
+
+                    // Create a list with ONLY the current user's feedback
+                    List<UserFeedBackResponse> userFeedbackList = new ArrayList<>();
+                    if (ud.getFeedBack() != null && !ud.getFeedBack().trim().isEmpty()) {
+                        userFeedbackList.add(new UserFeedBackResponse(currentUser, ud.getFeedBack()));
+                    }
 
                     return new DietResponse(
                             dietPlan.getId(),
@@ -591,9 +598,9 @@ public class DietService {
                             dietPlan.getTitle(),
                             dietPlan.getCreatedAt(),
                             dietPlan.getLastModifiedAt(),
-                            calculateRate(dietPlan.getId()),
+                            ud.getRate(),
                             buildScheduleResponse(dietPlan),
-                            null
+                            userFeedbackList
                     );
                 })
                 .toList();

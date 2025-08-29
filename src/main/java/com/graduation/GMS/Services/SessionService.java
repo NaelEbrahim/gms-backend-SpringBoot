@@ -564,6 +564,13 @@ public class SessionService {
                 .map(up -> {
                     Session session = up.getSession();
 
+                    // Create a list with ONLY the current user's feedback
+                    List<UserFeedBackResponse> userFeedbackList = new ArrayList<>();
+                    if (up.getFeedback() != null && !up.getFeedback().trim().isEmpty()) {
+                        userFeedbackList.add(new UserFeedBackResponse(user, up.getFeedback()));
+                    }
+
+
                     List<String> days = new ArrayList<>();
                     if (session.getDays() != null && !session.getDays().isEmpty()) {
                         days = Arrays.stream(session.getDays().split(","))
@@ -577,14 +584,14 @@ public class SessionService {
                             session.getDescription(),
                             session.getAClass().getId(),
                             UserResponse.mapToUserResponse(session.getCoach()),
-                            calculateRate(session.getId()),
+                            up.getRate(),
                             days,
                             session.getCreatedAt(),
                             session.getStartTime(),
                             session.getEndTime(),
                             session.getMaxNumber(),
                             userSessionRepository.countBySession(session),
-                            null);
+                            userFeedbackList);
                 })
                 .toList();
 

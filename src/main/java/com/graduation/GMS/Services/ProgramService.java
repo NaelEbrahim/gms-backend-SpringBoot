@@ -546,14 +546,20 @@ public class ProgramService {
                 .map(up -> {
                     Program program = up.getProgram();
 
+                    // Create a list with ONLY the current user's feedback
+                    List<UserFeedBackResponse> userFeedbackList = new ArrayList<>();
+                    if (up.getFeedback() != null && !up.getFeedback().trim().isEmpty()) {
+                        userFeedbackList.add(new UserFeedBackResponse(up.getUser(), up.getFeedback()));
+                    }
+
                     return new ProgramResponse(
                             program.getId(),
                             program.getTitle(),
                             program.getLevel(),
                             program.getIsPublic(),
-                            calculateRate(program.getId()),
+                            up.getRate(),
                             buildProgramScheduleResponse(program),
-                            null
+                            userFeedbackList
                     );
                 })
                 .toList();
