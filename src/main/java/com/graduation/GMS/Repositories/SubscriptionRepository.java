@@ -37,4 +37,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Inte
 
     @Query("SELECT s FROM Subscription s WHERE s.aClass = :class AND s.feedback IS NOT NULL")
     List<Subscription> findFeedbackByClass(@Param("class") Class classEntity);
+
+    Optional<Subscription> findFirstByUserOrderByJoinedAtDesc(User user);
+
 }

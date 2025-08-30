@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/class")
@@ -34,7 +36,7 @@ public class ClassController {
     }
 
     @PutMapping("upload-image")
-    public ResponseEntity<?> uploadClassImage(@ModelAttribute ImageRequest request){
+    public ResponseEntity<?> uploadClassImage(@ModelAttribute ImageRequest request) {
         return classService.uploadClassImage(request);
     }
 
@@ -55,21 +57,25 @@ public class ClassController {
     public ResponseEntity<?> assignProgramToClass(@RequestBody @Valid AssignProgramToClassRequest request) {
         return classService.assignProgramToClass(request);
     }
+
     // Endpoint to Unassign a program to a class (Request body)
     @PostMapping("/unassign-program")
     public ResponseEntity<?> unAssignProgramToClass(@RequestBody @Valid AssignProgramToClassRequest request) {
         return classService.unAssignProgramToClass(request);
     }
+
     // Endpoint to add Subscription
     @PostMapping("/new-subscription")
     public ResponseEntity<?> addNewSubscription(@RequestBody @Valid ClassSubscriptionRequest request) throws Exception {
         return classService.addNewSubscription(request);
     }
+
     // Endpoint to update Subscription
     @PostMapping("/update-subscription")
     public ResponseEntity<?> updateSubscription(@RequestBody @Valid ClassSubscriptionRequest request) throws Exception {
         return classService.updateSubscription(request);
     }
+
     // Get all subscribers for a class
     @GetMapping("/{classId}/subscribers-by-class")
     public ResponseEntity<?> getClassSubscribers(@PathVariable Integer classId) {
@@ -83,20 +89,34 @@ public class ClassController {
             @RequestParam Boolean isActive) {
         return classService.getSubscribersByActiveStatus(classId, isActive);
     }
+
     // Endpoint to add feedback
     @PostMapping("/feedBack")
     public ResponseEntity<?> addFeedBack(@RequestBody FeedBackClassRequest request) throws Exception {
         return classService.updateClassFeedback(request);
     }
+
     // Get active/inactive subscribers for a class
     @GetMapping("/{classId}/feedbacks")
     public ResponseEntity<?> getClassFeedBacks(
             @PathVariable Integer classId) {
         return classService.getAllCassFeedBacks(classId);
     }
+
     // Get active/inactive subscribers for a class
     @GetMapping("/my-classes")
     public ResponseEntity<?> getMyClasses() {
         return classService.getMyClasses();
     }
+
+    @GetMapping("/get-user-subscription-classes/{userId}")
+    public ResponseEntity<?> getUserSubscriptionClasses(@PathVariable Integer userId) {
+        return classService.getClassesSubscribersByUser(userId);
+    }
+
+    @PutMapping("inActive-user-subscription")
+    public ResponseEntity<?> inActiveSubscription(@RequestBody Map<String, String> body) {
+        return classService.inActiveUserSubscription(Integer.valueOf(body.get("userId")), Integer.valueOf(body.get("classId")));
+    }
+
 }

@@ -2,10 +2,12 @@ package com.graduation.GMS.Services.GeneralServices;
 
 
 import com.graduation.GMS.Models.Notification;
+import com.graduation.GMS.Models.Subscription;
 import com.graduation.GMS.Models.SubscriptionHistory;
 import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.NotificationRepository;
 import com.graduation.GMS.Repositories.SubscriptionHistoryRepository;
+import com.graduation.GMS.Repositories.SubscriptionRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,8 @@ public class ScheduleService {
     private final NotificationService notificationService;
 
     private final NotificationRepository notificationRepository;
+
+    private final SubscriptionRepository subscriptionRepository;
 
     private final SubscriptionHistoryRepository subscriptionHistoryRepository;
 
@@ -67,6 +71,14 @@ public class ScheduleService {
 
         if (!expiredUsers.isEmpty()) {
             notificationService.sendNotificationToUsers(expiredUsers, expiredNotification);
+            // inActive Expired Users
+            for (User item : expiredUsers) {
+                Subscription userSubscription = subscriptionRepository.findFirstByUserOrderByJoinedAtDesc(item).orElse(null);
+                if (userSubscription != null) {
+                    userSubscription.setIsActive(false);
+                    subscriptionRepository.save(userSubscription);
+                }
+            }
         }
     }
 

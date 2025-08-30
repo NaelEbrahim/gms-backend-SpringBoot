@@ -1,5 +1,6 @@
 package com.graduation.GMS.DTO.Response;
 
+import com.graduation.GMS.Models.Class;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,5 +30,26 @@ public class ClassResponse {
     private List<UserResponse> subscribers;
 
     private List<UserFeedBackResponse> feedbacks;
+
+    public ClassResponse(Integer id, String name, String description, String imagePath, Float price, UserResponse coach) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.imagePath = imagePath;
+        this.price = price;
+        this.coach = coach;
+    }
+
+    public static ClassResponse mapToClassResponse(Class classItem) {
+        return new ClassResponse(
+                classItem.getId(),
+                classItem.getName(),
+                classItem.getDescription(),
+                classItem.getImagePath(),
+                classItem.getPrice(),
+                UserResponse.mapToUserResponse(classItem.getAuditCoach())
+        );
+    }
+
 }
 

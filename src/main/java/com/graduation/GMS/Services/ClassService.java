@@ -19,10 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
@@ -120,7 +117,7 @@ public class ClassService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "User not found"));
         }
-        if(!existingClass.getAuditCoach().getId().equals(request.getCoachId())) {
+        if (!existingClass.getAuditCoach().getId().equals(request.getCoachId())) {
             existingClass.setAuditCoach(userOptional.get());
         }
 
@@ -212,7 +209,7 @@ public class ClassService {
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
 
-    private  Float calculateRate(int programId) {
+    private Float calculateRate(int programId) {
         // First check if the program exists
         Optional<Program> programOptional = programRepository.findById(programId);
         if (programOptional.isEmpty()) {
@@ -235,6 +232,7 @@ public class ClassService {
 
         return average.floatValue();  // Convert back to Float
     }
+
     public ResponseEntity<?> getAllClasses() {
         List<Class> classes = classRepository.findAll();
 
@@ -685,7 +683,7 @@ public class ClassService {
                                             pw.getSets(),
                                             pw.getDuration(),
                                             pw.getId()
-                                    ),Collectors.toList())
+                                    ), Collectors.toList())
                             ));
 
                     schedule.put(day, new WorkoutDayResponse(
@@ -706,5 +704,38 @@ public class ClassService {
         return new ProgramScheduleResponse(schedule);
     }
 
+    @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
+    public ResponseEntity<?> getClassesSubscribersByUser(Integer userId) {
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "user with this id not found"));
+        List<Subscription> userSubscriptions = subscriptionRepository.findByUser(user);
+        List<ClassResponse> subscriptionClasses = new ArrayList<>();
+        if (!userSubscriptions.isEmpty())
+            for (Subscription item : userSubscriptions)
+                subscriptionClasses.add(ClassResponse.mapToClassResponse(item.getAClass()));
+        return ResponseEntity.status(HttpStatus.OK).body(subscriptionClasses);
+    }
+
+    @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
+    public ResponseEntity<?> inActiveUserSubscription(Integer userId, Integer classId) {
+        var user = userRepository.findById(userId).orElse(null);
+        var aClass = classRepository.findById(classId).orElse(null);
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "user with this id not found"));
+        if (aClass == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "class with this id not found"));
+        Subscription userSubscription = subscriptionRepository.findByUserAndAClass(user, aClass).orElse(null);
+        if (userSubscription == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user not subscribe in this class"));
+        userSubscription.setIsActive(false);
+        subscriptionRepository.save(userSubscription);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "subscription inActivated Successfully"));
+    }
 
 }
