@@ -101,4 +101,9 @@ public class DietController {
     public ResponseEntity<?> getAssignedDietsByUserId(@PathVariable Integer userId) {
         return dietService.getAssignedDietsByUserId(userId);
     }
+
+    @GetMapping("/get-members-in-DietPlan/{dietId}")
+    public ResponseEntity<?> getMembersInDietPlan(@PathVariable Integer dietId){
+        return dietService.getDietSubscribers(dietId);
+    }
 }

@@ -105,6 +105,9 @@ public class ProgramController {
         return programService.checkIfUserInProgram(programId);
     }
 
-
+    @GetMapping("/get-members-in-program/{programId}")
+    public ResponseEntity<?> getMembersInProgram(@PathVariable Integer programId){
+        return programService.getProgramSubscribers(programId);
+    }
 
 }

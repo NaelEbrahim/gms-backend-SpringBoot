@@ -101,5 +101,10 @@ public class SessionController {
         return sessionService.getUserAttendanceById(userId,sessionId);
     }
 
+    @GetMapping("/get-members-in-session/{sessionId}")
+    public ResponseEntity<?> getMembersInSession(@PathVariable Integer sessionId){
+        return sessionService.getSessionSubscribers(sessionId);
+    }
+
 
 }

@@ -664,6 +664,19 @@ public class ProgramService {
                 .body(Map.of("message", "program with this id not found"));
     }
 
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary,Coach')")
+    public ResponseEntity<?> getProgramSubscribers(Integer programId) {
+        var program = programRepository.findById(programId).orElse(null);
+        if (program == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "No program with this id"));
+        List<User_Program> targetProgram = userProgramRepository.findByProgram(program);
+        List<UserResponse> programSubscribers = new ArrayList<>();
+        if (!targetProgram.isEmpty())
+            for (User_Program item : targetProgram)
+                programSubscribers.add(UserResponse.mapToUserResponse(item.getUser()));
+        return ResponseEntity.status(HttpStatus.OK).body(programSubscribers);
+    }
 
 
 }

@@ -105,7 +105,7 @@ public class SessionService {
         // Create and send notification
         Notification notification = new Notification();
         notification.setTitle("New Session has been created");
-        notification.setContent("Hurry up to join us in the new Session :" +session.getTitle());
+        notification.setContent("Hurry up to join us in the new Session :" + session.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
         notification = notificationRepository.save(notification); // Save and get managed instance
@@ -145,7 +145,7 @@ public class SessionService {
                     .body(Map.of("message", "User not found"));
         }
 
-        if(!session.getCoach().getId().equals(request.getCoachId())) {
+        if (!session.getCoach().getId().equals(request.getCoachId())) {
             session.setCoach(userOptional.get());
         }
 
@@ -746,6 +746,20 @@ public class SessionService {
                 "attendances", attendanceDates);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary,Coach')")
+    public ResponseEntity<?> getSessionSubscribers(Integer sessionId) {
+        var session = sessionRepository.findById(sessionId).orElse(null);
+        if (session == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "no Session with this id"));
+        List<User_Session> targetSession = userSessionRepository.findBySession(session);
+        List<UserResponse> sessionSubscribers = new ArrayList<>();
+        if (!targetSession.isEmpty())
+            for (User_Session item : targetSession)
+                sessionSubscribers.add(UserResponse.mapToUserResponse(item.getUser()));
+        return ResponseEntity.status(HttpStatus.OK).body(sessionSubscribers);
     }
 
 }

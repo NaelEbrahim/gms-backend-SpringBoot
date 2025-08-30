@@ -103,7 +103,7 @@ public class DietService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "User not found"));
         }
-        if(!existingDietPlan.getCoach().getId().equals(request.getCoachId())) {
+        if (!existingDietPlan.getCoach().getId().equals(request.getCoachId())) {
             existingDietPlan.setCoach(userOptional.get());
         }
 
@@ -659,4 +659,19 @@ public class DietService {
 
         return ResponseEntity.ok(dietResponses);
     }
+
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary,Coach')")
+    public ResponseEntity<?> getDietSubscribers(Integer dietId) {
+        var diet = dietPlanRepository.findById(dietId).orElse(null);
+        if (diet == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "No diets with this id"));
+        List<User_Diet> targetDiet = userDietRepository.findByDietPlan(diet);
+        List<UserResponse> dietSubscribers = new ArrayList<>();
+        if (!targetDiet.isEmpty())
+            for (User_Diet item : targetDiet)
+                dietSubscribers.add(UserResponse.mapToUserResponse(item.getUser()));
+        return ResponseEntity.status(HttpStatus.OK).body(dietSubscribers);
+    }
+
 }
