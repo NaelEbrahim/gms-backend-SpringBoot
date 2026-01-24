@@ -433,7 +433,7 @@ public class EventService {
 
         if (participants.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "There are No Participants For this Event"));
+                    .body(Map.of("message", "There are No  Participants For this Event"));
         }
 
         // Build response
