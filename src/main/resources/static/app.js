@@ -15,7 +15,7 @@ function startChat() {
 
   const channelId = `private-chat-${Math.min(currentUserId, otherUserId)}-${Math.max(currentUserId, otherUserId)}`;
 
-  const pusher = new Pusher("14b9b936cf3d2b6a6503", {
+  const pusher = new Pusher("d044493efec8a33cec65", {
     cluster: "ap2",
     auth: {
       headers: {

@@ -5,6 +5,7 @@ import com.graduation.GMS.Models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -12,4 +13,6 @@ public interface PrivateCoachRepository extends JpaRepository<PrivateCoach, Inte
     boolean existsByUserAndCoach(User user, User coach);
 
     Optional<PrivateCoach> findByUserAndCoach(User user, User coach);
+
+    List<PrivateCoach> findByUserId(Integer userId);
 }

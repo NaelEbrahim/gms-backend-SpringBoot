@@ -3,6 +3,7 @@ package com.graduation.GMS.Controllers;
 import com.graduation.GMS.DTO.Request.CreateWorkoutRequest;
 import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.WorkoutRequest;
+import com.graduation.GMS.Models.Enums.Muscle;
 import com.graduation.GMS.Services.WorkoutService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -31,7 +32,7 @@ public class WorkoutController {
     }
 
     @PutMapping("upload-image")
-    public ResponseEntity<?> uploadWorkoutImage(@ModelAttribute ImageRequest request){
+    public ResponseEntity<?> uploadWorkoutImage(@ModelAttribute ImageRequest request) {
         return workoutService.uploadWorkoutImage(request);
     }
 
@@ -47,25 +48,27 @@ public class WorkoutController {
 
     @GetMapping("/show/all")
     public ResponseEntity<?> getAllWorkouts(
-            @RequestParam(defaultValue = "") String keyword,
-            @RequestParam(required = false) String muscle,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        Pageable pageable = PageRequest.of(page, size);
-        return workoutService.searchWorkouts(keyword, muscle, pageable);
+            @RequestParam(required = false) Muscle muscle,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        if (page == null || size == null) {
+            // No pagination
+            return workoutService.getAllWorkouts(null, null);
+        } else {
+            Pageable pageable = PageRequest.of(page, size);
+            return workoutService.getAllWorkouts(muscle, pageable);
+        }
     }
 
-
     // Add to favorites
-    @PostMapping("/{id}/add-to-favorite")
-    public ResponseEntity<?> addWorkoutToFavorites(@PathVariable("id") Integer workoutId) {
+    @PostMapping("/add-to-favorite/{workoutId}")
+    public ResponseEntity<?> addWorkoutToFavorites(@PathVariable Integer workoutId) {
         return workoutService.addWorkoutToFavorites(workoutId);
     }
 
     // Remove from favorites
-    @PostMapping("/{id}/remove-from-favorite")
-    public ResponseEntity<?> removeWorkoutFromFavorites(@PathVariable("id") Integer workoutId) {
+    @DeleteMapping("/remove-from-favorite/{workoutId}")
+    public ResponseEntity<?> removeWorkoutFromFavorites(@PathVariable Integer workoutId) {
         return workoutService.removeWorkoutFromFavorites(workoutId);
     }
 

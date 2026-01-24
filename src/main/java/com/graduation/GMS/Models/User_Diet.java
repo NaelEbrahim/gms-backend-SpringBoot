@@ -27,6 +27,8 @@ public class User_Diet {
 
     private String feedBack;
 
+    private Boolean isActive;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

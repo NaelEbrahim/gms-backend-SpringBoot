@@ -12,6 +12,8 @@ import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import com.graduation.GMS.Tools.FilesManagement;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -62,7 +64,7 @@ public class ClassService {
         Class classEntity = new Class();
         Optional<User> userOptional = userRepository.findById(request.getCoachId());
         if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
 
@@ -71,15 +73,16 @@ public class ClassService {
         classEntity.setDescription(request.getDescription());
         classEntity.setPrice(request.getPrice());
 
-        // Save the class to the database
-        classRepository.save(classEntity);
-
-        String imagePath = FilesManagement.upload(request.getImage(), classEntity.getId(), "Classes");
-        if (imagePath == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Upload failed"));
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            String imagePath = FilesManagement.upload(request.getImage(), classEntity.getId(), "Classes");
+            if (imagePath == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("message", "Upload failed"));
+            }
+            classEntity.setImagePath(imagePath);
         }
-        classEntity.setImagePath(imagePath);
+
+        // Save the class to the database
         classRepository.save(classEntity);
 
         // Create and send notification
@@ -88,7 +91,7 @@ public class ClassService {
         notification.setContent("A new class has been published: " + classEntity.getName());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
-        notification = notificationRepository.save(notification); // Save and get managed instance
+        notification = notificationRepository.save(notification);
         List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
 
         notificationService.sendNotificationToUsers(
@@ -114,7 +117,7 @@ public class ClassService {
 
         Optional<User> userOptional = userRepository.findById(request.getCoachId());
         if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
         if (!existingClass.getAuditCoach().getId().equals(request.getCoachId())) {
@@ -233,14 +236,8 @@ public class ClassService {
         return average.floatValue();  // Convert back to Float
     }
 
-    public ResponseEntity<?> getAllClasses() {
-        List<Class> classes = classRepository.findAll();
-
-        if (classes.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No classes found"));
-        }
-
+    public ResponseEntity<?> getAllClasses(Pageable pageable) {
+        Page<Class> classes = classRepository.findAllPageable(pageable);
         List<ClassResponse> classResponses = classes.stream()
                 .map(classEntity -> {
                     // Get all programs for each class
@@ -248,7 +245,6 @@ public class ClassService {
                             .stream()
                             .map(classProgram -> {
                                 Program program = classProgram.getProgram();
-
                                 return new ProgramResponse(
                                         program.getId(),
                                         program.getTitle(),
@@ -260,7 +256,6 @@ public class ClassService {
                                 );
                             })
                             .collect(Collectors.toList());
-
                     return new ClassResponse(
                             mapToUserResponse(classEntity.getAuditCoach()),
                             classEntity.getId(),
@@ -274,11 +269,14 @@ public class ClassService {
                     );
                 })
                 .collect(Collectors.toList());
-
-        return ResponseEntity.status(HttpStatus.OK).body(classResponses);
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", classes.getTotalElements());
+        result.put("totalPages", classes.getTotalPages());
+        result.put("currentPage", classes.getNumber());
+        result.put("classes", classResponses);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", result));
     }
-
-    // Method to assign a program to a class
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
@@ -324,37 +322,25 @@ public class ClassService {
     public ResponseEntity<?> unAssignProgramToClass(AssignProgramToClassRequest request) {
         Integer classId = request.getClassId();
         Integer programId = request.getProgramId();
-
-        Optional<Class> classOptional = classRepository.findById(classId);
-        if (classOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Class classItem = classRepository.findById(classId).orElse(null);
+        if (classItem == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Class not found"));
         }
-
-        Optional<Program> programOptional = programRepository.findById(programId);
-        if (programOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Program programItem = programRepository.findById(programId).orElse(null);
+        if (programItem == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Program not found"));
         }
-
-        Class classEntity = classOptional.get();
-        Program programEntity = programOptional.get();
-
-        // Optional: Check if already assigned
-        boolean exists = class_ProgramRepository.existsByAClassAndProgram(classEntity, programEntity);
-        if (!exists) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
+        // Check if program assigned
+        Class_Program classProgram = class_ProgramRepository.findByAClassAndProgram(classItem, programItem).orElse(null);
+        if (classProgram == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Program is Not assigned to this class"));
         }
-
-        Class_Program classProgram = class_ProgramRepository.findByAClassAndProgram(classEntity, programEntity);
-
         class_ProgramRepository.delete(classProgram);
-
-        class_ProgramRepository.save(classProgram);
-
         return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("message", "Program successfully  Unassigned From class"));
+                .body(Map.of("message", "Program successfully Unassigned From class"));
     }
 
     @Transactional
@@ -587,6 +573,9 @@ public class ClassService {
                             classEntity.getDescription(),
                             classEntity.getImagePath(),
                             classEntity.getPrice(),
+                            subscription.getIsActive(),
+                            subscription.getFeedback(),
+                            subscription.getJoinedAt(),
                             null,
                             null,  // subscribers
                             null  // feedback
@@ -600,27 +589,22 @@ public class ClassService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> updateClassFeedback(FeedBackClassRequest request) {
-        User currentUser = HandleCurrentUserSession.getCurrentUser();
-        Optional<Class> classOptional = classRepository.findById(request.getClassId());
-
-        if (classOptional.isEmpty()) {
+        var user = HandleCurrentUserSession.getCurrentUser();
+        var Aclass = classRepository.findById(request.getClassId()).orElse(null);
+        if (Aclass == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "Class not found"));
         }
-
-        Optional<Subscription> subscription = subscriptionRepository.findByUserAndAClass(
-                currentUser,
-                classOptional.get()
-        );
-
-        if (subscription.isEmpty()) {
+        var subscription = subscriptionRepository.findByUserAndAClass(
+                user,
+                Aclass
+        ).orElse(null);
+        if (subscription == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You are not subscribed to this class"));
         }
-
-        subscription.get().setFeedback(request.getFeedback());
-        subscriptionRepository.save(subscription.get());
-
+        subscription.setFeedback(request.getFeedback());
+        subscriptionRepository.save(subscription);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Feedback updated successfully"));
     }
@@ -736,6 +720,76 @@ public class ClassService {
         subscriptionRepository.save(userSubscription);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "subscription inActivated Successfully"));
+    }
+
+    public ResponseEntity<?> deleteClassFeedBack(Integer userId, Integer classId) {
+        var user = userRepository.findById(userId).orElse(null);
+        var Aclass = classRepository.findById(classId).orElse(null);
+        if (user == null || Aclass == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "wrong user or class Id"));
+        }
+        var subscription = subscriptionRepository.findByUserAndAClass(user, Aclass).orElse(null);
+        if (subscription == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user has no subscription"));
+        }
+        subscription.setFeedback(null);
+        subscriptionRepository.save(subscription);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "feedback deleted"));
+    }
+
+    public ResponseEntity<?> getClassPrograms(Integer classId) {
+        var Aclass = classRepository.findById(classId).orElse(null);
+        if (Aclass == null) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(Map.of("message", "no class match this id"));
+        }
+        var classPrograms = class_ProgramRepository.findByAClass(Aclass);
+        List<ProgramResponse> results = new ArrayList<>();
+        for (var item : classPrograms) {
+            var program = item.getProgram();
+            results.add(new ProgramResponse(
+                    program.getId(),
+                    program.getTitle(),
+                    program.getLevel(),
+                    program.getIsPublic(),
+                    calculateRate(program.getId()),
+                    buildProgramScheduleResponse(program),
+                    null
+            ));
+        }
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", results));
+    }
+
+    public ResponseEntity<?> getUserSubscriptions(Integer userId) {
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user id not found"));
+        }
+        List<SubscriptionHistoryResponse> response = new ArrayList<>();
+        for (SubscriptionHistory item : subscriptionHistoryRepository.findByUserId(userId)) {
+            response.add(new SubscriptionHistoryResponse(item));
+        }
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", response));
+    }
+
+    public ResponseEntity<?> getClassSubscriptions(Integer classId) {
+        var aClass = classRepository.findById(classId).orElse(null);
+        if (aClass != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "class id not found"));
+        }
+        List<SubscriptionHistoryResponse> response = new ArrayList<>();
+        for (SubscriptionHistory item : subscriptionHistoryRepository.findByaClassId(classId)) {
+            response.add(new SubscriptionHistoryResponse(item));
+        }
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", response));
     }
 
 }

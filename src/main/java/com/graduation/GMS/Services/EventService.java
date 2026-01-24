@@ -12,13 +12,17 @@ import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import com.graduation.GMS.Tools.FilesManagement;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,31 +49,21 @@ public class EventService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> createEvent(CreateEventRequest request) {
-
-        // Check if the event title already exists (optional validation)
+        // Check if the event title already exists
         Optional<Event> existingEvent = eventRepository.findByTitle(request.getTitle());
         if (existingEvent.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Event title already exists"));
         }
+
         // Convert the DTO to entity and save
         Event eventEntity = new Event();
-
         eventEntity.setAdmin(HandleCurrentUserSession.getCurrentUser());
         eventEntity.setTitle(request.getTitle());
         eventEntity.setDescription(request.getDescription());
         eventEntity.setStartedAt(request.getStartedAt());
         eventEntity.setEndedAt(request.getEndedAt());
-        // Save the event to the database
-        eventRepository.save(eventEntity);
 
-        String imagePath = FilesManagement.upload(request.getImage(), eventEntity.getId(), "events");
-        if (imagePath == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Upload failed"));
-        }
-
-        eventEntity.setImagePath(imagePath);
         eventRepository.save(eventEntity);
 
         // Create and send notification
@@ -78,15 +72,12 @@ public class EventService {
         notification.setContent("New Event has been made :" + eventEntity.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
-        notification = notificationRepository.save(notification); // Save and get managed instance
-
+        notification = notificationRepository.save(notification);
         List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
-
         notificationService.sendNotificationToUsers(
                 usersWithUserRole,
                 notification
         );
-
         // Return the response with the saved event details
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Event created successfully"));
@@ -96,27 +87,30 @@ public class EventService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> updateEvent(Integer id, EventRequest request) {
-        Optional<Event> optionalEvent = eventRepository.findById(id);
-        if (optionalEvent.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Event event = eventRepository.findById(id).orElse(null);
+        if (event == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Event not found"));
         }
 
-        Event existingEvent = optionalEvent.get();
-
-        if (!existingEvent.getTitle().equals(request.getTitle())&&!request.getTitle().isEmpty()) {
-            existingEvent.setTitle(request.getTitle());
+        if (!event.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
+            event.setTitle(request.getTitle());
         }
-        if (!existingEvent.getDescription().equals(request.getDescription())&&!request.getDescription().isEmpty()) {
-            existingEvent.setDescription(request.getDescription());
+        if (!event.getDescription().equals(request.getDescription()) && !request.getDescription().isEmpty()) {
+            event.setDescription(request.getDescription());
         }
-        if (!existingEvent.getStartedAt().equals(request.getStartedAt())&&request.getStartedAt()!=null) {
-            existingEvent.setStartedAt(request.getStartedAt());
+        if (!event.getStartedAt().equals(request.getStartedAt()) && request.getStartedAt() != null) {
+            event.setStartedAt(request.getStartedAt());
         }
-        if (!existingEvent.getEndedAt().equals(request.getEndedAt())&&request.getEndedAt()!=null) {
-            existingEvent.setEndedAt(request.getEndedAt());
+        if (!event.getEndedAt().equals(request.getEndedAt()) && request.getEndedAt() != null) {
+            event.setEndedAt(request.getEndedAt());
         }
-        eventRepository.save(existingEvent);
+//        String imagePath = FilesManagement.upload(request.getImage(), eventEntity.getId(), "events");
+//        if (imagePath == null) {
+//            throw new InvalidMediaTypeException("IMAGE", "Upload failed");
+//        }
+//        eventEntity.setImagePath(imagePath);
+        eventRepository.save(event);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Event updated successfully"));
@@ -165,41 +159,51 @@ public class EventService {
         return ResponseEntity.ok(buildEventResponse(event));
     }
 
-    public ResponseEntity<?> getAllEvents() {
-        List<Event> events = eventRepository.findAll();
-        if (events.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No events found"));
-        }
-
+    public ResponseEntity<?> getAllEvents(Pageable pageable) {
+        Page<Event> events = eventRepository.findAllPageable(pageable);
         List<EventResponse> responses = events.stream()
                 .map(this::buildEventResponse)
                 .collect(Collectors.toList());
-
-        return ResponseEntity.ok(responses);
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", events.getTotalElements());
+        result.put("totalPages", events.getTotalPages());
+        result.put("currentPage", events.getNumber());
+        result.put("events", responses);
+        return ResponseEntity.ok(Map.of("message", result));
     }
 
     private EventResponse buildEventResponse(Event event) {
-        UserResponse adminResponse = mapToUserResponse(event.getAdmin());
+        // Prizes
+        List<PrizeResponse> prizeResponses =
+                prizeRepository.findByEvent(event)
+                        .stream()
+                        .map(prize -> new PrizeResponse(
+                                prize.getId(),
+                                prize.getDescription(),
+                                prize.getPrecondition()
+                        ))
+                        .collect(Collectors.toList());
 
-        // Get prizes directly from the PrizeRepository since it's one-to-many
-        List<PrizeResponse> prizeResponses = prizeRepository.findByEvent(event).stream()
-                .map(prize -> new PrizeResponse(
-                        prize.getId(),
-                        prize.getDescription(),
-                        prize.getPrecondition()
-                ))
-                .collect(Collectors.toList());
+        // Participants
+        List<ParticipantResponse> participantResponses =
+                eventParticipantRepository.findByEvent(event)
+                        .stream()
+                        .map(p -> new ParticipantResponse(
+                                p.getUser(),
+                                p.getScore()
+                        ))
+                        .collect(Collectors.toList());
 
         return new EventResponse(
                 event.getId(),
-                adminResponse,
+                event.getAdmin(),
                 event.getTitle(),
                 event.getDescription(),
                 event.getImagePath(),
                 event.getStartedAt(),
                 event.getEndedAt(),
-                prizeResponses
+                prizeResponses,
+                participantResponses
         );
     }
 
@@ -333,7 +337,7 @@ public class EventService {
         // 5. Return success response
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Score updated successfully For The User with ID: " + request.getUserId()
-                                                                            +" And Event ID: " + request.getEventId()));
+                        + " And Event ID: " + request.getEventId()));
     }
 
     @Transactional
@@ -385,10 +389,9 @@ public class EventService {
         // Find the event
         Optional<Event> event = eventRepository.findById(eventId);
         if (event.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Event not found"));
         }
-
 
         // Get all participants with their scores
         List<ParticipantResponse> participants = eventParticipantRepository.findByEvent(event.get())
@@ -398,11 +401,6 @@ public class EventService {
                         participation.getScore()
                 ))
                 .collect(Collectors.toList());
-
-        if (participants.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "There are No Participants For this Event"));
-        }
 
         // Build response
         EventParticipantResponse response = new EventParticipantResponse();

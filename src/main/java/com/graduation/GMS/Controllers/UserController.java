@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @PostMapping("/createUser")
-    public ResponseEntity<?> createUser(@Valid @RequestBody UserRequest userRequest) throws Exception {
+    public ResponseEntity<?> createUser(@Valid @RequestBody UserRequest userRequest) {
         return userService.createUser(userRequest);
     }
 
@@ -58,26 +58,21 @@ public class UserController {
 
     @GetMapping("/by-role")
     public ResponseEntity<?> getUsersByRole(
-            @RequestParam String role,
-            @RequestParam(defaultValue = "") String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
+            @RequestParam Roles role,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        if (page == null || size == null) {
+            return userService.getUsersByRole(role, null);
+        }
         Pageable pageable = PageRequest.of(page, size);
-
-        if (role.equalsIgnoreCase("Admin")) {
-            return userService.getUsersByRoleWithSearch(Roles.Admin, keyword, pageable);
-        } else if (role.equalsIgnoreCase("Secretary")) {
-            return userService.getUsersByRoleWithSearch(Roles.Secretary, keyword, pageable);
-        } else if (role.equalsIgnoreCase("User")) {
-            return userService.getUsersByRoleWithSearch(Roles.User, keyword, pageable);
-        } else if (role.equalsIgnoreCase("Coach")) {
-            return userService.getUsersByRoleWithSearch(Roles.Coach, keyword, pageable);
-        } else
-            return userService.getUsersByRoleWithSearch(Roles.User, keyword, pageable);
+        if (role.equals(Roles.All)) {
+            return userService.getAll(pageable);
+        } else {
+            return userService.getUsersByRole(role, pageable);
+        }
     }
 
-    // --- Private Coach Assignment APIs ---
+    // -- Private Coach Assignment APIs --
 
     @PostMapping("/assignCoach")
     public ResponseEntity<?> assignCoachToUser(@Valid @RequestBody AssignPrivateCoachToUserRequest request) {
@@ -94,6 +89,11 @@ public class UserController {
         return userService.unAssignCoachToUser(request);
     }
 
+    @PostMapping("/add-private-coach-rate")
+    public ResponseEntity<?> addCoachRate(@RequestBody Map<String, Integer> data) {
+        return userService.addCoachRate(data.get("coachId"), data.get("rate"));
+    }
+
     // --- Attendance APIs ---
 
     @PostMapping("/attendance")
@@ -106,34 +106,18 @@ public class UserController {
         return userService.getUserAttendanceById(userId);
     }
 
-    // --- Health Info APIs ---
-
-    @PostMapping("/healthInfo")
-    public ResponseEntity<?> createOrUpdateHealthInfo(@Valid @RequestBody HealthInfoRequest request) {
-        return userService.createOrUpdateHealthInfo(request);
-    }
-
-    @GetMapping("/healthInfo/history/{userId}")
-    public ResponseEntity<?> getHealthInfoHistory(@PathVariable Integer userId) {
-        return userService.getHealthInfoHistory(userId);
-    }
-
     @GetMapping("/profile")
     public ResponseEntity<?> userProfile() {
         return userService.getUserProfile();
     }
 
-    @GetMapping("/qr")
-    public ResponseEntity<?> userQR() {
-        return userService.getUserQR();
-    }
 
     @PostMapping("/logProgress")
     public ResponseEntity<?> addProgressInProgram(@Valid @RequestBody UserProgressRequest userProgressRequest) {
         return userService.logUserProgressInProgram(userProgressRequest);
     }
 
-    @PostMapping("/getProgressByRange")
+    @GetMapping("/getProgressByRange")
     public ResponseEntity<?> getProgressInProgramByRange(@Valid @RequestBody UserProgressRequest userProgressRequest) {
         return userService.getUserProgressInProgram(userProgressRequest);
     }
@@ -166,6 +150,26 @@ public class UserController {
     @PutMapping("/resetForgotPassword")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ForgetPasswordRequest request) {
         return userService.resetForgotPassword(request);
+    }
+
+    @GetMapping("/getUserPrivateCoaches/{userId}")
+    public ResponseEntity<?> getPrivateCoaches(@PathVariable Integer userId) {
+        return userService.getUserCoaches(userId);
+    }
+
+    @PostMapping("/logHealthInfo")
+    public ResponseEntity<?> logHealthInfo(@Valid @RequestBody HealthInfoRequest request) {
+        return userService.logHealthInfo(request);
+    }
+
+    @GetMapping("/getHealthInfoByRange")
+    public ResponseEntity<?> getHealthInfoHistory(@Valid @RequestBody HealthInfoRequest request) {
+        return userService.getUserHealthInfo(request);
+    }
+
+    @DeleteMapping("/deleteHealthInfo/{healthInfoId}")
+    public ResponseEntity<?> deleteUserHealthInfo(@PathVariable Integer healthInfoId) {
+        return userService.deleteHealthInfo(healthInfoId);
     }
 
 }

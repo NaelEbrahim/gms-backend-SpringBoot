@@ -18,7 +18,7 @@ public class LoginRequest {
 
     @NotBlank(message = "password is required")
     @Size(min = 8, message = "must be at least 8 characters")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$&*])\\S{8}$",
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$&*])\\S{8,}$",
             message = "password must contain 1 digit, 1 uppercase, 1 lowercase, and 1 special character")
     private String password;
 

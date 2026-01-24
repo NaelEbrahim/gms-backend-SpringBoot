@@ -4,6 +4,8 @@ import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.Services.ProgramService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,9 +39,17 @@ public class ProgramController {
         return programService.getProgramById(id);
     }
 
-    @GetMapping("/show/all")
-    public ResponseEntity<?> getAllPrograms() {
-        return programService.getAllPrograms();
+    @GetMapping("show/all")
+    public ResponseEntity<?> getPrograms(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        if (page == null || size == null) {
+            // No pagination
+            return programService.getAllPrograms(null);
+        } else {
+            Pageable pageable = PageRequest.of(page, size);
+            return programService.getAllPrograms(pageable);
+        }
     }
 
     @PostMapping("/assign-workout")
@@ -106,7 +116,7 @@ public class ProgramController {
     }
 
     @GetMapping("/get-members-in-program/{programId}")
-    public ResponseEntity<?> getMembersInProgram(@PathVariable Integer programId){
+    public ResponseEntity<?> getMembersInProgram(@PathVariable Integer programId) {
         return programService.getProgramSubscribers(programId);
     }
 

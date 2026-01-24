@@ -4,6 +4,7 @@ import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Models.User_Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 

@@ -84,16 +84,11 @@ public class NotificationService {
     public ResponseEntity<?> getMyNotifications() {
         List<User_Notification> userNotifications = userNotificationRepository.findByUser(HandleCurrentUserSession.getCurrentUser());
 
-        if (userNotifications.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No Notifications found"));
-        }
-
         var response = userNotifications.stream()
                 .map(un -> {
                     Notification n = un.getNotification();
                     return new NotificationResponse(
-                            n.getId(),
+                            un.getId(),
                             n.getTitle(),
                             n.getContent(),
                             n.getCreatedAt(),
@@ -103,6 +98,16 @@ public class NotificationService {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<?> deleteNotification(Integer id) {
+        if (!userNotificationRepository.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "notification id not found"));
+        }
+        userNotificationRepository.deleteById(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "notification deleted"));
     }
 
 }

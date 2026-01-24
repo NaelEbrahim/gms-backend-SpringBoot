@@ -1,8 +1,6 @@
 package com.graduation.GMS.Models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.graduation.GMS.Models.Enums.Day;
-import com.graduation.GMS.Models.Enums.WeekDay;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,15 +28,6 @@ public class Session {
 
     private Integer maxNumber;
 
-    private String days;
-
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startTime;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endTime;
-
     @Column(nullable = false, updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -56,5 +45,8 @@ public class Session {
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<User_Session> userSessionList;
+
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SessionSchedule> schedules;
 
 }

@@ -1,9 +1,13 @@
 package com.graduation.GMS.Services;
 
+import com.graduation.GMS.DTO.Request.AboutUsRequest;
 import com.graduation.GMS.DTO.Request.FAQRequest;
 import com.graduation.GMS.DTO.Response.FAQResponse;
+import com.graduation.GMS.DTO.Response.ProfileResponse;
 import com.graduation.GMS.DTO.Response.UserResponse;
+import com.graduation.GMS.Models.AboutUs;
 import com.graduation.GMS.Models.FAQ;
+import com.graduation.GMS.Repositories.AboutUsRepository;
 import com.graduation.GMS.Repositories.FAQRepository;
 import com.graduation.GMS.Repositories.UserRepository;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
@@ -13,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,8 +28,10 @@ import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
 @Service
 @AllArgsConstructor
 public class FAQService {
-    private FAQRepository faqRepository;
-    private UserRepository userRepository;
+
+    private final FAQRepository faqRepository;
+    private final AboutUsRepository aboutUsRepository;
+
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin')")
@@ -38,23 +46,19 @@ public class FAQService {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "FAQ created successfully"));
     }
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin')")
-    public ResponseEntity<?> updateFAQ(Integer id,FAQRequest request) {
-
-        Optional<FAQ> optionalFAQ = faqRepository.findById(id);
-        if (optionalFAQ.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+    public ResponseEntity<?> updateFAQ(Integer id, FAQRequest request) {
+        var existingFAQ = faqRepository.findById(id).orElse(null);
+        if (existingFAQ == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "FAQ not found"));
         }
-
-        FAQ existingFAQ = optionalFAQ.get();
-
-
-        if (!existingFAQ.getQuestion().equals(request.getQuestion())&&!request.getQuestion().isEmpty()) {
+        if (!existingFAQ.getQuestion().equals(request.getQuestion()) && !request.getQuestion().isEmpty()) {
             existingFAQ.setQuestion(request.getQuestion());
         }
-        if (!existingFAQ.getAnswer().equals(request.getAnswer())&&!request.getAnswer().isEmpty()) {
+        if (!existingFAQ.getAnswer().equals(request.getAnswer()) && !request.getAnswer().isEmpty()) {
             existingFAQ.setAnswer(request.getAnswer());
         }
 
@@ -68,7 +72,7 @@ public class FAQService {
     public ResponseEntity<?> deleteFAQ(Integer id) {
 
         if (!faqRepository.existsById(id)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "FAQ not found"));
         }
 
@@ -79,13 +83,12 @@ public class FAQService {
     }
 
     public ResponseEntity<?> getFAQById(Integer id) {
-        Optional<FAQ> faqOptional = faqRepository.findById(id);
-        if (faqOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "FAQ Not found"));
+        var faqEntity = faqRepository.findById(id).orElse(null);
+        if (faqEntity == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "FAQ Id not found"));
         }
 
-        FAQ faqEntity = faqOptional.get();
         UserResponse adminResponse = mapToUserResponse(faqEntity.getAdmin());
 
         FAQResponse responseDto = new FAQResponse(
@@ -102,11 +105,6 @@ public class FAQService {
     public ResponseEntity<?> getAllFAQes() {
         List<FAQ> faqs = faqRepository.findAll();
 
-        if (faqs.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No FAQs found"));
-        }
-
         List<FAQResponse> faqResponses = faqs.stream()
                 .map(c -> new FAQResponse(
                         c.getId(),
@@ -118,6 +116,58 @@ public class FAQService {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(faqResponses);
+    }
+
+
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
+    public ResponseEntity<?> updateAboutUs(AboutUsRequest request) {
+        AboutUs about = aboutUsRepository.findById(1).orElse(new AboutUs());
+        boolean isUpdated = false;
+
+        if (request.getGymName() != null && !request.getGymName().equals(about.getGymName())) {
+            about.setGymName(request.getGymName());
+            isUpdated = true;
+        }
+        if (request.getGymDescription() != null && !request.getGymDescription().equals(about.getGymDescription())) {
+            about.setGymDescription(request.getGymDescription());
+            isUpdated = true;
+        }
+        if (request.getOurMission() != null && !request.getOurMission().equals(about.getOurMission())) {
+            about.setOurMission(request.getOurMission());
+            isUpdated = true;
+        }
+        if (request.getOurVision() != null && !request.getOurVision().equals(about.getOurVision())) {
+            about.setOurVision(request.getOurVision());
+            isUpdated = true;
+        }
+        if (request.getFacebookLink() != null && !request.getFacebookLink().equals(about.getFacebookLink())) {
+            about.setFacebookLink(request.getFacebookLink());
+            isUpdated = true;
+        }
+        if (request.getInstagramLink() != null && !request.getInstagramLink().equals(about.getInstagramLink())) {
+            about.setInstagramLink(request.getInstagramLink());
+            isUpdated = true;
+        }
+        if (request.getTwitterLink() != null && !request.getTwitterLink().equals(about.getTwitterLink())) {
+            about.setTwitterLink(request.getTwitterLink());
+            isUpdated = true;
+        }
+        if (isUpdated) {
+            about.setUpdatedAt(LocalDateTime.now());
+            aboutUsRepository.save(about);
+        }
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "data updated"));
+    }
+
+    public ResponseEntity<?> getAboutUs() {
+        var about = aboutUsRepository.findById(1).orElse(null);
+        if (about == null) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                    .body(Map.of("message", "no content"));
+        }
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", about));
     }
 
 

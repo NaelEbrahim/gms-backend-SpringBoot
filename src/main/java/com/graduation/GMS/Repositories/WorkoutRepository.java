@@ -16,15 +16,15 @@ public interface WorkoutRepository extends JpaRepository<Workout, Integer> {
     Optional<Workout> findByTitle(String title);
 
     @Query("""
-    SELECT w FROM Workout w
-    WHERE (:muscle IS NULL OR w.primary_muscle = :muscle OR w.secondary_muscles = :muscle)
-      AND (
-          LOWER(w.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
-      )""")
-    Page<Workout> searchWorkoutsByMuscleAndKeyword(
-            @Param("keyword") String keyword,
+              SELECT w FROM Workout w
+              WHERE w.primary_muscle = :muscle
+            """)
+    Page<Workout> findByPrimaryMuscle(
             @Param("muscle") Muscle muscle,
             Pageable pageable
     );
+
+    @Query("SELECT w FROM Workout w ORDER BY w.id")
+    Page<Workout> findAllPageable(Pageable pageable);
 
 }

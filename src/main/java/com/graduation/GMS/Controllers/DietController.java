@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 
 
 @RestController
@@ -51,11 +52,13 @@ public class DietController {
     public ResponseEntity<?> assignMealToDiet(@RequestBody @Valid AssignMealToDietRequest request) {
         return dietService.assignMealToDiet(request);
     }
+
     // Endpoint to update assign a meal for a diet (Request body)
     @PostMapping("/update-assign-meal")
     public ResponseEntity<?> updateAssignMealToDiet(@RequestBody @Valid AssignMealToDietRequest request) {
         return dietService.updateAssignedMealToDiet(request);
     }
+
     // Endpoint to Unassign a meal for a diet (Request body)
     @PostMapping("/unassign-meal")
     public ResponseEntity<?> unAssignMealToDiet(@RequestBody @Valid AssignMealToDietRequest request) {
@@ -103,7 +106,13 @@ public class DietController {
     }
 
     @GetMapping("/get-members-in-DietPlan/{dietId}")
-    public ResponseEntity<?> getMembersInDietPlan(@PathVariable Integer dietId){
+    public ResponseEntity<?> getMembersInDietPlan(@PathVariable Integer dietId) {
         return dietService.getDietSubscribers(dietId);
     }
+
+    @DeleteMapping("/delete-user-feedback")
+    public ResponseEntity<?> deleteUserFeedback(@RequestBody Map<String, String> data) {
+        return dietService.deleteDietFeedback(Integer.valueOf(data.get("userId")), Integer.valueOf(data.get("dietId")));
+    }
+
 }

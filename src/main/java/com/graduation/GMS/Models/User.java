@@ -46,15 +46,11 @@ public class User {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dob;
 
-    @Column(nullable = true)
     private String profileImagePath;
 
     @Column(updatable = false, nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
-
-    @Column(unique = true, nullable = false, length = 512)
-    private String qr;
 
     private String FcmToken;
 
@@ -109,14 +105,6 @@ public class User {
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<User_Coach> userList;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "coach", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<User_Coach> coachList;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Event_Participant> eventParticipantList;
 
     @JsonIgnore
@@ -144,12 +132,16 @@ public class User {
     private List<User_Diet> userDietList;
 
     @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<User_Conversation> userConversations;
+
+    @JsonIgnore
     @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Message> userMessages;
+    private List<Message> userSentMessages;
 
     @JsonIgnore
     @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Message> coachMessages;
+    private List<Message> userReceivedMessages;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

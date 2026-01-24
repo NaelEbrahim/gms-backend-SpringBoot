@@ -3,19 +3,14 @@ package com.graduation.GMS.Models;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.graduation.GMS.Models.Enums.MessageType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.awt.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,15 +20,21 @@ public class Message {
 
     private MessageType type;
 
+    private Boolean isRead;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime date;
+    private LocalDateTime date = LocalDateTime.now();
 
     @ManyToOne
-    @JoinColumn(name = "sender_id")
+    @JoinColumn(name = "sender_id" ,nullable = false)
     private User sender;
 
     @ManyToOne
-    @JoinColumn(name = "receiver_id")
+    @JoinColumn(name = "receiver_id",nullable = false)
     private User receiver;
+
+    @ManyToOne
+    @JoinColumn(name = "conversation_id")
+    private Conversation conversation;
 
 }

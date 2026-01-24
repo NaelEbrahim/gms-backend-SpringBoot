@@ -7,8 +7,11 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
@@ -53,24 +56,23 @@ public class ArticleController {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        if (wiki.equalsIgnoreCase("Health")) {
-            return articleService.searchArticles(Wiki.Health, keyword, pageable);
+        if (wiki != null) {
+            if (wiki.equalsIgnoreCase("All")) {
+                return articleService.searchArticles(null, keyword, pageable);
+            } else if (wiki.equalsIgnoreCase("Sport")) {
+                return articleService.searchArticles(Wiki.Sport, keyword, pageable);
+            } else if (wiki.equalsIgnoreCase("Food")) {
+                return articleService.searchArticles(Wiki.Food, keyword, pageable);
+            } else if (wiki.equalsIgnoreCase("Fitness")) {
+                return articleService.searchArticles(Wiki.Fitness, keyword, pageable);
+            } else if (wiki.equalsIgnoreCase("Supplements")) {
+                return articleService.searchArticles(Wiki.Supplements, keyword, pageable);
+            } else if (wiki.equalsIgnoreCase("Health")) {
+                return articleService.searchArticles(Wiki.Health, keyword, pageable);
+            }
         }
-        else if (wiki.equalsIgnoreCase("Sport")) {
-            return articleService.searchArticles(Wiki.Sport, keyword, pageable);
-        }
-        else if (wiki.equalsIgnoreCase("Food")) {
-            return articleService.searchArticles(Wiki.Food, keyword, pageable);
-        }
-        else if (wiki.equalsIgnoreCase("Fitness")) {
-            return articleService.searchArticles(Wiki.Fitness, keyword, pageable);
-        }
-        else if (wiki.equalsIgnoreCase("Supplements")) {
-            return articleService.searchArticles(Wiki.Supplements, keyword, pageable);
-        }
-        else {
-            return articleService.searchArticles(null, keyword, pageable);
-        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "wikiType required"));
     }
 
 }

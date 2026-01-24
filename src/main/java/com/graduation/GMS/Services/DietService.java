@@ -397,6 +397,7 @@ public class DietService {
         User_Diet userDiet = new User_Diet();
         userDiet.setDiet_plan(dietPlan);
         userDiet.setUser(user);
+        userDiet.setIsActive(true);
         userDiet.setStartedAt(LocalDateTime.now());
         userDietRepository.save(userDiet);
 
@@ -586,11 +587,11 @@ public class DietService {
                 .map(ud -> {
                     DietPlan dietPlan = ud.getDiet_plan();
 
-                    // Create a list with ONLY the current user's feedback
-                    List<UserFeedBackResponse> userFeedbackList = new ArrayList<>();
-                    if (ud.getFeedBack() != null && !ud.getFeedBack().trim().isEmpty()) {
-                        userFeedbackList.add(new UserFeedBackResponse(currentUser, ud.getFeedBack()));
-                    }
+//                    // Create a list with ONLY the current user's feedback
+//                    List<UserFeedBackResponse> userFeedbackList = new ArrayList<>();
+//                    if (ud.getFeedBack() != null && !ud.getFeedBack().trim().isEmpty()) {
+//                        userFeedbackList.add(new UserFeedBackResponse(currentUser, ud.getFeedBack()));
+//                    }
 
                     return new DietResponse(
                             dietPlan.getId(),
@@ -599,8 +600,11 @@ public class DietService {
                             dietPlan.getCreatedAt(),
                             dietPlan.getLastModifiedAt(),
                             ud.getRate(),
+                            ud.getIsActive(),
                             buildScheduleResponse(dietPlan),
-                            userFeedbackList
+                            null,
+                            ud.getFeedBack(),
+                            ud.getStartedAt()
                     );
                 })
                 .toList();
@@ -672,6 +676,25 @@ public class DietService {
             for (User_Diet item : targetDiet)
                 dietSubscribers.add(UserResponse.mapToUserResponse(item.getUser()));
         return ResponseEntity.status(HttpStatus.OK).body(dietSubscribers);
+    }
+
+    public ResponseEntity<?> deleteDietFeedback(Integer userId, Integer dietId) {
+        var user = userRepository.findById(userId).orElse(null);
+        var diet = dietPlanRepository.findById(dietId).orElse(null);
+        System.out.println(userId + " " + dietId);
+        if (user == null || diet == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "wrong user or diet Id"));
+        }
+        var userDiet = userDietRepository.findByUserAndDietPlan(user, diet).orElse(null);
+        if (userDiet == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user has no subscription"));
+        }
+        userDiet.setFeedBack(null);
+        userDietRepository.save(userDiet);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "feedback deleted"));
     }
 
 }

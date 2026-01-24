@@ -1,5 +1,6 @@
 package com.graduation.GMS.Controllers;
 
+import com.graduation.GMS.DTO.Request.AboutUsRequest;
 import com.graduation.GMS.DTO.Request.FAQRequest;
 import com.graduation.GMS.Services.FAQService;
 import lombok.AllArgsConstructor;
@@ -43,5 +44,16 @@ public class FAQController {
     public ResponseEntity<?> getAllFAQes() {
         return faqService.getAllFAQes();
     }
+
+    @PutMapping("/update-about-us")
+    public ResponseEntity<?> updateAboutUs(@RequestBody AboutUsRequest request) {
+        return faqService.updateAboutUs(request);
+    }
+
+    @GetMapping("/get-about-us")
+    public ResponseEntity<?> getAboutUs() {
+        return faqService.getAboutUs();
+    }
+
 
 }

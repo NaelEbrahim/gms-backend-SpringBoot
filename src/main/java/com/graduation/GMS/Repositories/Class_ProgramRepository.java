@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface Class_ProgramRepository extends JpaRepository<Class_Program, Integer> {
@@ -19,5 +20,5 @@ public interface Class_ProgramRepository extends JpaRepository<Class_Program, In
     List<Class_Program> findByAClass(@Param("aClass") Class aClass);
 
     @Query("SELECT cp FROM Class_Program cp WHERE cp.aClass = :aClass And cp.program= :program")
-    Class_Program findByAClassAndProgram(Class aClass, Program program);
+    Optional<Class_Program> findByAClassAndProgram(Class aClass, Program program);
 }

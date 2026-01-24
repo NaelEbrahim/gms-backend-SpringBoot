@@ -27,4 +27,27 @@ public class ArticleResponse {
 
     private LocalDateTime lastModifiedAt;
 
+    private Integer minReadTime ;
+
+    public ArticleResponse(Integer id, UserResponse admin, String title, String content, Wiki wikiType, LocalDateTime createdAt, LocalDateTime lastModifiedAt) {
+        this.id = id;
+        this.admin = admin;
+        this.title = title;
+        this.content = content;
+        this.wikiType = wikiType;
+        this.createdAt = createdAt;
+        this.lastModifiedAt = lastModifiedAt;
+        this.minReadTime = calculateReadTime(this.content);
+    }
+
+    public static int calculateReadTime(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return 0;
+        }
+        String[] words = content.trim().split("\\s+");
+        int wordCount = words.length;
+        double timeInMinutes = (double) wordCount / 60;
+        return (int) Math.ceil(timeInMinutes);
+    }
+
 }

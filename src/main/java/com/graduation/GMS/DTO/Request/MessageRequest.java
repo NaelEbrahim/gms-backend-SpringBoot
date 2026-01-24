@@ -1,12 +1,11 @@
 package com.graduation.GMS.DTO.Request;
 
-import com.graduation.GMS.Models.Enums.MessageType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.util.List;
 
 @Setter
 @Getter
@@ -23,5 +22,9 @@ public class MessageRequest {
     private String receiverId;
 
     private String content;
+
+    private List<Integer> messageIds;
+
+    private Integer conversationId;
 
 }

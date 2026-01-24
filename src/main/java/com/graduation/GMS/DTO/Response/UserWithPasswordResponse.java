@@ -23,7 +23,9 @@ public class UserWithPasswordResponse extends ProfileResponse{
                 user.getGender(),
                 user.getDob(),
                 user.getCreatedAt(),
-                user.getQr());
+                null,
+                null
+        );
         this.password = password;
     }
 }

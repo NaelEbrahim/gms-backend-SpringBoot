@@ -1,7 +1,10 @@
 package com.graduation.GMS.DTO.Response;
 
+import com.graduation.GMS.Models.Enums.Gender;
 import com.graduation.GMS.Models.User;
 import lombok.*;
+
+import java.time.LocalDate;
 
 
 @Getter
@@ -16,6 +19,12 @@ public class UserResponse {
     private String lastName;
 
     private String email;
+
+    private String phoneNumber;
+
+    private Gender gender;
+
+    private LocalDate dob;
 
     private String profileImagePath;
 
@@ -32,6 +41,9 @@ public class UserResponse {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
+                user.getPhoneNumber(),
+                user.getGender(),
+                user.getDob(),
                 user.getProfileImagePath()
         );
     }

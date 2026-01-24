@@ -1,16 +1,12 @@
 package com.graduation.GMS.DTO.Request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
-import com.graduation.GMS.Models.Enums.WeekDay;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.List;
 
 @Setter
@@ -19,23 +15,26 @@ import java.util.List;
 @AllArgsConstructor
 public class SessionRequest {
 
-    private Integer coachId;
+    Integer coachId;
 
-    private Integer classId;
-    @NotBlank(message = "Program title is required")
-    @Size(max = 100, message = "Program title must not exceed 100 characters")
-    private String title;
+    Integer classId;
 
-    private String description;
+    String title;
 
-    private Integer maxNumber;
+    String description;
 
-    private List<String> days;
+    Integer maxNumber;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startTime;
+    List<SessionScheduleRequest> schedules;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endTime;
+    @Setter
+    @Getter
+    public static class SessionScheduleRequest {
+        DayOfWeek day;
+
+        LocalTime startTime;
+
+        LocalTime endTime;
+    }
 
 }

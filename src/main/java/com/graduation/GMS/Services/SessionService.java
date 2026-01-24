@@ -1,8 +1,5 @@
 package com.graduation.GMS.Services;
 
-import com.google.zxing.*;
-import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
-import com.google.zxing.common.HybridBinarizer;
 import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.DTO.Response.ProgramResponse;
 import com.graduation.GMS.DTO.Response.SessionResponse;
@@ -16,11 +13,14 @@ import com.graduation.GMS.Models.Enums.WeekDay;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -53,144 +53,102 @@ public class SessionService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createSession(SessionRequest request) {
-        // Check if session title already exists
-        Optional<Session> existingSession = sessionRepository.findByTitle(request.getTitle());
-        if (existingSession.isPresent()) {
+        if (sessionRepository.findByTitle(request.getTitle()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Session title already exists"));
         }
-
-        Optional<Class> classOptional = classRepository.findById(request.getClassId());
-        if (classOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Class not found"));
-        }
-
-        // 🔁 Convert input strings to WeekDay enum safely
-        List<WeekDay> weekDays;
-        try {
-            weekDays = request.getDays().stream()
-                    .map(day -> WeekDay.valueOf(day))
-                    .toList();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message",
-                            "Invalid day name. Expected values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday"));
-        }
-
-        Optional<User> userOptional = userRepository.findById(request.getCoachId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "User not found"));
-        }
-
-        // Create and save new session
+        Class aClass = classRepository.findById(request.getClassId())
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.BAD_REQUEST, "Class not found"));
+        User coach = userRepository.findById(request.getCoachId())
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Coach not found"));
         Session session = new Session();
         session.setTitle(request.getTitle());
         session.setDescription(request.getDescription());
         session.setMaxNumber(request.getMaxNumber());
-        session.setStartTime(request.getStartTime());
-        session.setEndTime(request.getEndTime());
         session.setCreatedAt(LocalDateTime.now());
-        session.setCoach(userOptional.get());
-        session.setAClass(classOptional.get());
-        if (!weekDays.isEmpty()) {
-            String daysString = weekDays.stream()
-                    .map(Enum::name)
-                    .collect(Collectors.joining(","));
-            session.setDays(daysString);
+        session.setCoach(coach);
+        session.setAClass(aClass);
+        // schedules
+        if (request.getSchedules() != null && !request.getSchedules().isEmpty()) {
+            List<SessionSchedule> schedules = request.getSchedules().stream()
+                    .map(req -> {
+                        SessionSchedule schedule = new SessionSchedule();
+                        schedule.setDay(req.getDay());
+                        schedule.setStartTime(req.getStartTime());
+                        schedule.setEndTime(req.getEndTime());
+                        schedule.setSession(session);
+                        return schedule;
+                    }).toList();
+            session.setSchedules(schedules);
         }
-
-
-        // Create and send notification
-        Notification notification = new Notification();
-        notification.setTitle("New Session has been created");
-        notification.setContent("Hurry up to join us in the new Session :" + session.getTitle());
-        notification.setCreatedAt(LocalDateTime.now());
-        // Persist notification first
-        notification = notificationRepository.save(notification); // Save and get managed instance
-
-        List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
-
-        notificationService.sendNotificationToUsers(
-                usersWithUserRole,
-                notification
-        );
-
         sessionRepository.save(session);
+
+        // notification
+        Notification notification = new Notification();
+        notification.setTitle("New Session has been created" + session.getTitle());
+        notification.setContent("Hurry up to join session: " + session.getTitle());
+        notification.setCreatedAt(LocalDateTime.now());
+
+        notification = notificationRepository.save(notification);
+
+        List<User> users = userRepository.findAllByRoleName(Roles.User);
+        notificationService.sendNotificationToUsers(users, notification);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Session created successfully"));
     }
 
+
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> updateSession(Integer id, SessionRequest request) {
-        Optional<Session> optionalSession = sessionRepository.findById(id);
-        if (optionalSession.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Session not found"));
-        }
-
-        Session session = optionalSession.get();
-
-        Optional<Class> classOptional = classRepository.findById(request.getClassId());
-        if (classOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Class not found"));
-        }
-
-        Optional<User> userOptional = userRepository.findById(request.getCoachId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "User not found"));
-        }
-
-        if (!session.getCoach().getId().equals(request.getCoachId())) {
-            session.setCoach(userOptional.get());
-        }
-
-        // 🔁 Convert input strings to WeekDay enum safely
-        List<WeekDay> weekDays;
-        try {
-            weekDays = request.getDays().stream()
-                    .map(day -> WeekDay.valueOf(day))
-                    .toList();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message",
-                            "Invalid day name. Expected values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday"));
-        }
-
-        if (!session.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
+        Session session = sessionRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session not found"));
+        if (request.getTitle() != null && !request.getTitle().equals(session.getTitle())) {
             session.setTitle(request.getTitle());
         }
-        if (request.getDescription() != null && !session.getDescription().equals(request.getDescription())) {
+        if (request.getDescription() != null) {
             session.setDescription(request.getDescription());
         }
-        if (request.getMaxNumber() != null && !session.getMaxNumber().equals(request.getMaxNumber())) {
+        if (request.getMaxNumber() != null) {
             session.setMaxNumber(request.getMaxNumber());
         }
-        // update the list here
-        if (request.getStartTime() != null && !session.getStartTime().equals(request.getStartTime())) {
-            session.setStartTime(request.getStartTime());
+        if (request.getCoachId() != null &&
+                !session.getCoach().getId().equals(request.getCoachId())) {
+            User coach = userRepository.findById(request.getCoachId())
+                    .orElseThrow(() ->
+                            new ResponseStatusException(HttpStatus.BAD_REQUEST, "Coach not found"));
+            session.setCoach(coach);
         }
-        if (request.getEndTime() != null && !session.getEndTime().equals(request.getEndTime())) {
-            session.setEndTime(request.getEndTime());
-        }
-        if (request.getClassId() != null && !session.getAClass().getId().equals(request.getClassId())) {
-            session.setAClass(classRepository.findById(request.getClassId()).get());
-        }
-        if (!weekDays.isEmpty()) {
-            String daysString = weekDays.stream()
-                    .map(Enum::name)
-                    .collect(Collectors.joining(","));
-            session.setDays(daysString);
-        }
+        if (request.getClassId() != null &&
+                !session.getAClass().getId().equals(request.getClassId())) {
 
+            Class aClass = classRepository.findById(request.getClassId())
+                    .orElseThrow(() ->
+                            new ResponseStatusException(HttpStatus.BAD_REQUEST, "Class not found"));
+            session.setAClass(aClass);
+        }
+        if (request.getSchedules() != null) {
+            session.getSchedules().clear();
+            List<SessionSchedule> newSchedules = request.getSchedules().stream()
+                    .map(req -> {
+                        SessionSchedule schedule = new SessionSchedule();
+                        schedule.setDay(req.getDay());
+                        schedule.setStartTime(req.getStartTime());
+                        schedule.setEndTime(req.getEndTime());
+                        schedule.setSession(session);
+                        return schedule;
+                    }).toList();
+            session.getSchedules().addAll(newSchedules);
+        }
         sessionRepository.save(session);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("message", "Session updated successfully"));
+        return ResponseEntity.ok(
+                Map.of("message", "Session updated successfully"));
     }
+
 
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> deleteSession(Integer id) {
@@ -205,21 +163,22 @@ public class SessionService {
     }
 
     public ResponseEntity<?> getSessionById(Integer id) {
-        Optional<Session> sessionOptional = sessionRepository.findById(id);
-        if (sessionOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Session not found"));
-        }
-
-        Session session = sessionOptional.get();
-
-        List<String> days = new ArrayList<>();
-        if (session.getDays() != null && !session.getDays().isEmpty()) {
-            days = Arrays.stream(session.getDays().split(","))
-                    .map(String::trim)
-                    .toList();
-        }
-
+        Session session = sessionRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Session not found"
+                        )
+                );
+        List<SessionResponse.Schedule> schedules =
+                session.getSchedules()
+                        .stream()
+                        .map(s -> new SessionResponse.Schedule(
+                                s.getDay().name(),
+                                s.getStartTime(),
+                                s.getEndTime()
+                        ))
+                        .toList();
         SessionResponse response = new SessionResponse(
                 session.getId(),
                 session.getTitle(),
@@ -227,36 +186,33 @@ public class SessionService {
                 session.getAClass().getId(),
                 UserResponse.mapToUserResponse(session.getCoach()),
                 calculateRate(session.getId()),
-                days,
+                schedules,
                 session.getCreatedAt(),
-                session.getStartTime(),
-                session.getEndTime(),
                 session.getMaxNumber(),
                 userSessionRepository.countBySession(session),
-                null);
-
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+                null,
+                null,
+                null,
+                session.getAClass().getName(),
+                session.getAClass().getImagePath()
+        );
+        return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<?> getAllSessions() {
-        List<Session> sessions = sessionRepository.findAll();
 
-        if (sessions.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No sessions found"));
-        }
-
+    public ResponseEntity<?> getAllSessions(Pageable pageable) {
+        Page<Session> sessions = sessionRepository.findAllPageable(pageable);
         List<SessionResponse> sessionResponses = sessions.stream()
                 .map(session -> {
-                    // Get workouts for each session
-
-                    List<String> days = new ArrayList<>();
-                    if (session.getDays() != null && !session.getDays().isEmpty()) {
-                        days = Arrays.stream(session.getDays().split(","))
-                                .map(String::trim)
-                                .toList();
-                    }
-
+                    List<SessionResponse.Schedule> schedules =
+                            session.getSchedules()
+                                    .stream()
+                                    .map(s -> new SessionResponse.Schedule(
+                                            s.getDay().name(),
+                                            s.getStartTime(),
+                                            s.getEndTime()
+                                    ))
+                                    .toList();
                     return new SessionResponse(
                             session.getId(),
                             session.getTitle(),
@@ -264,58 +220,66 @@ public class SessionService {
                             session.getAClass().getId(),
                             UserResponse.mapToUserResponse(session.getCoach()),
                             calculateRate(session.getId()),
-                            days,
+                            schedules,
                             session.getCreatedAt(),
-                            session.getStartTime(),
-                            session.getEndTime(),
                             session.getMaxNumber(),
                             userSessionRepository.countBySession(session),
-                            null);
+                            null,
+                            null,
+                            null,
+                            session.getAClass().getName(),
+                            session.getAClass().getImagePath()
+                    );
                 })
-                .collect(Collectors.toList());
-
-        return ResponseEntity.status(HttpStatus.OK).body(sessionResponses);
+                .toList();
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", sessions.getTotalElements());
+        result.put("totalPages", sessions.getTotalPages());
+        result.put("currentPage", sessions.getNumber());
+        result.put("sessions", sessionResponses);
+        return ResponseEntity.ok(Map.of("message", result));
     }
 
-    public ResponseEntity<?> getAllSessionsByClassId(int classId) {
-        List<Session> sessions = sessionRepository.findAll();
-
+    public ResponseEntity<?> getAllSessionsByClassId(int classId, Pageable pageable) {
+        Page<Session> sessions = sessionRepository.findAllByAClass_Id(classId, pageable);
         if (sessions.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "No sessions found"));
         }
-
-        List<SessionResponse> sessionResponses = sessions.stream()
-                .filter(session -> session.getAClass().getId() == classId)
-                .map(session -> {
-                    // Get workouts for each session
-
-                    List<String> days = new ArrayList<>();
-                    if (session.getDays() != null && !session.getDays().isEmpty()) {
-                        days = Arrays.stream(session.getDays().split(","))
-                                .map(String::trim)
-                                .toList();
-                    }
-
-                    return new SessionResponse(
-                            session.getId(),
-                            session.getTitle(),
-                            session.getDescription(),
-                            session.getAClass().getId(),
-                            UserResponse.mapToUserResponse(session.getCoach()),
-                            calculateRate(session.getId()),
-                            days,
-                            session.getCreatedAt(),
-                            session.getStartTime(),
-                            session.getEndTime(),
-                            session.getMaxNumber(),
-                            userSessionRepository.countBySession(session),
-                            null);
-                })
-                .collect(Collectors.toList());
-
-        return ResponseEntity.status(HttpStatus.OK).body(sessionResponses);
+        List<SessionResponse> sessionResponses =
+                sessions.stream()
+                        .map(session -> {
+                            List<SessionResponse.Schedule> schedules =
+                                    session.getSchedules()
+                                            .stream()
+                                            .map(s -> new SessionResponse.Schedule(
+                                                    s.getDay().name(),
+                                                    s.getStartTime(),
+                                                    s.getEndTime()
+                                            ))
+                                            .toList();
+                            return new SessionResponse(
+                                    session.getId(),
+                                    session.getTitle(),
+                                    session.getDescription(),
+                                    session.getAClass().getId(),
+                                    UserResponse.mapToUserResponse(session.getCoach()),
+                                    calculateRate(session.getId()),
+                                    schedules,
+                                    session.getCreatedAt(),
+                                    session.getMaxNumber(),
+                                    userSessionRepository.countBySession(session),
+                                    null,
+                                    null,
+                                    null,
+                                    session.getAClass().getName(),
+                                    session.getAClass().getImagePath()
+                            );
+                        })
+                        .toList();
+        return ResponseEntity.ok(sessionResponses);
     }
+
 
     private Float calculateRate(int sessionId) {
         // First check if the session exists
@@ -432,38 +396,29 @@ public class SessionService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> rateSession(RateSessionRequest request) {
-
         User user = HandleCurrentUserSession.getCurrentUser();
-
         // Validate session exists
-        Optional<Session> sessionOptional = sessionRepository.findById(request.getSessionId());
-        if (sessionOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        var session = sessionRepository.findById(request.getSessionId()).orElse(null);
+        if (session == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Session not found"));
         }
-
-        Session session = sessionOptional.get();
-
         // Check if session is assigned to user
         if (!userSessionRepository.existsByUserAndSession(user, session)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "You can only rate sessions assigned to you"));
         }
-
         // Validate rating (1-5)
         if (request.getRate() == null || request.getRate() < 1 || request.getRate() > 5) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Rating must be between 1 and 5"));
         }
-
-        // Find or create user-session relationship
+        // Find user-session relationship
         User_Session userSession = userSessionRepository.findByUserAndSession(user, session)
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
-
         // Update rating
         userSession.setRate(request.getRate());
         userSessionRepository.save(userSession);
-
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Session rated successfully"));
     }
@@ -507,143 +462,133 @@ public class SessionService {
     }
 
     public ResponseEntity<?> getAllSessionFeedBacks(Integer sessionId) {
-        Optional<Session> sessionOptional = sessionRepository.findById(sessionId);
-        if (sessionOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Session not found"));
-        }
-
-        Session session = sessionOptional.get();
-
-        // Get only active subscribers
-        List<UserFeedBackResponse> feedBacks = userSessionRepository.findFeedbackBySession(session)
-                .stream()
-                .map(User_Session -> {
-                    User user = User_Session.getUser();
-                    return new UserFeedBackResponse(user, User_Session.getFeedback());
-                })
-                .toList();
-
-        List<String> days = new ArrayList<>();
-        if (session.getDays() != null && !session.getDays().isEmpty()) {
-            days = Arrays.stream(session.getDays().split(","))
-                    .map(String::trim)
-                    .toList();
-        }
-
-        SessionResponse responseDto = new SessionResponse(
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        // feedbacks
+        List<UserFeedBackResponse> feedBacks =
+                userSessionRepository.findFeedbackBySession(session)
+                        .stream()
+                        .map(us -> new UserFeedBackResponse(
+                                us.getUser(),
+                                us.getFeedback()
+                        ))
+                        .toList();
+        // schedules (day + time)
+        List<SessionResponse.Schedule> schedules =
+                session.getSchedules()
+                        .stream()
+                        .map(s -> new SessionResponse.Schedule(
+                                s.getDay().name(),
+                                s.getStartTime(),
+                                s.getEndTime()
+                        ))
+                        .toList();
+        SessionResponse response = new SessionResponse(
                 session.getId(),
                 session.getTitle(),
                 session.getDescription(),
                 session.getAClass().getId(),
                 UserResponse.mapToUserResponse(session.getCoach()),
                 calculateRate(session.getId()),
-                days,
+                schedules,
                 session.getCreatedAt(),
-                session.getStartTime(),
-                session.getEndTime(),
                 session.getMaxNumber(),
                 userSessionRepository.countBySession(session),
-                feedBacks);
-
-        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+                feedBacks,
+                null,
+                null,
+                session.getAClass().getName(),
+                session.getAClass().getImagePath()
+        );
+        return ResponseEntity.ok(response);
     }
+
 
     @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> getMyAssignedSessions() {
         User user = HandleCurrentUserSession.getCurrentUser();
-
         List<User_Session> userSessions = userSessionRepository.findByUser(user);
-
-        if (userSessions.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No sessions assigned to this user"));
-        }
-
         List<SessionResponse> sessionResponses = userSessions.stream()
-                .map(up -> {
-                    Session session = up.getSession();
-
-                    // Create a list with ONLY the current user's feedback
-                    List<UserFeedBackResponse> userFeedbackList = new ArrayList<>();
-                    if (up.getFeedback() != null && !up.getFeedback().trim().isEmpty()) {
-                        userFeedbackList.add(new UserFeedBackResponse(user, up.getFeedback()));
-                    }
-
-
-                    List<String> days = new ArrayList<>();
-                    if (session.getDays() != null && !session.getDays().isEmpty()) {
-                        days = Arrays.stream(session.getDays().split(","))
-                                .map(String::trim)
-                                .toList();
-                    }
-
+                .map(us -> {
+                    Session session = us.getSession();
+                    // schedules (day + time)
+                    List<SessionResponse.Schedule> schedules =
+                            session.getSchedules()
+                                    .stream()
+                                    .map(s -> new SessionResponse.Schedule(
+                                            s.getDay().name(),
+                                            s.getStartTime(),
+                                            s.getEndTime()
+                                    ))
+                                    .toList();
                     return new SessionResponse(
                             session.getId(),
                             session.getTitle(),
                             session.getDescription(),
                             session.getAClass().getId(),
                             UserResponse.mapToUserResponse(session.getCoach()),
-                            up.getRate(),
-                            days,
+                            us.getRate(),
+                            schedules,
                             session.getCreatedAt(),
-                            session.getStartTime(),
-                            session.getEndTime(),
                             session.getMaxNumber(),
                             userSessionRepository.countBySession(session),
-                            userFeedbackList);
+                            null,
+                            us.getFeedback(),
+                            us.getJoinedAt(),
+                            session.getAClass().getName(),
+                            session.getAClass().getImagePath()
+                    );
                 })
                 .toList();
-
         return ResponseEntity.ok(sessionResponses);
     }
+
 
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> getAssignedSessionsByUserId(Integer userId) {
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
-
         User user = userOptional.get();
         List<User_Session> userSessions = userSessionRepository.findByUser(user);
-
-        if (userSessions.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No sessions assigned to this user"));
-        }
-
         List<SessionResponse> sessionResponses = userSessions.stream()
-                .map(up -> {
-                    Session session = up.getSession();
-
-                    List<String> days = new ArrayList<>();
-                    if (session.getDays() != null && !session.getDays().isEmpty()) {
-                        days = Arrays.stream(session.getDays().split(","))
-                                .map(String::trim)
-                                .toList();
-                    }
-
+                .map(us -> {
+                    Session session = us.getSession();
+                    // schedules (day + start/end time)
+                    List<SessionResponse.Schedule> schedules =
+                            session.getSchedules()
+                                    .stream()
+                                    .map(s -> new SessionResponse.Schedule(
+                                            s.getDay().name(),
+                                            s.getStartTime(),
+                                            s.getEndTime()
+                                    ))
+                                    .toList();
                     return new SessionResponse(
                             session.getId(),
                             session.getTitle(),
                             session.getDescription(),
                             session.getAClass().getId(),
                             UserResponse.mapToUserResponse(session.getCoach()),
-                            calculateRate(session.getId()),
-                            days,
+                            us.getRate(),
+                            schedules,
                             session.getCreatedAt(),
-                            session.getStartTime(),
-                            session.getEndTime(),
                             session.getMaxNumber(),
                             userSessionRepository.countBySession(session),
-                            null);
+                            null,
+                            us.getFeedback(),
+                            us.getJoinedAt(),
+                            session.getAClass().getName(),
+                            session.getAClass().getImagePath()
+                    );
                 })
                 .toList();
-
         return ResponseEntity.ok(sessionResponses);
     }
+
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
@@ -690,9 +635,6 @@ public class SessionService {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of("message", "Attendance recorded successfully"));
 
-        } catch (NotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "QR code could not be decoded"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal server error: " + e.getMessage()));
@@ -701,15 +643,7 @@ public class SessionService {
 
     // Helper method to decode Base64 QR image and extract email
     private String decodeEmailFromQrImage(String qrBase64) throws Exception {
-        byte[] imageBytes = Base64.getDecoder().decode(qrBase64);
-        ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes);
-        BufferedImage bufferedImage = ImageIO.read(bis);
-
-        LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
-        BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
-        Result result = new MultiFormatReader().decode(bitmap);
-        return result.getText();
+        return "result.getText()";
     }
 
     @Transactional
@@ -760,6 +694,24 @@ public class SessionService {
             for (User_Session item : targetSession)
                 sessionSubscribers.add(UserResponse.mapToUserResponse(item.getUser()));
         return ResponseEntity.status(HttpStatus.OK).body(sessionSubscribers);
+    }
+
+    public ResponseEntity<?> deleteSessionFeedBack(Integer userId, Integer classId) {
+        var user = userRepository.findById(userId).orElse(null);
+        var session = sessionRepository.findById(classId).orElse(null);
+        if (user == null || session == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "wrong user or session Id"));
+        }
+        var userSession = userSessionRepository.findByUserAndSession(user, session).orElse(null);
+        if (userSession == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user has no subscription"));
+        }
+        userSession.setFeedback(null);
+        userSessionRepository.save(userSession);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "feedback deleted"));
     }
 
 }

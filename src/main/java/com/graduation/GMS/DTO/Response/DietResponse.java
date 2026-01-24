@@ -27,9 +27,24 @@ public class DietResponse {
 
     private Float rate;
 
+    private Boolean isActive;
+
     private ScheduleResponse schedule;
 
     private List<UserFeedBackResponse> feedBacks;
 
+    private String myFeedback;
 
+    private LocalDateTime startedAt;
+
+    public DietResponse(Integer id, UserResponse coach, String title, LocalDateTime createdAt, LocalDateTime lastModifiedAt, Float rate, ScheduleResponse schedule, List<UserFeedBackResponse> feedBacks) {
+        this.id = id;
+        this.coach = coach;
+        this.title = title;
+        this.createdAt = createdAt;
+        this.lastModifiedAt = lastModifiedAt;
+        this.rate = rate;
+        this.schedule = schedule;
+        this.feedBacks = feedBacks;
+    }
 }

@@ -21,10 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -145,27 +142,13 @@ public class WorkoutService {
                 .body(response);
     }
 
-    public ResponseEntity<?> searchWorkouts(String keyword, String muscleStr, Pageable pageable) {
-        Muscle muscle = null;
-
-        try {
-            if (muscleStr != null && !muscleStr.isBlank()) {
-                muscle = Muscle.valueOf(muscleStr.trim());
-            }
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Invalid muscle group: " + muscleStr));
+    public ResponseEntity<?> getAllWorkouts(Muscle muscle, Pageable pageable) {
+        Page<Workout> workoutsPage;
+        if (muscle != null) {
+            workoutsPage = workoutRepository.findByPrimaryMuscle(muscle, pageable);
+        } else {
+            workoutsPage = workoutRepository.findAllPageable(pageable);
         }
-
-        Page<Workout> workoutsPage = workoutRepository.searchWorkoutsByMuscleAndKeyword(
-                keyword, muscle, pageable
-        );
-
-        if (workoutsPage.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No workouts found"));
-        }
-
         List<WorkoutResponse> workoutResponses = workoutsPage.stream()
                 .map(w -> new WorkoutResponse(
                         w.getId(),
@@ -181,14 +164,13 @@ public class WorkoutService {
                         0
                 ))
                 .toList();
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("count", workoutsPage.getTotalElements());
-        response.put("totalPages", workoutsPage.getTotalPages());
-        response.put("currentPage", workoutsPage.getNumber());
-        response.put("workouts", workoutResponses);
-
-        return ResponseEntity.ok(response);
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", workoutsPage.getTotalElements());
+        result.put("totalPages", workoutsPage.getTotalPages());
+        result.put("currentPage", workoutsPage.getNumber());
+        result.put("workouts", workoutResponses);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", result));
     }
 
 
@@ -237,14 +219,7 @@ public class WorkoutService {
     @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> getMyFavoriteWorkouts() {
         User user = HandleCurrentUserSession.getCurrentUser();
-
         List<User_Workout_favorite> favorites = userWorkoutFavorite.findAllByUser(user);
-
-        if (favorites.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No favorite workouts found"));
-        }
-
         List<WorkoutResponse> responseList = favorites.stream()
                 .map(fav -> {
                     Workout w = fav.getWorkout();

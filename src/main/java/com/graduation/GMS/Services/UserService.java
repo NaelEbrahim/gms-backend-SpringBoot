@@ -1,8 +1,6 @@
 package com.graduation.GMS.Services;
 
-import com.google.zxing.*;
-import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
-import com.google.zxing.common.HybridBinarizer;
+
 import com.graduation.GMS.Config.SecurityConfig;
 import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.DTO.Response.*;
@@ -31,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -69,14 +68,16 @@ public class UserService {
 
     private final VerificationCodeService verificationCodeService;
 
+    private final SubscriptionHistoryRepository subscriptionHistoryRepository;
+
 
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
-    public ResponseEntity<?> createUser(UserRequest createRequest) throws Exception {
+    public ResponseEntity<?> createUser(UserRequest createRequest) {
         return internalCreateUser(createRequest);
     }
 
     @Transactional
-    public ResponseEntity<?> internalCreateUser(UserRequest createRequest) throws Exception {
+    public ResponseEntity<?> internalCreateUser(UserRequest createRequest) {
         if (userRepository.findByEmail(createRequest.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message:", "email already exist"));
@@ -95,7 +96,6 @@ public class UserService {
         newUser.setDob(createRequest.getDob());
         newUser.setPhoneNumber(createRequest.getPhoneNumber());
         newUser.setCreatedAt(LocalDateTime.now());
-        newUser.setQr(Generators.generateQRCode(createRequest.getEmail()));
         newUser.setPassword(securityConfig.passwordEncoder().encode(password));
         userRepository.save(newUser);
         //Roles
@@ -122,7 +122,7 @@ public class UserService {
             for (User_Role element : ur)
                 userRoles.add(element.getRole().getRoleName());
             // Tokens
-            invalidateUserToken(user.getId());
+            invalidateUserToken(user);
             String accessToken = jwtService.generateAccessToken(user, userRoles);
             String refreshToken = jwtService.generateRefreshToken(user);
             authTokenRepository.save(AuthToken.builder().user(user).accessToken(accessToken).refreshToken(refreshToken).build());
@@ -132,6 +132,20 @@ public class UserService {
         } else
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "invalid username or password"));
+    }
+
+    boolean checkSubscription(User user) {
+        boolean isExpired = false;
+        List<SubscriptionHistory> latestSubs = subscriptionHistoryRepository.findLatestSubscriptions();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Damascus"));
+        for (SubscriptionHistory sh : latestSubs) {
+            LocalDate endDate = sh.getPaymentDate().toLocalDate().plusMonths(1);
+            if (!endDate.isAfter(today)) {
+                isExpired = true;
+                break;
+            }
+        }
+        return isExpired;
     }
 
     @Transactional
@@ -147,11 +161,15 @@ public class UserService {
                 List<Roles> userRoles = new ArrayList<>();
                 for (User_Role element : ur)
                     userRoles.add(element.getRole().getRoleName());
-                invalidateUserToken(user.getId());
-                // Generate new access token
+                invalidateUserToken(user);
+                // Generate new access & refresh token
                 String newAccessToken = jwtService.generateAccessToken(user, userRoles);
-                authTokenRepository.save(AuthToken.builder().user(user).accessToken(newAccessToken).refreshToken(refreshToken).build());
-                return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+                String newRefreshToken = jwtService.generateRefreshToken(user);
+                authTokenRepository.save(AuthToken.builder().user(user).accessToken(newAccessToken).refreshToken(newRefreshToken).build());
+                Map<String, Object> response = new HashMap<>();
+                response.put("accessToken", newAccessToken);
+                response.put("refreshToken", newRefreshToken);
+                return ResponseEntity.ok(response);
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
             }
@@ -175,19 +193,14 @@ public class UserService {
         if (userRequest.getEmail() != null && !userRequest.getEmail().equals(user.getEmail())) {
             if (userRepository.findByEmail(userRequest.getEmail()).isPresent())
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message:", "email already exist"));
-            try {
+            else
                 user.setEmail(userRequest.getEmail());
-                user.setQr(Generators.generateQRCode(userRequest.getEmail()));
-                userRepository.save(user);
-            } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("message:", e.getMessage()));
-            }
         }
         if (userRequest.getPhoneNumber() != null && !userRequest.getPhoneNumber().equals(user.getPhoneNumber())) {
             if (userRepository.findByPhoneNumber(userRequest.getPhoneNumber()).isPresent())
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message:", "phone number already exist"));
-            user.setPhoneNumber(userRequest.getPhoneNumber());
+            else
+                user.setPhoneNumber(userRequest.getPhoneNumber());
         }
         if (userRequest.getDob() != null && !userRequest.getDob().equals(user.getDob())) {
             user.setDob(userRequest.getDob());
@@ -195,9 +208,9 @@ public class UserService {
         if (userRequest.getGender() != null && !userRequest.getGender().equals(user.getGender())) {
             user.setGender(userRequest.getGender());
         }
-        userRepository.save(user);
+        var savedUser = userRepository.save(user);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("message:", "information updated successfully"));
+                .body(Map.of("message", UserResponse.mapToUserResponse(savedUser)));
     }
 
     @Transactional
@@ -218,8 +231,7 @@ public class UserService {
     public ResponseEntity<?> logout() {
         var user = HandleCurrentUserSession.getCurrentUser();
         if (user != null) {
-            user.setFcmToken(null);
-            invalidateUserToken(user.getId());
+            invalidateUserToken(user);
             SecurityContextHolder.clearContext();
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("message", "logout successfully"));
@@ -229,42 +241,40 @@ public class UserService {
     }
 
     @Transactional
-    public void invalidateUserToken(Integer userId) {
-        authTokenRepository.deleteByUserId(userId);
+    public void invalidateUserToken(User user) {
+        user.setFcmToken(null);
+        authTokenRepository.deleteByUserId(user.getId());
         authTokenRepository.flush();
     }
 
-    public ResponseEntity<?> getUsersByRoleWithSearch(Roles roleName, String keyword, Pageable pageable) {
-        Page<User> usersPage = userRepository.searchByRoleAndKeyword(roleName, keyword, pageable);
-
-        List<ProfileResponse> userResponses = usersPage
+    public ResponseEntity<?> getUsersByRole(Roles roleName, Pageable pageable) {
+        Page<User> usersPage = userRepository.findUsersByRole(roleName, pageable);
+        List<ProfileResponse> responses = usersPage
                 .stream()
                 .map(ProfileResponse::mapToProfileResponse)
                 .toList();
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("role", roleName);
-        response.put("count", usersPage.getTotalElements());
-        response.put("totalPages", usersPage.getTotalPages());
-        response.put("currentPage", usersPage.getNumber());
-        response.put("users", userResponses);
-
-        return ResponseEntity.ok(response);
+        Map<String, Object> result = new HashMap<>();
+        result.put("role", roleName);
+        result.put("count", usersPage.getTotalElements());
+        result.put("totalPages", usersPage.getTotalPages());
+        result.put("currentPage", usersPage.getNumber());
+        result.put("users", responses);
+        return ResponseEntity.ok(Map.of("message", result));
     }
 
-
-    public ResponseEntity<?> getAll() {
-        List<ProfileResponse> userResponses = userRepository.findAll()
+    public ResponseEntity<?> getAll(Pageable pageable) {
+        Page<User> usersPage = userRepository.findAllUsers(pageable);
+        List<ProfileResponse> responses = usersPage
                 .stream()
-                .map(u -> ProfileResponse.mapToProfileResponse(u))
+                .map(ProfileResponse::mapToProfileResponse)
                 .toList();
-        Map<String, Object> response = Map.of(
-                "count", userResponses.size(),
-
-                "users", userResponses
-        );
-        return ResponseEntity.ok(response);
-
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", usersPage.getTotalElements());
+        result.put("totalPages", usersPage.getTotalPages());
+        result.put("currentPage", usersPage.getNumber());
+        result.put("users", responses);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", result));
     }
 
     private boolean userHasRole(User user, Roles roleName) {
@@ -306,7 +316,7 @@ public class UserService {
         PrivateCoach userCoach = new PrivateCoach();
         userCoach.setUser(user);
         userCoach.setCoach(coach);
-        userCoach.setStartedAt(LocalDateTime.now());
+        //userCoach.setStartedAt(LocalDateTime.now());
         userCoach.setPricePerMonth(request.getPaymentAmount());
 
         privateCoachRepository.save(userCoach);
@@ -362,7 +372,7 @@ public class UserService {
         // Create and save the relationship
         PrivateCoach userCoach = userCoachOptional.get();
 
-        userCoach.setStartedAt(LocalDateTime.now());
+        //userCoach.setStartedAt(LocalDateTime.now());
         userCoach.setPricePerMonth(request.getPaymentAmount());
 
         privateCoachRepository.save(userCoach);
@@ -441,7 +451,7 @@ public class UserService {
     public ResponseEntity<?> createAttendanceFromQr(QrAttendanceRequest request) {
         try {
             // 1. Decode QR Base64 image and extract email text
-            String email = decodeEmailFromQrImage(request.getQrCode());
+            String email = "";// TODO : receive email from front instead of this -> decodeEmailFromQrImage(request.getQrCode());
 
             // 2. Find user by extracted email
             Optional<User> userOptional = userRepository.findByEmail(email);
@@ -486,26 +496,10 @@ public class UserService {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of("message", "Attendance recorded successfully"));
 
-        } catch (NotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "QR code could not be decoded"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal server error: " + e.getMessage()));
         }
-    }
-
-    // Helper method to decode Base64 QR image and extract email
-    private String decodeEmailFromQrImage(String qrBase64) throws Exception {
-        byte[] imageBytes = Base64.getDecoder().decode(qrBase64);
-        ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes);
-        BufferedImage bufferedImage = ImageIO.read(bis);
-
-        LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
-        BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
-        Result result = new MultiFormatReader().decode(bitmap);
-        return result.getText();
     }
 
     @Transactional
@@ -544,15 +538,10 @@ public class UserService {
                 .body(Map.of("message", ProfileResponse.mapToProfileResponse(HandleCurrentUserSession.getCurrentUser())));
     }
 
-    public ResponseEntity<?> getUserQR() {
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("message", HandleCurrentUserSession.getCurrentUser().getQr()));
-    }
-
     @Transactional
     public ResponseEntity<?> uploadUserProfileImage(ImageRequest request) {
-        Optional<User> user = userRepository.findById(request.getId());
-        if (user.isEmpty()) {
+        var user = userRepository.findById(request.getId()).orElse(null);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", "User not found"));
         }
@@ -560,17 +549,15 @@ public class UserService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "User not authorized to do this operation"));
         }
-
         String imagePath = FilesManagement.upload(request.getImage(), request.getId(), "user-profile");
         if (imagePath == null) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Upload failed"));
         }
-
-        user.get().setProfileImagePath(imagePath);
-        userRepository.save(user.get());
-
-        return ResponseEntity.ok(Map.of("message", "Profile image uploaded", "imageUrl", imagePath));
+        user.setProfileImagePath(imagePath);
+        userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", Map.of("profileImagePath", imagePath)));
     }
 
     @Transactional
@@ -598,11 +585,11 @@ public class UserService {
 
     @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> getUserProgressInProgram(UserProgressRequest userProgressRequest) {
-        var user = HandleCurrentUserSession.getCurrentUser();
+        var user = userRepository.findById(userProgressRequest.getUserId()).orElse(null);
         var programWorkout = programWorkoutRepository.findById(userProgressRequest.getProgram_workout_id()).orElse(null);
-        if (programWorkout == null)
+        if (user == null || programWorkout == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "program_workout not found"));
+                    .body(Map.of("message", "user or program_workout id not found"));
         LocalDate startDate = userProgressRequest.getStartDate();
         LocalDate endDate = userProgressRequest.getEndDate();
         if (startDate == null || endDate == null) {
@@ -679,64 +666,6 @@ public class UserService {
         return response;
     }
 
-    @Transactional
-    @PreAuthorize("hasAnyAuthority('User','Coach')")
-    public ResponseEntity<?> createOrUpdateHealthInfo(HealthInfoRequest request) {
-        Optional<User> userOpt = userRepository.findById(request.getUserId());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "User not found"));
-        }
-        User user = userOpt.get();
-        HealthInfo healthInfo = new HealthInfo();
-        if (request.getWeightKg() != null && request.getWeightKg() > 0) {
-            healthInfo.setWeightKg(request.getWeightKg());
-        }
-        healthInfo.setUser(user);
-        if (request.getHeightCm() != null && request.getHeightCm() > 0) {
-            healthInfo.setHeightCm(request.getHeightCm());
-        }
-        if (request.getImprovementPercentage() != null && request.getImprovementPercentage() > 0) {
-            healthInfo.setImprovementPercentage(request.getImprovementPercentage());
-        }
-        if (!request.getNotes().isEmpty()) {
-            healthInfo.setNotes(request.getNotes());
-        }
-        healthInfo.setRecordedAt(LocalDateTime.now());
-
-        healthInfoRepository.save(healthInfo);
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(Map.of("message", "Health info saved successfully"));
-    }
-
-    @PreAuthorize("hasAnyAuthority('User','Coach')")
-    public ResponseEntity<?> getHealthInfoHistory(Integer userId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "User not found"));
-        }
-
-        User user = userOpt.get();
-
-        List<HealthInfo> history = healthInfoRepository.findByUserOrderByRecordedAtDesc(user);
-
-        // Map HealthInfo to DTOs
-        List<HealthInfoResponse> healthInfoDTOs = history.stream()
-                .map(HealthInfoResponse::fromEntity)
-                .toList();
-
-        UserResponse userResponse = UserResponse.mapToUserResponse(user);
-
-        Map<String, Object> response = Map.of(
-                "user", userResponse,
-                "healthInfoHistory", healthInfoDTOs
-        );
-
-        return ResponseEntity.ok(response);
-    }
-
     public ResponseEntity<?> saveUserFcmToken(String token) {
         var user = HandleCurrentUserSession.getCurrentUser();
         if (token == null)
@@ -782,5 +711,146 @@ public class UserService {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", "user not found or new password is invalid"));
     }
+
+    public ResponseEntity<?> getUserCoaches(Integer userId) {
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "user not found"));
+        List<PrivateCoachResponse> userCoaches = new ArrayList<>();
+        for (PrivateCoach element : privateCoachRepository.findByUserId(userId))
+            userCoaches.add(new PrivateCoachResponse(element.getCoach(), element.getStartedAt(), element.getUserRate()));
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", userCoaches));
+    }
+
+    public ResponseEntity<?> addCoachRate(Integer coachId, Integer rate) {
+        var user = HandleCurrentUserSession.getCurrentUser();
+        var coach = userRepository.findById(coachId).orElse(null);
+        var privateCoach = privateCoachRepository.findByUserAndCoach(user, coach).orElse(null);
+        if (privateCoach == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "coach not assign to this user"));
+        }
+        privateCoach.setUserRate((float) rate);
+        privateCoachRepository.save(privateCoach);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "rate updated"));
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> logHealthInfo(HealthInfoRequest healthInfoRequest) {
+        var user = HandleCurrentUserSession.getCurrentUser();
+        var previousInfo = healthInfoRepository.findTopByUserIdOrderByRecordedAtDesc(user.getId()).orElse(null);
+
+        if (previousInfo == null)
+            return logHealthInfoFirstTime(healthInfoRequest);
+
+        var newHealthInfo = new HealthInfo();
+
+        newHealthInfo.setUser(user);
+        newHealthInfo.setRecordedAt(LocalDate.now());
+
+        // Use previous values if current request is null
+        newHealthInfo.setHeightCm(
+                healthInfoRequest.getHeightCm() != null ? healthInfoRequest.getHeightCm() : previousInfo.getHeightCm()
+        );
+        newHealthInfo.setWeightKg(
+                healthInfoRequest.getWeightKg() != null ? healthInfoRequest.getWeightKg() : previousInfo.getWeightKg()
+        );
+        newHealthInfo.setArmCircumference(
+                healthInfoRequest.getArmCircumference() != null ? healthInfoRequest.getArmCircumference() : previousInfo.getArmCircumference()
+        );
+        newHealthInfo.setThighCircumference(
+                healthInfoRequest.getThighCircumference() != null ? healthInfoRequest.getThighCircumference() : previousInfo.getThighCircumference()
+        );
+        newHealthInfo.setWaistCircumference(
+                healthInfoRequest.getWaistCircumference() != null ? healthInfoRequest.getWaistCircumference() : previousInfo.getWaistCircumference()
+        );
+        if (healthInfoRequest.getNotes() != null)
+            newHealthInfo.setNotes(healthInfoRequest.getNotes());
+
+        healthInfoRepository.save(newHealthInfo);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "health info recorded successfully"));
+    }
+
+    @Transactional
+    public ResponseEntity<?> logHealthInfoFirstTime(HealthInfoRequest healthInfoRequest) {
+        var newHealthInfo = new HealthInfo();
+        if (healthInfoRequest.getHeightCm() == null || healthInfoRequest.getWeightKg() == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "height and weight must not be null for the first time"));
+        newHealthInfo.setHeightCm(healthInfoRequest.getHeightCm());
+        newHealthInfo.setWeightKg(healthInfoRequest.getWeightKg());
+        if (healthInfoRequest.getArmCircumference() != null)
+            newHealthInfo.setArmCircumference(healthInfoRequest.getArmCircumference());
+        if (healthInfoRequest.getThighCircumference() != null)
+            newHealthInfo.setThighCircumference(healthInfoRequest.getThighCircumference());
+        if (healthInfoRequest.getWaistCircumference() != null)
+            newHealthInfo.setWaistCircumference(healthInfoRequest.getWaistCircumference());
+        if (healthInfoRequest.getNotes() != null)
+            newHealthInfo.setNotes(healthInfoRequest.getNotes());
+        newHealthInfo.setRecordedAt(LocalDate.now());
+        newHealthInfo.setUser(HandleCurrentUserSession.getCurrentUser());
+        healthInfoRepository.save(newHealthInfo);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "health info recorded successfully"));
+    }
+
+    public ResponseEntity<?> getUserHealthInfo(HealthInfoRequest healthInfoRequest) {
+        var user = userRepository.findById(healthInfoRequest.getUserId()).orElse(null);
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "user not found"));
+        LocalDate startDate = healthInfoRequest.getStartDate();
+        LocalDate endDate = healthInfoRequest.getEndDate();
+        if (startDate == null || endDate == null) {
+            endDate = healthInfoRepository.findTopByUserIdOrderByRecordedAtDesc(user.getId())
+                    .map(HealthInfo::getRecordedAt)
+                    .orElse(LocalDate.now());
+            startDate = endDate.minusDays(30); // last month from last recorded date
+        }
+
+        var userHealthInfo = healthInfoRepository.findByUserIdAndRecordedAtBetween(
+                user.getId(),
+                startDate,
+                endDate
+        );
+        return ResponseEntity.ok(buildHealthInfoResponse(userHealthInfo));
+    }
+
+
+    private List<HealthInfoResponse> buildHealthInfoResponse(List<HealthInfo> healthInfoList) {
+        List<HealthInfoResponse> response = new ArrayList<>();
+        for (HealthInfo item : healthInfoList) {
+            HealthInfoResponse element = new HealthInfoResponse();
+            element.setId(item.getId());
+            element.setHeightCm(item.getHeightCm());
+            element.setWeightKg(item.getWeightKg());
+            element.setArmCircumference(item.getArmCircumference());
+            element.setWaistCircumference(item.getWaistCircumference());
+            element.setThighCircumference(item.getThighCircumference());
+            element.setRecordedAt(item.getRecordedAt());
+            element.setNotes(item.getNotes());
+            response.add(element);
+        }
+        return response;
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('User')")
+    public ResponseEntity<?> deleteHealthInfo(Integer healthInfoId) {
+        var userHealthInfo = healthInfoRepository.findById(healthInfoId).orElse(null);
+        if (userHealthInfo == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "health info found"));
+        healthInfoRepository.deleteById(userHealthInfo.getId());
+        healthInfoRepository.flush();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "recorded health info deleted"));
+    }
+
 
 }

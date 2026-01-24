@@ -20,4 +20,10 @@ public interface SubscriptionHistoryRepository extends JpaRepository<Subscriptio
             """)
     List<SubscriptionHistory> findLatestSubscriptions();
 
+    List<SubscriptionHistory> findByUserId (Integer userId);
+
+    List<SubscriptionHistory> findByaClassId(Integer classId);
+
+
+
 }

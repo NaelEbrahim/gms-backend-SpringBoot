@@ -4,6 +4,8 @@ import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.Services.ClassService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,19 +19,19 @@ public class ClassController {
 
     private ClassService classService;
 
-    // Endpoint to create a new class
+    // create a new class
     @PostMapping("/create")
     public ResponseEntity<?> createClass(@Valid @ModelAttribute CreateClassRequest classRequest) {
         return classService.createClass(classRequest);
     }
 
-    // Endpoint to update an existing class
+    // update an existing class
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateClass(@PathVariable Integer id, @Valid @RequestBody ClassRequest classRequest) {
         return classService.updateClass(id, classRequest);
     }
 
-    // Endpoint to delete a class
+    // delete a class
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteClass(@PathVariable Integer id) {
         return classService.deleteClass(id);
@@ -40,39 +42,47 @@ public class ClassController {
         return classService.uploadClassImage(request);
     }
 
-    // Endpoint to get details of a specific class by ID
+    // get details of a specific class by ID
     @GetMapping("/show/{id}")
     public ResponseEntity<?> getClassById(@PathVariable Integer id) {
         return classService.getClassById(id);
     }
 
-    // Endpoint to get all classes
+    // get all classes
     @GetMapping("/show/all")
-    public ResponseEntity<?> getAllClasses() {
-        return classService.getAllClasses();
+    public ResponseEntity<?> getAllClasses(@RequestParam(required = false) Integer page,
+                                           @RequestParam(required = false) Integer size) {
+        if (page == null || size == null) {
+            // No pagination
+            return classService.getAllClasses(null);
+        } else {
+            Pageable pageable = PageRequest.of(page, size);
+            return classService.getAllClasses(pageable);
+        }
     }
 
-    // Endpoint to assign a program to a class (Request body)
+    // assign a program to a class (Request body)
     @PostMapping("/assign-program")
-    public ResponseEntity<?> assignProgramToClass(@RequestBody @Valid AssignProgramToClassRequest request) {
+    public ResponseEntity<?> assignProgramToClass(@Valid @RequestBody AssignProgramToClassRequest request) {
         return classService.assignProgramToClass(request);
     }
 
-    // Endpoint to Unassign a program to a class (Request body)
+    // Unassign a program to a class (Request body)
     @PostMapping("/unassign-program")
-    public ResponseEntity<?> unAssignProgramToClass(@RequestBody @Valid AssignProgramToClassRequest request) {
+    public ResponseEntity<?> unAssignProgramToClass(@Valid @RequestBody AssignProgramToClassRequest request) {
+        System.out.println(request.getClassId() + "-" + request.getProgramId());
         return classService.unAssignProgramToClass(request);
     }
 
-    // Endpoint to add Subscription
+    // add Subscription
     @PostMapping("/new-subscription")
-    public ResponseEntity<?> addNewSubscription(@RequestBody @Valid ClassSubscriptionRequest request) throws Exception {
+    public ResponseEntity<?> addNewSubscription(@Valid @RequestBody ClassSubscriptionRequest request) throws Exception {
         return classService.addNewSubscription(request);
     }
 
-    // Endpoint to update Subscription
+    // update Subscription
     @PostMapping("/update-subscription")
-    public ResponseEntity<?> updateSubscription(@RequestBody @Valid ClassSubscriptionRequest request) throws Exception {
+    public ResponseEntity<?> updateSubscription(@Valid @RequestBody ClassSubscriptionRequest request) throws Exception {
         return classService.updateSubscription(request);
     }
 
@@ -114,9 +124,29 @@ public class ClassController {
         return classService.getClassesSubscribersByUser(userId);
     }
 
-    @PutMapping("inActive-user-subscription")
+    @PutMapping("/inActive-user-subscription")
     public ResponseEntity<?> inActiveSubscription(@RequestBody Map<String, String> body) {
         return classService.inActiveUserSubscription(Integer.valueOf(body.get("userId")), Integer.valueOf(body.get("classId")));
+    }
+
+    @DeleteMapping("/delete-user-feedback")
+    public ResponseEntity<?> deleteUserFeedback(@RequestBody Map<String, String> data) {
+        return classService.deleteClassFeedBack(Integer.valueOf(data.get("userId")), Integer.valueOf(data.get("classId")));
+    }
+
+    @GetMapping("/get-class-programs/{classId}")
+    public ResponseEntity<?> getClassPrograms(@PathVariable Integer classId) {
+        return classService.getClassPrograms(classId);
+    }
+
+    @GetMapping("/get-user-subscriptions-history/{userId}")
+    public ResponseEntity<?> getUserSubscriptions(@PathVariable Integer userId) {
+        return classService.getUserSubscriptions(userId);
+    }
+
+    @GetMapping("/get-class-subscriptions-history/{classId}")
+    public ResponseEntity<?> getClassSubscriptions(@PathVariable Integer classId) {
+        return classService.getUserSubscriptions(classId);
     }
 
 }

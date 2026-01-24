@@ -20,7 +20,7 @@ public class Article {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(unique = true, length = 50, nullable = false)
+    @Column(unique = true, nullable = false)
     private String title;
 
     @Lob

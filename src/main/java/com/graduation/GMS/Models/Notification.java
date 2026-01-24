@@ -18,7 +18,7 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(length = 50, unique = true)
+    @Column(unique = true)
     private String title;
 
     private String content;

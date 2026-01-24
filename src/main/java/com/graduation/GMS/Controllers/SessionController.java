@@ -4,8 +4,12 @@ import com.graduation.GMS.DTO.Request.*;
 import com.graduation.GMS.Services.SessionService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/session")
@@ -38,15 +42,22 @@ public class SessionController {
 
     @GetMapping("/byclassid/{id}")
     public ResponseEntity<?> getSessionByClassId(@PathVariable Integer id) {
-        return sessionService.getAllSessionsByClassId(id);
+        return sessionService.getAllSessionsByClassId(id,null);
     }
-
 
     @GetMapping("/show/all")
-    public ResponseEntity<?> getAllSessions() {
-        return sessionService.getAllSessions();
+    public ResponseEntity<?> getAllSessions(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
+    ) {
+        if (page == null || size == null) {
+            // No pagination
+            return sessionService.getAllSessions(null);
+        } else {
+            Pageable pageable = PageRequest.of(page, size);
+            return sessionService.getAllSessions(pageable);
+        }
     }
-
 
     // Assign a session to a user
     @PostMapping("/assign")
@@ -97,14 +108,18 @@ public class SessionController {
     }
 
     @GetMapping("/{userId}/attendance/{sessionId}")
-    public ResponseEntity<?> getUserAttendanceById(@PathVariable Integer userId,@PathVariable Integer sessionId) {
-        return sessionService.getUserAttendanceById(userId,sessionId);
+    public ResponseEntity<?> getUserAttendanceById(@PathVariable Integer userId, @PathVariable Integer sessionId) {
+        return sessionService.getUserAttendanceById(userId, sessionId);
     }
 
     @GetMapping("/get-members-in-session/{sessionId}")
-    public ResponseEntity<?> getMembersInSession(@PathVariable Integer sessionId){
+    public ResponseEntity<?> getMembersInSession(@PathVariable Integer sessionId) {
         return sessionService.getSessionSubscribers(sessionId);
     }
 
+    @DeleteMapping("/delete-user-feedback")
+    public ResponseEntity<?> deleteSessionFeedback(@RequestBody Map<String, String> data) {
+        return sessionService.deleteSessionFeedBack(Integer.valueOf(data.get("userId")), Integer.valueOf(data.get("sessionId")));
+    }
 
 }

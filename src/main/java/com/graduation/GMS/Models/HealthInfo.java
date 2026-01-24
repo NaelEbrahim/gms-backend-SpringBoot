@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -18,11 +18,17 @@ public class HealthInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private LocalDateTime recordedAt;
+    private LocalDate recordedAt;
 
     private Float weightKg;
 
     private Float heightCm;
+
+    private Float ArmCircumference;
+
+    private Float ThighCircumference;
+
+    private Float WaistCircumference;
 
     private Float improvementPercentage;
 

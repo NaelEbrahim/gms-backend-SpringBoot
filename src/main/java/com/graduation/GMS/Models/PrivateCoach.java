@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,8 +20,10 @@ public class PrivateCoach {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startedAt = LocalDate.now();
+
+    private Float userRate;
 
     private Float pricePerMonth;
 

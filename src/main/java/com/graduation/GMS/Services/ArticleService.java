@@ -65,8 +65,8 @@ public class ArticleService {
 
         // Create and send notification
         Notification notification = new Notification();
-        notification.setTitle("New Article: " + article.getTitle());
-        notification.setContent("A new article has been published: " + article.getTitle());
+        notification.setTitle("A new article has been published: " + article.getTitle());
+        notification.setContent("article title : " + article.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
         notification = notificationRepository.save(notification); // Save and get managed instance
@@ -151,7 +151,7 @@ public class ArticleService {
         Page<Article> articlesPage = articleRepository.searchArticlesByWikiAndKeyword(wikiParam, keyword, pageable);
 
         if (articlesPage.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("message", "No Articles found"));
         }
 

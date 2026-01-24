@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -24,6 +25,12 @@ public class ClassResponse {
     private String imagePath;
 
     private Float price;
+
+    private Boolean isActive;
+
+    private String myFeedBack;
+
+    private LocalDateTime joinedAt;
 
     private List<ProgramResponse> programs;
 
@@ -51,5 +58,16 @@ public class ClassResponse {
         );
     }
 
+    public ClassResponse(UserResponse coach, Integer id, String name, String description, String imagePath, Float price, List<ProgramResponse> programs, List<UserResponse> subscribers, List<UserFeedBackResponse> feedbacks) {
+        this.coach = coach;
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.imagePath = imagePath;
+        this.price = price;
+        this.programs = programs;
+        this.subscribers = subscribers;
+        this.feedbacks = feedbacks;
+    }
 }
 

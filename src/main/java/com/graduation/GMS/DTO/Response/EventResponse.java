@@ -1,9 +1,7 @@
 package com.graduation.GMS.DTO.Response;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.AllArgsConstructor;
+import com.graduation.GMS.Models.User;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -11,8 +9,6 @@ import java.util.List;
 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class EventResponse {
 
     private Integer id;
@@ -31,4 +27,27 @@ public class EventResponse {
 
     private List<PrizeResponse> prizes;
 
+    private List<ParticipantResponse> participants;
+
+    public EventResponse(
+            Integer id,
+            User admin,
+            String title,
+            String description,
+            String imagePath,
+            LocalDateTime startedAt,
+            LocalDateTime endedAt,
+            List<PrizeResponse> prizes,
+            List<ParticipantResponse> participants
+    ) {
+        this.id = id;
+        this.admin = UserResponse.mapToUserResponse(admin);
+        this.title = title;
+        this.description = description;
+        this.imagePath = imagePath;
+        this.startedAt = startedAt;
+        this.endedAt = endedAt;
+        this.prizes = prizes;
+        this.participants = participants;
+    }
 }

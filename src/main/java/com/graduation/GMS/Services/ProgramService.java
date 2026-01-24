@@ -10,6 +10,8 @@ import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,26 +44,21 @@ public class ProgramService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createProgram(ProgramRequest request) {
-        // Check if program title already exists
-        Optional<Program> existingProgram = programRepository.findByTitle(request.getTitle());
-        if (existingProgram.isPresent()) {
+        // Check if program title & level already exist
+        Program existingProgram = programRepository.findByTitle(request.getTitle()).orElse(null);
+        if (existingProgram != null && existingProgram.getLevel().equals(request.getLevel())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("message", "Program title already exists"));
+                    .body(Map.of("message", "Program already exist"));
         }
-
         // Create and save new program
         Program program = new Program();
         program.setTitle(request.getTitle());
         program.setLevel(request.getLevel());
-        if (request.getIsPublic().equalsIgnoreCase("true")) {
-            program.setIsPublic(true);
-        } else {
-            program.setIsPublic(false);
-        }
+        program.setIsPublic(request.getIsPublic().equalsIgnoreCase("true"));
 
         // Create and send notification
         Notification notification = new Notification();
-        notification.setTitle("New Program");
+        notification.setTitle("New Program" + program.getTitle());
         notification.setContent("New Program has been made :" + program.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
@@ -81,33 +78,20 @@ public class ProgramService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> updateProgram(Integer id, ProgramRequest request) {
-        Optional<Program> optionalProgram = programRepository.findById(id);
-        if (optionalProgram.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Program program = programRepository.findById(id).orElse(null);
+        if (program == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Program not found"));
         }
-
-        Program program = optionalProgram.get();
-        // Check if program title already exists
-        Optional<Program> existingProgram = programRepository.findByTitle(request.getTitle());
-        if (existingProgram.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Program title already exists"));
-        }
-        if (!program.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
+        if (!request.getTitle().isEmpty() && !program.getTitle().equals(request.getTitle())) {
             program.setTitle(request.getTitle());
         }
         if (request.getLevel() != null && !program.getLevel().equals(request.getLevel())) {
             program.setLevel(request.getLevel());
         }
-        if (!request.getIsPublic().isEmpty() && !program.getIsPublic().equals(request.getIsPublic())) {
-            if (request.getIsPublic().equalsIgnoreCase("true")) {
-                program.setIsPublic(true);
-            } else {
-                program.setIsPublic(false);
-            }
+        if (!request.getIsPublic().isEmpty()) {
+            program.setIsPublic(request.getIsPublic().equalsIgnoreCase("true"));
         }
-
         programRepository.save(program);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Program updated successfully"));
@@ -147,18 +131,11 @@ public class ProgramService {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    public ResponseEntity<?> getAllPrograms() {
-        List<Program> programs = programRepository.findAll();
-
-        if (programs.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No programs found"));
-        }
-
+    public ResponseEntity<?> getAllPrograms(Pageable pageable) {
+        Page<Program> programs = programRepository.findAllPageable(pageable);
         List<ProgramResponse> programResponses = programs.stream()
                 .map(program -> {
                     // Get workouts for each program
-
                     return new ProgramResponse(
                             program.getId(),
                             program.getTitle(),
@@ -170,8 +147,13 @@ public class ProgramService {
                     );
                 })
                 .collect(Collectors.toList());
-
-        return ResponseEntity.status(HttpStatus.OK).body(programResponses);
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", programs.getTotalElements());
+        result.put("totalPages", programs.getTotalPages());
+        result.put("currentPage", programs.getNumber());
+        result.put("programs", programResponses);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", result));
     }
 
     private Float calculateRate(int programId) {
@@ -230,9 +212,9 @@ public class ProgramService {
         programWorkout.setWorkout(workout);
         programWorkout.setDay(request.getDay());
         programWorkout.setMuscle(workout.getPrimary_muscle());
-        programWorkout.setReps(request.getReps());
-        if (request.getSets() != null)
-            programWorkout.setSets(request.getSets());
+        programWorkout.setSets(request.getSets());
+        if (request.getReps() != null)
+            programWorkout.setReps(request.getReps());
         if (request.getDuration() != null)
             programWorkout.setDuration(request.getDuration());
 

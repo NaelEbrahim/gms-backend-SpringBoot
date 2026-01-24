@@ -6,13 +6,16 @@ import com.graduation.GMS.DTO.Request.MessageRequest;
 import com.graduation.GMS.Services.GeneralServices.ChatService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.nio.file.AccessDeniedException;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/chat")
-@CrossOrigin("http://localhost:63342")
+//@CrossOrigin("http://localhost:63342")
 public class ChatController {
 
     private final ChatService chatService;
@@ -29,20 +32,41 @@ public class ChatController {
 
     @PostMapping("/sendMessage")
     public ResponseEntity<?> sendMessage(@RequestBody @Valid MessageRequest messageRequest) {
-
         return chatService.sendMessage(messageRequest);
     }
+
     @PostMapping("/sendFile")
     public ResponseEntity<?> sendFile(@ModelAttribute FileChatRequest fileChatRequest) {
-
         return chatService.sendFile(fileChatRequest);
     }
 
     @GetMapping("/conversations")
     public ResponseEntity<?> getConversations() {
-        return ResponseEntity.ok(chatService.getGroupedConversations());
+        return chatService.getUserConversations();
     }
 
+    @GetMapping("/messages")
+    public ResponseEntity<?> getMessages(
+            @RequestParam Integer conversationId,
+            @RequestParam Integer page,
+            @RequestParam Integer size
+    ) {
+        return chatService.getMessages(conversationId, page, size);
+    }
 
+    @DeleteMapping("/deleteMessage")
+    public ResponseEntity<?> deleteMessage(@RequestBody @Valid MessageRequest messageRequest) throws AccessDeniedException {
+        return chatService.deleteMessage(messageRequest);
+    }
+
+    @DeleteMapping("/deleteConversation")
+    public ResponseEntity<?> deleteConversation(@RequestBody @Valid MessageRequest messageRequest) throws AccessDeniedException {
+        return chatService.deleteConversation(messageRequest);
+    }
+
+    @PutMapping("/updateLastSeen")
+    public ResponseEntity<?> updateConversationLastSeen(@RequestParam Integer conversationId){
+        return chatService.updateLastSeen(conversationId);
+    }
 
 }

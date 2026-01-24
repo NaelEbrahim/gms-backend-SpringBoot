@@ -7,6 +7,8 @@ import com.graduation.GMS.DTO.Request.UpdateScoreRequest;
 import com.graduation.GMS.Services.EventService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,8 +45,17 @@ public class EventController {
     }
 
     @GetMapping("/show/all")
-    public ResponseEntity<?> getAllEvents() {
-        return eventService.getAllEvents();
+    public ResponseEntity<?> getAllEvents(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
+    ) {
+        if (page == null || size == null) {
+            // No pagination
+            return eventService.getAllEvents(null);
+        } else {
+            Pageable pageable = PageRequest.of(page, size);
+            return eventService.getAllEvents(pageable);
+        }
     }
 
     @PostMapping("/subscribe/{id}")

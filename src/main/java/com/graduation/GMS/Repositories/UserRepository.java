@@ -23,16 +23,15 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     List<User> findAllByRoleName(@Param("roleName") Roles roleName);
 
     @Query("""
-    SELECT ur.user FROM User_Role ur
-    WHERE ur.role.roleName = :roleName
-      AND (
-          LOWER(ur.user.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-          LOWER(ur.user.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-          LOWER(ur.user.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
-      )""")
-    Page<User> searchByRoleAndKeyword(@Param("roleName") Roles roleName,
-                                      @Param("keyword") String keyword,
-                                      Pageable pageable);
+                SELECT DISTINCT u
+                FROM User u
+                JOIN u.userRoleList ur
+                JOIN ur.role r
+                WHERE r.roleName = :roleName
+            """)
+    Page<User> findUsersByRole(@Param("roleName") Roles roleName, Pageable pageable);
 
+    @Query("SELECT u FROM User u ORDER BY u.id")
+    Page<User> findAllUsers(Pageable pageable);
 
 }

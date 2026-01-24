@@ -7,7 +7,6 @@ import com.graduation.GMS.DTO.Response.MealResponse;
 import com.graduation.GMS.Models.Meal;
 import com.graduation.GMS.Repositories.MealRepository;
 import com.graduation.GMS.Tools.FilesManagement;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,12 +15,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -48,8 +48,9 @@ public class MealService {
         mealRepository.save(meal);
         String imagePath = FilesManagement.upload(request.getImage(), meal.getId(), "meals");
         if (imagePath == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Upload failed"));
+            throw new TransactionException("Upload failed") {};
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("message", "Upload failed"));
         }
 
         meal.setImagePath(imagePath);

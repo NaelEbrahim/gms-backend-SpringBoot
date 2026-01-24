@@ -3,9 +3,7 @@ package com.graduation.GMS.Controllers;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,4 +18,10 @@ public class NotificationController {
     public ResponseEntity<?> getMyNotifications() {
         return notificationService.getMyNotifications();
     }
+
+    @DeleteMapping("/delete-notification/{notificationId}")
+    public ResponseEntity<?> deleteNotification(@PathVariable Integer notificationId) {
+        return notificationService.deleteNotification(notificationId);
+    }
+
 }
