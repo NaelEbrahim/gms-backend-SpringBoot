@@ -25,7 +25,7 @@ public class EventController {
 
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateEvent(@PathVariable Integer id,
-                                           @Valid @RequestBody EventRequest request) {
+                                         @Valid @ModelAttribute EventRequest request) {
         return eventService.updateEvent(id, request);
     }
 
@@ -35,7 +35,7 @@ public class EventController {
     }
 
     @PutMapping("upload-image")
-    public ResponseEntity<?> uploadEventImage(@ModelAttribute ImageRequest request){
+    public ResponseEntity<?> uploadEventImage(@ModelAttribute ImageRequest request) {
         return eventService.uploadEventImage(request);
     }
 
@@ -62,13 +62,14 @@ public class EventController {
     public ResponseEntity<?> subscribeToEvent(@Valid @PathVariable Integer id) {
         return eventService.subscribeToEvent(id);
     }
-    @PostMapping("/unsubscribe/{id}")
+
+    @DeleteMapping("/unsubscribe/{id}")
     public ResponseEntity<?> unsubscribeFromEvent(@Valid @PathVariable Integer id) {
         return eventService.unsubscribeFromEvent(id);
     }
 
     // Score Management Endpoints
-    @PostMapping("/scores")
+    @PutMapping("/scores")
     public ResponseEntity<?> updateUserScore(@Valid @RequestBody UpdateScoreRequest request) {
         return eventService.updateUserScore(request);
     }
@@ -79,17 +80,8 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}/participants")
-    public ResponseEntity<?> getEventParticipants(@PathVariable Integer eventId ,@RequestParam String rank) {
-        if (rank.equalsIgnoreCase("desc")) {
-            return eventService.getEventParticipantsDesc(eventId);
-        }
-        else if (rank.equalsIgnoreCase("asc")) {
-            return eventService.getEventParticipantsASC(eventId);
-        }
-        else {
-            return eventService.getEventParticipants(eventId);
-        }
-
+    public ResponseEntity<?> getEventParticipants(@PathVariable Integer eventId) {
+        return eventService.getEventParticipants(eventId);
     }
 
 }

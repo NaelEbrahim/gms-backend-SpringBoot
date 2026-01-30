@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -23,9 +23,9 @@ public class EventRequest {
     @Size(max = 500, message = "description must not exceed 500 characters")
     private String description;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startedAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endedAt;
 }

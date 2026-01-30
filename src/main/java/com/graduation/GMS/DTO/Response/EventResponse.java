@@ -4,6 +4,7 @@ import com.graduation.GMS.Models.User;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,9 +22,9 @@ public class EventResponse {
 
     private String imagePath;
 
-    private LocalDateTime startedAt;
+    private LocalDate startedAt;
 
-    private LocalDateTime endedAt;
+    private LocalDate endedAt;
 
     private List<PrizeResponse> prizes;
 
@@ -35,8 +36,8 @@ public class EventResponse {
             String title,
             String description,
             String imagePath,
-            LocalDateTime startedAt,
-            LocalDateTime endedAt,
+            LocalDate startedAt,
+            LocalDate endedAt,
             List<PrizeResponse> prizes,
             List<ParticipantResponse> participants
     ) {

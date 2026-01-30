@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -16,8 +16,8 @@ import java.util.List;
 public class EventParticipantResponse {
     private String title;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startedAt;
 
     private List<ParticipantResponse> participants;
 }

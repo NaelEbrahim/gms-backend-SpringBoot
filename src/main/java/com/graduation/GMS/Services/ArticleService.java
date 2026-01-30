@@ -24,10 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
 
@@ -146,14 +143,8 @@ public class ArticleService {
     }
 
 
-    public ResponseEntity<?> searchArticles(Wiki wikiParam, String keyword, Pageable pageable) {
-
-        Page<Article> articlesPage = articleRepository.searchArticlesByWikiAndKeyword(wikiParam, keyword, pageable);
-
-        if (articlesPage.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(Map.of("message", "No Articles found"));
-        }
+    public ResponseEntity<?> searchArticles(Wiki wikiParam, Pageable pageable) {
+        Page<Article> articlesPage = articleRepository.findByWikiType(wikiParam, pageable);
 
         List<ArticleResponse> articleResponses = articlesPage.stream()
                 .map(article -> new ArticleResponse(
@@ -166,14 +157,12 @@ public class ArticleService {
                         article.getLastModifiedAt()
                 )).toList();
 
-        Map<String, Object> response = new LinkedHashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("count", articlesPage.getTotalElements());
         response.put("totalPages", articlesPage.getTotalPages());
         response.put("currentPage", articlesPage.getNumber());
         response.put("articles", articleResponses);
-
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of("message", response));
     }
 
 

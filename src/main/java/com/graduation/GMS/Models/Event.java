@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,11 +29,11 @@ public class Event {
     @Column(nullable = true)
     private String ImagePath;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startedAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endedAt;
 
     @ManyToOne
     @JoinColumn(name = "admin_id")

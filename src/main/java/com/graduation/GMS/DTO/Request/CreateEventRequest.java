@@ -1,8 +1,6 @@
 package com.graduation.GMS.DTO.Request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +8,7 @@ import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -23,11 +21,11 @@ public class CreateEventRequest {
 
     private String description;
 
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startedAt;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startedAt;
 
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endedAt;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endedAt;
 
     private MultipartFile image;
 

@@ -50,7 +50,6 @@ public class ArticleController {
     @GetMapping("/show/all")
     public ResponseEntity<?> getAllArticles(
             @RequestParam(required = false) String wiki,
-            @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -58,17 +57,17 @@ public class ArticleController {
 
         if (wiki != null) {
             if (wiki.equalsIgnoreCase("All")) {
-                return articleService.searchArticles(null, keyword, pageable);
+                return articleService.searchArticles(null, pageable);
             } else if (wiki.equalsIgnoreCase("Sport")) {
-                return articleService.searchArticles(Wiki.Sport, keyword, pageable);
+                return articleService.searchArticles(Wiki.Sport, pageable);
             } else if (wiki.equalsIgnoreCase("Food")) {
-                return articleService.searchArticles(Wiki.Food, keyword, pageable);
+                return articleService.searchArticles(Wiki.Food, pageable);
             } else if (wiki.equalsIgnoreCase("Fitness")) {
-                return articleService.searchArticles(Wiki.Fitness, keyword, pageable);
+                return articleService.searchArticles(Wiki.Fitness, pageable);
             } else if (wiki.equalsIgnoreCase("Supplements")) {
-                return articleService.searchArticles(Wiki.Supplements, keyword, pageable);
+                return articleService.searchArticles(Wiki.Supplements, pageable);
             } else if (wiki.equalsIgnoreCase("Health")) {
-                return articleService.searchArticles(Wiki.Health, keyword, pageable);
+                return articleService.searchArticles(Wiki.Health, pageable);
             }
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

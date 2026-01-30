@@ -21,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -68,7 +69,7 @@ public class EventService {
 
         // Create and send notification
         Notification notification = new Notification();
-        notification.setTitle("New Event");
+        notification.setTitle("New Event" + eventEntity.getTitle());
         notification.setContent("New Event has been made :" + eventEntity.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
@@ -151,7 +152,7 @@ public class EventService {
     public ResponseEntity<?> getEventById(Integer id) {
         Optional<Event> eventOptional = eventRepository.findById(id);
         if (eventOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Event not found"));
         }
 
@@ -262,7 +263,7 @@ public class EventService {
         Optional<Event> eventOptional = eventRepository.findById(id);
 
         if (eventOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Event not found"));
         }
 
@@ -289,7 +290,7 @@ public class EventService {
         notification.setContent("You just Un Subscribed Event :" + event.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
-        notification = notificationRepository.save(notification); // Save and get managed instance
+        notification = notificationRepository.save(notification);
 
         notificationService.sendNotification(
                 HandleCurrentUserSession.getCurrentUser(),
@@ -301,40 +302,39 @@ public class EventService {
     }
 
     // Helper method to check if current time is within 1 day before event start
-    private boolean isWithinOneDayBeforeStart(LocalDateTime eventStart) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime oneDayBefore = eventStart.minusDays(1);
+    private boolean isWithinOneDayBeforeStart(LocalDate eventStart) {
+        LocalDate now = LocalDate.now();
+        LocalDate oneDayBefore = eventStart.minusDays(1);
         return now.isAfter(oneDayBefore) && now.isBefore(eventStart);
     }
 
     @Transactional
-    @PreAuthorize("hasAnyAuthority('Admin','Secretary')") // Only authorized roles can update scores
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> updateUserScore(UpdateScoreRequest request) {
-
-        Optional<User> user = userRepository.findById(request.getUserId());
-        if (user.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User Not Found"));
         }
-        Optional<Event> event = eventRepository.findById(request.getEventId());
-        if (event.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Event event = eventRepository.findById(request.getEventId()).orElse(null);
+        if (event == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Event Not Found"));
         }
 
         // Check participation
-        Optional<Event_Participant> participation =
-                eventParticipantRepository.findByUserAndEvent(user.get(), event.get());
-        if (participation.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Event_Participant participation =
+                eventParticipantRepository.findByUserAndEvent(user, event).orElse(null);
+        if (participation == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Participation record not found"));
         }
 
-        // 4. Update the score
-        participation.get().setScore(request.getScore());
-        eventParticipantRepository.save(participation.get());
+        // Update the score
+        participation.setScore(request.getScore());
+        eventParticipantRepository.save(participation);
 
-        // 5. Return success response
+        // Return success response
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Score updated successfully For The User with ID: " + request.getUserId()
                         + " And Event ID: " + request.getEventId()));
@@ -363,8 +363,8 @@ public class EventService {
         }
 
         // Check if one day has passed since event started
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime oneDayAfterEvent = event.getStartedAt().plusDays(1);
+        LocalDate now = LocalDate.now();
+        LocalDate oneDayAfterEvent = event.getStartedAt().plusDays(1);
 
         if (now.isBefore(oneDayAfterEvent)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -401,74 +401,6 @@ public class EventService {
                         participation.getScore()
                 ))
                 .collect(Collectors.toList());
-
-        // Build response
-        EventParticipantResponse response = new EventParticipantResponse();
-        response.setTitle(event.get().getTitle());
-        response.setStartedAt(event.get().getStartedAt());
-        response.setParticipants(participants);
-
-        return ResponseEntity.ok(response);
-    }
-
-    @Transactional
-    @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
-    public ResponseEntity<?> getEventParticipantsASC(Integer eventId) {
-        // Find the event
-        Optional<Event> event = eventRepository.findById(eventId);
-        if (event.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Event not found"));
-        }
-
-
-        // Get all participants with their scores
-        List<ParticipantResponse> participants = eventParticipantRepository.findByEventOrderByScoreAsc(event.get())
-                .stream()
-                .map(participation -> new ParticipantResponse(
-                        participation.getUser(),
-                        participation.getScore()
-                ))
-                .collect(Collectors.toList());
-
-        if (participants.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "There are No  Participants For this Event"));
-        }
-
-        // Build response
-        EventParticipantResponse response = new EventParticipantResponse();
-        response.setTitle(event.get().getTitle());
-        response.setStartedAt(event.get().getStartedAt());
-        response.setParticipants(participants);
-
-        return ResponseEntity.ok(response);
-    }
-
-    @Transactional
-    @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
-    public ResponseEntity<?> getEventParticipantsDesc(Integer eventId) {
-        // Find the event
-        Optional<Event> event = eventRepository.findById(eventId);
-        if (event.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Event not found"));
-        }
-
-
-        // Get all participants with their scores
-        List<ParticipantResponse> participants = eventParticipantRepository.findByEventOrderByScoreDesc(event.get())
-                .stream()
-                .map(participation -> new ParticipantResponse(
-                        participation.getUser(),
-                        participation.getScore()
-                ))
-                .collect(Collectors.toList());
-
-        if (participants.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "There are No Participants For this Event"));
-        }
 
         // Build response
         EventParticipantResponse response = new EventParticipantResponse();
