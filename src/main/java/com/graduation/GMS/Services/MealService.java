@@ -18,10 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -44,31 +41,28 @@ public class MealService {
         meal.setTitle(request.getTitle());
         meal.setDescription(request.getDescription());
         meal.setCalories(request.getCalories());
-
         mealRepository.save(meal);
-        String imagePath = FilesManagement.upload(request.getImage(), meal.getId(), "meals");
-        if (imagePath == null) {
-            throw new TransactionException("Upload failed") {};
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(Map.of("message", "Upload failed"));
-        }
 
-        meal.setImagePath(imagePath);
-        mealRepository.save(meal);
+//        String imagePath = FilesManagement.upload(request.getImage(), meal.getId(), "meals");
+//        if (imagePath == null) {
+//            throw new TransactionException("Upload failed") {
+//            };
+//        }
+//        meal.setImagePath(imagePath);
+//        mealRepository.save(meal);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Meal created successfully"));
     }
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
-    public ResponseEntity<?> updateMeal(Integer id,MealRequest request) {
-        Optional<Meal> optionalMeal = mealRepository.findById(id);
-        if (optionalMeal.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+    public ResponseEntity<?> updateMeal(Integer id, MealRequest request) {
+        Meal meal = mealRepository.findById(id).orElse(null);
+        if (meal == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Meal not found"));
         }
-        Meal meal = optionalMeal.get();
-
 
         if (!request.getTitle().isEmpty() && !meal.getTitle().equals(request.getTitle())) {
             meal.setTitle(request.getTitle());
@@ -78,7 +72,7 @@ public class MealService {
             meal.setDescription(request.getDescription());
         }
 
-        if (request.getCalories()!=null && !meal.getCalories().equals(request.getCalories())) {
+        if (request.getCalories() != null && !meal.getCalories().equals(request.getCalories())) {
             meal.setCalories(request.getCalories());
         }
 
@@ -121,21 +115,8 @@ public class MealService {
                 .body(response);
     }
 
-    public ResponseEntity<?> getAllMeals(int page, int size, String title) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Meal> meals;
-
-        if (title != null && !title.isBlank()) {
-            meals = mealRepository.searchByTitle(title, pageable);
-        } else {
-            meals = mealRepository.findAll(pageable);
-        }
-
-        if (meals.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No meals found"));
-        }
-
+    public ResponseEntity<?> getAllMeals(Pageable pageable) {
+        Page<Meal> meals = mealRepository.findAllPageable(pageable);
         List<MealResponse> mealResponses = meals.getContent().stream()
                 .map(w -> new MealResponse(
                         w.getId(),
@@ -148,13 +129,14 @@ public class MealService {
                 ))
                 .toList();
 
-        Map<String, Object> response = new LinkedHashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("count", meals.getTotalElements());
         response.put("totalPages", meals.getTotalPages());
         response.put("currentPage", meals.getNumber());
         response.put("meals", mealResponses);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", response));
     }
 
 

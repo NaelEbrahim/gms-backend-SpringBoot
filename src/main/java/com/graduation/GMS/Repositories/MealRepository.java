@@ -1,6 +1,7 @@
 package com.graduation.GMS.Repositories;
 
 import com.graduation.GMS.Models.Meal;
+import com.graduation.GMS.Models.Program;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,6 @@ import java.util.Optional;
 public interface MealRepository extends JpaRepository<Meal, Integer> {
     Optional<Meal> findByTitle(String title);
 
-    @Query("SELECT m FROM Meal m WHERE LOWER(m.title) LIKE LOWER(CONCAT('%', :title, '%'))")
-    Page<Meal> searchByTitle(@Param("title") String title, Pageable pageable);
+    @Query("SELECT m FROM Meal m ORDER BY m.id")
+    Page<Meal> findAllPageable(Pageable pageable);
 }

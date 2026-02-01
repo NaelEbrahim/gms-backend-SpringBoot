@@ -1,6 +1,7 @@
 package com.graduation.GMS.Models.Enums;
 
 public enum Muscle {
+    All,
     Chest,
     Back,
     Shoulders,

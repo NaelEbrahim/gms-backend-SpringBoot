@@ -47,20 +47,20 @@ public class WorkoutService {
         Workout workout = new Workout();
         workout.setTitle(request.getTitle());
         workout.setPrimary_muscle(request.getPrimaryMuscle());
-        workout.setSecondary_muscles(request.getSecondaryMuscles());
+        workout.setSecondary_muscles(request.getSecondaryMuscle());
         workout.setAvg_calories(request.getAvgCalories());
         workout.setDescription(request.getDescription());
 
         workoutRepository.save(workout);
 
-        String imagePath = FilesManagement.upload(request.getImage(), workout.getId(), "workouts");
-        if (imagePath == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Upload failed"));
-        }
-
-        workout.setImagePath(imagePath);
-        workoutRepository.save(workout);
+//        String imagePath = FilesManagement.upload(request.getImage(), workout.getId(), "workouts");
+//        if (imagePath == null) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("message", "Upload failed"));
+//        }
+//
+//        workout.setImagePath(imagePath);
+//        workoutRepository.save(workout);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Workout created successfully"));
@@ -69,14 +69,11 @@ public class WorkoutService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> updateWorkout(Integer id, WorkoutRequest request) {
-        Optional<Workout> optionalWorkout = workoutRepository.findById(id);
-        if (optionalWorkout.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Workout workout = workoutRepository.findById(id).orElse(null);
+        if (workout == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Workout not found"));
         }
-
-        Workout workout = optionalWorkout.get();
-
 
         if (!request.getTitle().isEmpty() && !workout.getTitle().equals(request.getTitle())) {
             workout.setTitle(request.getTitle());
@@ -86,8 +83,8 @@ public class WorkoutService {
             workout.setPrimary_muscle(request.getPrimaryMuscle());
         }
 
-        if (request.getSecondaryMuscles() != null && !workout.getSecondary_muscles().equals(request.getSecondaryMuscles())) {
-            workout.setSecondary_muscles(request.getSecondaryMuscles());
+        if (request.getSecondaryMuscle() != null && !workout.getSecondary_muscles().equals(request.getSecondaryMuscle())) {
+            workout.setSecondary_muscles(request.getSecondaryMuscle());
         }
 
         if (request.getAvgCalories() != null && !workout.getAvg_calories().equals(request.getAvgCalories())) {
@@ -153,10 +150,10 @@ public class WorkoutService {
                 .map(w -> new WorkoutResponse(
                         w.getId(),
                         w.getTitle(),
-                        0.0f,
+                        w.getAvg_calories(),
                         w.getPrimary_muscle().name(),
                         w.getSecondary_muscles() != null ? w.getSecondary_muscles().name() : null,
-                        w.getAvg_calories(),
+                        0.0f,
                         w.getDescription(),
                         w.getImagePath(),
                         0,

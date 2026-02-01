@@ -27,7 +27,7 @@ public class WorkoutController {
 
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateWorkout(@PathVariable Integer id,
-                                           @Valid @RequestBody WorkoutRequest request) {
+                                           @Valid @ModelAttribute WorkoutRequest request) {
         return workoutService.updateWorkout(id, request);
     }
 
@@ -56,7 +56,11 @@ public class WorkoutController {
             return workoutService.getAllWorkouts(null, null);
         } else {
             Pageable pageable = PageRequest.of(page, size);
-            return workoutService.getAllWorkouts(muscle, pageable);
+            if (muscle.equals(Muscle.All)) {
+                return workoutService.getAllWorkouts(null, pageable);
+            } else {
+                return workoutService.getAllWorkouts(muscle, pageable);
+            }
         }
     }
 

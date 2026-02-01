@@ -1,10 +1,13 @@
 package com.graduation.GMS.Controllers;
+
 import com.graduation.GMS.DTO.Request.CreateMealRequest;
 import com.graduation.GMS.DTO.Request.ImageRequest;
 import com.graduation.GMS.DTO.Request.MealRequest;
 import com.graduation.GMS.Services.MealService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,45 +19,44 @@ public class MealController {
 
     private MealService mealService;
 
-    // Endpoint to create a new Meal
     @PostMapping("/create")
     public ResponseEntity<?> createMeal(@Valid @ModelAttribute CreateMealRequest request) {
         return mealService.createMeal(request);
     }
 
-    // Endpoint to update an existing Meal
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateMeal(@PathVariable Integer id, @Valid @RequestBody MealRequest request) {
+    public ResponseEntity<?> updateMeal(@PathVariable Integer id, @Valid @ModelAttribute MealRequest request) {
         return mealService.updateMeal(id, request);
     }
 
     @PutMapping("upload-image")
-    public ResponseEntity<?> uploadMealImage(@ModelAttribute ImageRequest request){
+    public ResponseEntity<?> uploadMealImage(@ModelAttribute ImageRequest request) {
         return mealService.uploadMealImage(request);
     }
 
-    // Endpoint to delete an Meal
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteMeal(@PathVariable Integer id) {
         return mealService.deleteMeal(id);
     }
 
-    // Endpoint to get details of a specific Meal by ID
     @GetMapping("/show/{id}")
     public ResponseEntity<?> getMealById(@PathVariable Integer id) {
         return mealService.getMealById(id);
     }
 
-    // Endpoint to get paginated and searchable Meals
     @GetMapping("/show/all")
     public ResponseEntity<?> getAllMeals(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String keyword
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
     ) {
-        return mealService.getAllMeals(page, size, keyword);
+        if (page == null || size == null) {
+            // No pagination
+            return mealService.getAllMeals(null);
+        } else {
+            Pageable pageable = PageRequest.of(page, size);
+            return mealService.getAllMeals(pageable);
+        }
     }
-
 
 }
 

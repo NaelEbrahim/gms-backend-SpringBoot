@@ -19,7 +19,7 @@ public class CreateWorkoutRequest {
 
     private Muscle primaryMuscle;
 
-    private Muscle secondaryMuscles;
+    private Muscle secondaryMuscle;
 
     private Float avgCalories;
 
