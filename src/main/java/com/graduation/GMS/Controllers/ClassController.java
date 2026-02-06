@@ -87,7 +87,7 @@ public class ClassController {
     }
 
     // Get all subscribers for a class
-    @GetMapping("/{classId}/subscribers-by-class")
+    @GetMapping("/subscribers-by-class/{classId}")
     public ResponseEntity<?> getClassSubscribers(@PathVariable Integer classId) {
         return classService.getSubscribersByClass(classId);
     }
@@ -121,7 +121,7 @@ public class ClassController {
 
     @GetMapping("/get-user-subscription-classes/{userId}")
     public ResponseEntity<?> getUserSubscriptionClasses(@PathVariable Integer userId) {
-        return classService.getClassesSubscribersByUser(userId);
+        return classService.getUserSubscriptionClasses(userId);
     }
 
     @PutMapping("/inActive-user-subscription")

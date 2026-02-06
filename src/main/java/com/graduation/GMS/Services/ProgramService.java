@@ -309,20 +309,17 @@ public class ProgramService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> assignProgramToUser(AssignProgramToUserRequest request) {
-        Optional<User> userOptional = userRepository.findById(request.getUserId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
 
-        Optional<Program> programOptional = programRepository.findById(request.getProgramId());
-        if (programOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Program program = programRepository.findById(request.getProgramId()).orElse(null);
+        if (program == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Program not found"));
         }
-
-        Program program = programOptional.get();
-        User user = userOptional.get();
 
         // Check if already assigned
         boolean exists = userProgramRepository.existsByUserAndProgram(user, program);
@@ -343,14 +340,14 @@ public class ProgramService {
 
         // Create and send notification
         Notification notification = new Notification();
-        notification.setTitle("New Assignment");
+        notification.setTitle("New Assignment" + user.getFirstName() + " " + user.getLastName() + program.getTitle());
         notification.setContent("New Program has been assigned to You:" + program.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
         notification = notificationRepository.save(notification); // Save and get managed instance
 
         notificationService.sendNotification(
-                userOptional.get(),
+                user,
                 notification
         );
 
@@ -361,20 +358,17 @@ public class ProgramService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> unAssignProgramToUser(AssignProgramToUserRequest request) {
-        Optional<User> userOptional = userRepository.findById(request.getUserId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
 
-        Optional<Program> programOptional = programRepository.findById(request.getProgramId());
-        if (programOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Program program = programRepository.findById(request.getProgramId()).orElse(null);
+        if (program == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Program not found"));
         }
-
-        Program program = programOptional.get();
-        User user = userOptional.get();
 
         // Find the existing assignment
         Optional<User_Program> userProgramOptional = userProgramRepository.findByUserAndProgram(user, program);
@@ -395,7 +389,7 @@ public class ProgramService {
         notification = notificationRepository.save(notification); // Save and get managed instance
 
         notificationService.sendNotification(
-                userOptional.get(),
+                user,
                 notification
         );
 
@@ -412,7 +406,7 @@ public class ProgramService {
         // Validate program exists
         Optional<Program> programOptional = programRepository.findById(request.getProgramId());
         if (programOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Program not found"));
         }
 
@@ -650,14 +644,36 @@ public class ProgramService {
     public ResponseEntity<?> getProgramSubscribers(Integer programId) {
         var program = programRepository.findById(programId).orElse(null);
         if (program == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "No program with this id"));
-        List<User_Program> targetProgram = userProgramRepository.findByProgram(program);
         List<UserResponse> programSubscribers = new ArrayList<>();
+        List<User_Program> targetProgram = userProgramRepository.findByProgram(program);
         if (!targetProgram.isEmpty())
             for (User_Program item : targetProgram)
                 programSubscribers.add(UserResponse.mapToUserResponse(item.getUser()));
-        return ResponseEntity.status(HttpStatus.OK).body(programSubscribers);
+        Map<Integer, Boolean> subscribersStatus = targetProgram.stream()
+                .collect(Collectors.toMap(
+                        up -> up.getUser().getId(),
+                        User_Program::getIsActive
+                ));
+        return ResponseEntity.ok(Map.of(
+                "subscribers", programSubscribers,
+                "subscribersStatus", subscribersStatus
+        ));
+    }
+
+    @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
+    public ResponseEntity<?> getUserSubscriptionPrograms(Integer userId) {
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user with this id not found"));
+        List<User_Program> userSubscriptions = userProgramRepository.findByUser(user);
+        List<ProgramResponse> subscriptionPrograms = new ArrayList<>();
+        if (!userSubscriptions.isEmpty())
+            for (User_Program item : userSubscriptions)
+                subscriptionPrograms.add(ProgramResponse.builder().name(item.getProgram().getTitle()).build());
+        return ResponseEntity.status(HttpStatus.OK).body(subscriptionPrograms);
     }
 
 

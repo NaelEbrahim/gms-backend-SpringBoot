@@ -12,6 +12,8 @@ import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,36 +46,32 @@ public class DietService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> createDiet(DietRequest request) {
-        // Check if the diet title already exists (optional validation)
-        Optional<DietPlan> existingDietPlan = dietPlanRepository.findByTitle(request.getTitle());
-        if (existingDietPlan.isPresent()) {
+        DietPlan dietPlan = dietPlanRepository.findByTitle(request.getTitle()).orElse(null);
+        if (dietPlan != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Diet Plan title already exists"));
         }
-        // Convert the DTO to entity and save
+
         DietPlan dietPlanEntity = new DietPlan();
 
-        Optional<User> userOptional = userRepository.findById(request.getCoachId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        User coach = userRepository.findById(request.getCoachId()).orElse(null);
+        if (coach == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
 
         dietPlanEntity.setTitle(request.getTitle());
-        dietPlanEntity.setCoach(userOptional.get());
+        dietPlanEntity.setCoach(coach);
         dietPlanEntity.setCreatedAt(LocalDateTime.now());
         dietPlanEntity.setLastModifiedAt(LocalDateTime.now());
-        // Save the dietPlan to the database
         dietPlanRepository.save(dietPlanEntity);
-
 
         // Create and send notification
         Notification notification = new Notification();
-        notification.setTitle("New Diet Plan");
+        notification.setTitle("New Diet Plan" + dietPlanEntity.getTitle());
         notification.setContent("New Diet Plan has been made :" + dietPlanEntity.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
-        // Persist notification first
-        notification = notificationRepository.save(notification); // Save and get managed instance
+        notification = notificationRepository.save(notification);
 
         List<User> usersWithUserRole = userRepository.findAllByRoleName(Roles.User);
 
@@ -82,7 +80,6 @@ public class DietService {
                 notification
         );
 
-        // Return the response with the saved dietPlan details
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Diet Plan created successfully"));
     }
@@ -90,29 +87,26 @@ public class DietService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> updateDiet(Integer id, DietRequest request) {
-        Optional<DietPlan> optionalDietPlan = dietPlanRepository.findById(id);
-        if (optionalDietPlan.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        DietPlan dietPlan = dietPlanRepository.findById(id).orElse(null);
+        if (dietPlan == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Diet Plan not found"));
         }
-
-        DietPlan existingDietPlan = optionalDietPlan.get();
-
-        Optional<User> userOptional = userRepository.findById(request.getCoachId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        User coach = userRepository.findById(request.getCoachId()).orElse(null);
+        if (coach == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
-        if (!existingDietPlan.getCoach().getId().equals(request.getCoachId())) {
-            existingDietPlan.setCoach(userOptional.get());
+        if (!dietPlan.getCoach().getId().equals(request.getCoachId())) {
+            dietPlan.setCoach(coach);
         }
 
-        if (!existingDietPlan.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
-            existingDietPlan.setTitle(request.getTitle());
+        if (!dietPlan.getTitle().equals(request.getTitle()) && !request.getTitle().isEmpty()) {
+            dietPlan.setTitle(request.getTitle());
         }
 
-        existingDietPlan.setLastModifiedAt(LocalDateTime.now());
-        dietPlanRepository.save(existingDietPlan);
+        dietPlan.setLastModifiedAt(LocalDateTime.now());
+        dietPlanRepository.save(dietPlan);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "Diet Plan updated successfully"));
@@ -164,7 +158,7 @@ public class DietService {
     }
 
     private ScheduleResponse buildScheduleResponse(DietPlan dietPlan) {
-        Map<Day, MealDayResponse> schedule = new LinkedHashMap<>();
+        Map<Day, MealDayResponse> schedule = new HashMap<>();
 
         planMealRepository.findByDietPlan(dietPlan)
                 .stream()
@@ -172,7 +166,7 @@ public class DietService {
                 .forEach((day, dayMeals) -> {
                     Map<MealTime, List<MealResponse>> mealsByTime = dayMeals.stream()
                             .collect(Collectors.groupingBy(
-                                    Plan_Meal::getMealTime,
+                                    Plan_Meal::getMealTime,   // KEEP AS ENUM
                                     Collectors.mapping(pm -> new MealResponse(
                                             pm.getMeal().getId(),
                                             pm.getMeal().getTitle(),
@@ -225,18 +219,11 @@ public class DietService {
     }
 
 
-    public ResponseEntity<?> getAllDiets() {
-        List<DietPlan> dietPlans = dietPlanRepository.findAll();
-
-        if (dietPlans.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No diet plans found"));
-        }
-
+    public ResponseEntity<?> getAllDiets(Pageable pageable) {
+        Page<DietPlan> dietPlans = dietPlanRepository.findAllPageable(pageable);
         List<DietResponse> dietPlanResponses = dietPlans.stream()
                 .map(dietPlan -> {
                     // Get meals for each diet plan
-
                     return new DietResponse(
                             dietPlan.getId(),
                             mapToUserResponse(dietPlan.getCoach()),
@@ -249,33 +236,32 @@ public class DietService {
                     );
                 })
                 .toList();
-
-        return ResponseEntity.status(HttpStatus.OK).body(dietPlanResponses);
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", dietPlans.getTotalElements());
+        result.put("totalPages", dietPlans.getTotalPages());
+        result.put("currentPage", dietPlans.getNumber());
+        result.put("dietPlans", dietPlanResponses);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", result));
     }
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> assignMealToDiet(AssignMealToDietRequest request) {
-        Integer dietPlanId = request.getDiet_plan_id();
-        Integer mealId = request.getMeal_id();
-
-        Optional<DietPlan> dietPlanOptional = dietPlanRepository.findById(dietPlanId);
-        if (dietPlanOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        DietPlan dietPlan = dietPlanRepository.findById(request.getDietId()).orElse(null);
+        if (dietPlan == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Diet Plan not found"));
         }
 
-        Optional<Meal> mealOptional = mealRepository.findById(mealId);
-        if (mealOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Meal meal = mealRepository.findById(request.getMealId()).orElse(null);
+        if (meal == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Meal not found"));
         }
 
-        DietPlan dietPlanEntity = dietPlanOptional.get();
-        Meal mealEntity = mealOptional.get();
-
-        // Optional: Check if already assigned
-        boolean exists = planMealRepository.existsByDietPlanAndMealAndDayAndMealTime(dietPlanEntity, mealEntity, request.getDay(), request.getMealTime());
+        // Check if already assigned
+        boolean exists = planMealRepository.existsByDietPlanAndMealAndDayAndMealTime(dietPlan, meal, request.getDay(), request.getMealTime());
         if (exists) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Meal is already assigned to this dietPlan"));
@@ -283,8 +269,8 @@ public class DietService {
 
         // Create and save the relationship
         Plan_Meal planMeal = new Plan_Meal();
-        planMeal.setDietPlan(dietPlanEntity);
-        planMeal.setMeal(mealEntity);
+        planMeal.setDietPlan(dietPlan);
+        planMeal.setMeal(meal);
         planMeal.setQuantity(request.getQuantity());
         planMeal.setDay(request.getDay());
         planMeal.setMealTime(request.getMealTime());
@@ -298,39 +284,30 @@ public class DietService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> updateAssignedMealToDiet(AssignMealToDietRequest request) {
-        Integer dietPlanId = request.getDiet_plan_id();
-        Integer mealId = request.getMeal_id();
-
-        Optional<DietPlan> dietPlanOptional = dietPlanRepository.findById(dietPlanId);
-        if (dietPlanOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        DietPlan dietPlan = dietPlanRepository.findById(request.getDietId()).orElse(null);
+        if (dietPlan == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Diet Plan not found"));
         }
 
-        Optional<Meal> mealOptional = mealRepository.findById(mealId);
-        if (mealOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Meal meal = mealRepository.findById(request.getMealId()).orElse(null);
+        if (meal == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Meal not found"));
         }
 
-        DietPlan dietPlanEntity = dietPlanOptional.get();
-        Meal mealEntity = mealOptional.get();
+        Plan_Meal planMeal = planMealRepository.findByDietPlanAndMealAndDayAndMealTime(dietPlan,
+                meal, request.getDay(), request.getMealTime()).orElse(null);
 
-
-        Optional<Plan_Meal> planMealOpt = planMealRepository.findByDietPlanAndMealAndDayAndMealTime(dietPlanEntity,
-                mealEntity, request.getDay(), request.getMealTime());
-
-        if (planMealOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Meal not assigned to diet plan"));
+        if (planMeal == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Meal not assigned to diet plan"));
         }
 
-        Plan_Meal pm = planMealOpt.get();
-
-        if (request.getQuantity() != null && !request.getQuantity().equals(pm.getQuantity())) {
-            pm.setQuantity(request.getQuantity());
+        if (request.getQuantity() != null && !request.getQuantity().equals(planMeal.getQuantity())) {
+            planMeal.setQuantity(request.getQuantity());
         }
 
-        planMealRepository.save(pm);
+        planMealRepository.save(planMeal);
 
         return ResponseEntity.ok(Map.of("message", "Meal assignment updated successfully"));
     }
@@ -338,32 +315,26 @@ public class DietService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> unAssignMealFromDiet(AssignMealToDietRequest request) {
-        Integer dietPlanId = request.getDiet_plan_id();
-        Integer mealId = request.getMeal_id();
-
-        Optional<DietPlan> dietPlanOptional = dietPlanRepository.findById(dietPlanId);
-        if (dietPlanOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        DietPlan dietPlan = dietPlanRepository.findById(request.getDietId()).orElse(null);
+        if (dietPlan == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Diet Plan not found"));
         }
 
-        Optional<Meal> mealOptional = mealRepository.findById(mealId);
-        if (mealOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Meal meal = mealRepository.findById(request.getMealId()).orElse(null);
+        if (meal == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Meal not found"));
         }
 
-        DietPlan dietPlanEntity = dietPlanOptional.get();
-        Meal mealEntity = mealOptional.get();
+        Plan_Meal planMeal = planMealRepository.findByDietPlanAndMealAndDayAndMealTime(dietPlan,
+                meal, request.getDay(), request.getMealTime()).orElse(null);
 
-        Optional<Plan_Meal> planMealOpt = planMealRepository.findByDietPlanAndMealAndDayAndMealTime(dietPlanEntity,
-                mealEntity, request.getDay(), request.getMealTime());
-
-        if (planMealOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Meal not assigned to diet plan"));
+        if (planMeal == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Meal not assigned to diet plan"));
         }
 
-        planMealRepository.delete(planMealOpt.get());
+        planMealRepository.delete(planMeal);
         return ResponseEntity.ok(Map.of("message", "Meal successfully removed from diet plan"));
     }
 
@@ -668,14 +639,22 @@ public class DietService {
     public ResponseEntity<?> getDietSubscribers(Integer dietId) {
         var diet = dietPlanRepository.findById(dietId).orElse(null);
         if (diet == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "No diets with this id"));
         List<User_Diet> targetDiet = userDietRepository.findByDietPlan(diet);
         List<UserResponse> dietSubscribers = new ArrayList<>();
         if (!targetDiet.isEmpty())
             for (User_Diet item : targetDiet)
                 dietSubscribers.add(UserResponse.mapToUserResponse(item.getUser()));
-        return ResponseEntity.status(HttpStatus.OK).body(dietSubscribers);
+        Map<Integer, Boolean> subscribersStatus = targetDiet.stream()
+                .collect(Collectors.toMap(
+                        up -> up.getUser().getId(),
+                        User_Diet::getIsActive
+                ));
+        return ResponseEntity.ok(Map.of(
+                "subscribers", dietSubscribers,
+                "subscribersStatus", subscribersStatus
+        ));
     }
 
     public ResponseEntity<?> deleteDietFeedback(Integer userId, Integer dietId) {
@@ -695,6 +674,20 @@ public class DietService {
         userDietRepository.save(userDiet);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "feedback deleted"));
+    }
+
+    @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
+    public ResponseEntity<?> getUserSubscriptionDiets(Integer userId) {
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user with this id not found"));
+        List<User_Diet> userSubscriptions = userDietRepository.findByUser(user);
+        List<DietResponse> subscriptionDiets = new ArrayList<>();
+        if (!userSubscriptions.isEmpty())
+            for (User_Diet item : userSubscriptions)
+                subscriptionDiets.add(DietResponse.builder().title(item.getDiet_plan().getTitle()).build());
+        return ResponseEntity.status(HttpStatus.OK).body(subscriptionDiets);
     }
 
 }

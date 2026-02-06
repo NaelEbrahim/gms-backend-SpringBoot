@@ -13,8 +13,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MealRequest {
 
-    @NotBlank(message = "Program title is required")
-    @Size(max = 100, message = "Program title must not exceed 100 characters")
+    @NotBlank(message = "Meal title is required")
     private String title;
 
     private Float calories;

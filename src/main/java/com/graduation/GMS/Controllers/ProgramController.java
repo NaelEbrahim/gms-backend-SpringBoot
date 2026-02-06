@@ -75,7 +75,7 @@ public class ProgramController {
     }
 
     // Unassign a program from a user
-    @PostMapping("/unassign")
+    @DeleteMapping("/unassign")
     public ResponseEntity<?> unAssignProgramFromUser(@RequestBody AssignProgramToUserRequest request) {
         return programService.unAssignProgramToUser(request);
     }
@@ -118,6 +118,11 @@ public class ProgramController {
     @GetMapping("/get-members-in-program/{programId}")
     public ResponseEntity<?> getMembersInProgram(@PathVariable Integer programId) {
         return programService.getProgramSubscribers(programId);
+    }
+
+    @GetMapping("/get-user-subscription-programs/{userId}")
+    public ResponseEntity<?> getUserSubscriptionPrograms(@PathVariable Integer userId) {
+        return programService.getUserSubscriptionPrograms(userId);
     }
 
 }

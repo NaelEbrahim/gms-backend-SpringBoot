@@ -1,15 +1,11 @@
 package com.graduation.GMS.Services;
 
 import com.graduation.GMS.DTO.Request.*;
-import com.graduation.GMS.DTO.Response.ProgramResponse;
-import com.graduation.GMS.DTO.Response.SessionResponse;
-import com.graduation.GMS.DTO.Response.UserFeedBackResponse;
-import com.graduation.GMS.DTO.Response.UserResponse;
+import com.graduation.GMS.DTO.Response.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Models.*;
 import com.graduation.GMS.Models.Class;
 import com.graduation.GMS.Models.Enums.Roles;
-import com.graduation.GMS.Models.Enums.WeekDay;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
 import lombok.AllArgsConstructor;
@@ -22,9 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -308,20 +301,17 @@ public class SessionService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> assignSessionToUser(AssignSessionToUserRequest request) {
-        Optional<User> userOptional = userRepository.findById(request.getUserId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
 
-        Optional<Session> sessionOptional = sessionRepository.findById(request.getSessionId());
-        if (sessionOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Session session = sessionRepository.findById(request.getSessionId()).orElse(null);
+        if (session == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Session not found"));
         }
-
-        Session session = sessionOptional.get();
-        User user = userOptional.get();
 
         // Check if max number of users reached
         int currentSubscribers = userSessionRepository.countBySession(session);
@@ -341,6 +331,7 @@ public class SessionService {
         User_Session userSession = new User_Session();
         userSession.setSession(session);
         userSession.setUser(user);
+        userSession.setIsActive(true);
         userSession.setJoinedAt(LocalDateTime.now());
         userSessionRepository.save(userSession);
 
@@ -350,10 +341,10 @@ public class SessionService {
         notification.setContent("New Subscription has been made in Session:" + userSession.getSession().getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
-        notification = notificationRepository.save(notification); // Save and get managed instance
+        notification = notificationRepository.save(notification);
 
         notificationService.sendNotification(
-                userOptional.get(),
+                user,
                 notification
         );
 
@@ -364,20 +355,17 @@ public class SessionService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Coach')")
     public ResponseEntity<?> unAssignSessionToUser(AssignSessionToUserRequest request) {
-        Optional<User> userOptional = userRepository.findById(request.getUserId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
 
-        Optional<Session> sessionOptional = sessionRepository.findById(request.getSessionId());
-        if (sessionOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Session session = sessionRepository.findById(request.getSessionId()).orElse(null);
+        if (session == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Session not found"));
         }
-
-        Session session = sessionOptional.get();
-        User user = userOptional.get();
 
         // Find the existing assignment
         Optional<User_Session> userSessionOptional = userSessionRepository.findByUserAndSession(user, session);
@@ -686,14 +674,22 @@ public class SessionService {
     public ResponseEntity<?> getSessionSubscribers(Integer sessionId) {
         var session = sessionRepository.findById(sessionId).orElse(null);
         if (session == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "no Session with this id"));
         List<User_Session> targetSession = userSessionRepository.findBySession(session);
         List<UserResponse> sessionSubscribers = new ArrayList<>();
         if (!targetSession.isEmpty())
             for (User_Session item : targetSession)
                 sessionSubscribers.add(UserResponse.mapToUserResponse(item.getUser()));
-        return ResponseEntity.status(HttpStatus.OK).body(sessionSubscribers);
+        Map<Integer, Boolean> subscribersStatus = targetSession.stream()
+                .collect(Collectors.toMap(
+                        up -> up.getUser().getId(),
+                        User_Session::getIsActive
+                ));
+        return ResponseEntity.ok(Map.of(
+                "subscribers", sessionSubscribers,
+                "subscribersStatus", subscribersStatus
+        ));
     }
 
     public ResponseEntity<?> deleteSessionFeedBack(Integer userId, Integer classId) {
@@ -712,6 +708,20 @@ public class SessionService {
         userSessionRepository.save(userSession);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", "feedback deleted"));
+    }
+
+    @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
+    public ResponseEntity<?> getUserSubscriptionSessions(Integer userId) {
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user with this id not found"));
+        List<User_Session> userSubscriptions = userSessionRepository.findByUser(user);
+        List<SessionResponse> subscriptionSessions = new ArrayList<>();
+        if (!userSubscriptions.isEmpty())
+            for (User_Session item : userSubscriptions)
+                subscriptionSessions.add(SessionResponse.builder().title(item.getSession().getTitle()).build());
+        return ResponseEntity.status(HttpStatus.OK).body(subscriptionSessions);
     }
 
 }

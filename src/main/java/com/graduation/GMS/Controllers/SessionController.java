@@ -66,7 +66,7 @@ public class SessionController {
     }
 
     // Unassign a session from a user
-    @PostMapping("/unassign")
+    @DeleteMapping("/unassign")
     public ResponseEntity<?> unAssignSessionFromUser(@RequestBody AssignSessionToUserRequest request) {
         return sessionService.unAssignSessionToUser(request);
     }
@@ -120,6 +120,11 @@ public class SessionController {
     @DeleteMapping("/delete-user-feedback")
     public ResponseEntity<?> deleteSessionFeedback(@RequestBody Map<String, String> data) {
         return sessionService.deleteSessionFeedBack(Integer.valueOf(data.get("userId")), Integer.valueOf(data.get("sessionId")));
+    }
+
+    @GetMapping("/get-user-subscription-sessions/{userId}")
+    public ResponseEntity<?> getUserSubscriptionSessions(@PathVariable Integer userId) {
+        return sessionService.getUserSubscriptionSessions(userId);
     }
 
 }

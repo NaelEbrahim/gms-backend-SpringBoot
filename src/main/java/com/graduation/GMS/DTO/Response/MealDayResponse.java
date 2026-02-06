@@ -1,6 +1,7 @@
 package com.graduation.GMS.DTO.Response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,16 +14,19 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MealDayResponse {
+    @JsonProperty("Breakfast")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private List<MealResponse> breakfast;
+    private List<MealResponse> Breakfast;
 
+    @JsonProperty("Lunch")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private List<MealResponse> lunch;
+    private List<MealResponse> Lunch;
 
+    @JsonProperty("Dinner")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private List<MealResponse> dinner;
+    private List<MealResponse> Dinner;
 
+    @JsonProperty("Snack")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private List<MealResponse> snack;
-
+    private List<MealResponse> Snack;
 }

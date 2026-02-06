@@ -13,10 +13,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class DietRequest {
 
-    private Integer coachId;
-
-    @NotBlank(message = "Class Title is required")
-    @Size(max = 100, message = "Class Title must not exceed 100 characters")
+    @NotBlank(message = "dietPlan Title is required")
     private String title;
+
+    private Integer coachId;
 
 }

@@ -23,6 +23,8 @@ public class User_Session {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime joinedAt;
 
+    private Boolean isActive;
+
     private Float rate;
 
     private String feedback;

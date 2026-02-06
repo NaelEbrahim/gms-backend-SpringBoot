@@ -12,9 +12,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssignMealToDietRequest {
-    private Integer meal_id;
+    private Integer mealId;
 
-    private Integer diet_plan_id;
+    private Integer dietId;
 
     private Float quantity;
 

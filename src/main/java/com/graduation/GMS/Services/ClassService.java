@@ -346,47 +346,47 @@ public class ClassService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> addNewSubscription(ClassSubscriptionRequest request) throws Exception {
-        Optional<Class> classOptional = classRepository.findById(request.getClassId());
-
         // Validate class and user existence
-        if (classOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Class Aclass = classRepository.findById(request.getClassId()).orElse(null);
+        if (Aclass == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Class not found"));
         }
-        Optional<User> userOptional = userRepository.findById(request.getUserId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
 
         // Check if user already has an active subscription
         Optional<Subscription> existingSubscription = subscriptionRepository
-                .findByUserAndAClass(userOptional.get(), classOptional.get());
+                .findByUserAndAClass(user, Aclass);
         if (existingSubscription.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "User already has an active subscription to this class"));
         }
         // Record payment if provided
-        processPayment(request, userOptional.get(), classOptional.get());
+        processPayment(request, user, Aclass);
 
         // Create and save subscription
         Subscription subscription = new Subscription();
-        subscription.setUser(userOptional.get());
-        subscription.setAClass(classOptional.get());
+        subscription.setUser(user);
+        subscription.setAClass(Aclass);
         subscription.setJoinedAt(LocalDateTime.now());
         subscription.setIsActive(true);
         subscriptionRepository.save(subscription);
 
         // Create and send notification
         Notification notification = new Notification();
-        notification.setTitle("New Subscription");
+        notification.setTitle("New Subscription" + user.getFirstName() + " " + user.getLastName());
         notification.setContent("New Subscription has been made in Class:" + subscription.getAClass().getName());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
-        notification = notificationRepository.save(notification); // Save and get managed instance
+        notification = notificationRepository.save(notification);
 
         notificationService.sendNotification(
-                userOptional.get(),
+                user,
                 notification
         );
 
@@ -480,47 +480,53 @@ public class ClassService {
 
     @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
     public ResponseEntity<?> getSubscribersByClass(Integer classId) {
-        Optional<Class> classOptional = classRepository.findById(classId);
-        if (classOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Class classEntity = classRepository.findById(classId).orElse(null);
+        if (classEntity == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Class not found"));
         }
 
+        List<Subscription> subscriptions = subscriptionRepository.findByAClass(classEntity);
 
-        Class classEntity = classOptional.get();
-        UserResponse coachResponse = mapToUserResponse(classEntity.getAuditCoach());
-        // Get all subscribers for this class
-        List<UserResponse> subscribers = subscriptionRepository.findByAClass(classEntity)
+        List<UserResponse> subscribers = subscriptions
                 .stream()
-                .map(subscription -> {
-                    User user = subscription.getUser();
-                    return mapToUserResponse(user);
-                })
+                .map(subscription -> mapToUserResponse(subscription.getUser()))
                 .toList();
 
         ClassResponse responseDto = new ClassResponse(
-                coachResponse,
-                classEntity.getId(),
-                classEntity.getName(),
-                classEntity.getDescription(),
-                classEntity.getImagePath(),
-                classEntity.getPrice(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null,
                 subscribers,
                 null
         );
 
-        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+        // Extra info for frontend
+        Map<Integer, Boolean> subscribersIsActive = subscriptions
+                .stream()
+                .collect(Collectors.toMap(
+                        subscription -> subscription.getUser().getId(),
+                        Subscription::getIsActive
+                ));
+
+        return ResponseEntity.ok(Map.of(
+                "subscribers", responseDto.getSubscribers(),
+                "subscribersStatus", subscribersIsActive
+        ));
     }
+
 
     @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
     public ResponseEntity<?> getSubscribersByActiveStatus(Integer classId, boolean isActive) {
         Optional<Class> classOptional = classRepository.findById(classId);
         if (classOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Class not found"));
         }
-
 
         Class classEntity = classOptional.get();
         UserResponse coachResponse = mapToUserResponse(classEntity.getAuditCoach());
@@ -689,10 +695,10 @@ public class ClassService {
     }
 
     @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
-    public ResponseEntity<?> getClassesSubscribersByUser(Integer userId) {
+    public ResponseEntity<?> getUserSubscriptionClasses(Integer userId) {
         var user = userRepository.findById(userId).orElse(null);
         if (user == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "user with this id not found"));
         List<Subscription> userSubscriptions = subscriptionRepository.findByUser(user);
         List<ClassResponse> subscriptionClasses = new ArrayList<>();
