@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Getter
 public class PrivateCoachResponse {
 
-    private final UserResponse coach;
+    private final UserResponse item;
 
     private final Boolean isActive;
 
@@ -18,7 +18,7 @@ public class PrivateCoachResponse {
     private final Float rate;
 
     public PrivateCoachResponse(User coach, LocalDate startedAt, Float rate) {
-        this.coach = UserResponse.mapToUserResponse(coach);
+        this.item = UserResponse.mapToUserResponse(coach);
         this.isActive =  !LocalDate.now().isAfter(startedAt.plusDays(30));
         this.startedAt = startedAt;
         this.rate = rate;

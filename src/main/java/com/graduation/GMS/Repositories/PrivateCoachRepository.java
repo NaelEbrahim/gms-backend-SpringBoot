@@ -15,4 +15,6 @@ public interface PrivateCoachRepository extends JpaRepository<PrivateCoach, Inte
     Optional<PrivateCoach> findByUserAndCoach(User user, User coach);
 
     List<PrivateCoach> findByUserId(Integer userId);
+
+    List<PrivateCoach> findByCoachId(Integer userId);
 }

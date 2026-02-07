@@ -94,6 +94,11 @@ public class UserController {
         return userService.addCoachRate(data.get("coachId"), data.get("rate"));
     }
 
+    @GetMapping("/get-coach-user/{coachId}")
+    public ResponseEntity<?> getCoachUsers(@PathVariable Integer coachId) {
+        return userService.getCoachUsers(coachId);
+    }
+
     // --- Attendance APIs ---
 
     @PostMapping("/attendance")

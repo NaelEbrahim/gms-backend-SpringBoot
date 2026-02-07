@@ -715,7 +715,7 @@ public class UserService {
     public ResponseEntity<?> getUserCoaches(Integer userId) {
         var user = userRepository.findById(userId).orElse(null);
         if (user == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "user not found"));
         List<PrivateCoachResponse> userCoaches = new ArrayList<>();
         for (PrivateCoach element : privateCoachRepository.findByUserId(userId))
@@ -802,7 +802,7 @@ public class UserService {
     public ResponseEntity<?> getUserHealthInfo(HealthInfoRequest healthInfoRequest) {
         var user = userRepository.findById(healthInfoRequest.getUserId()).orElse(null);
         if (user == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "user not found"));
         LocalDate startDate = healthInfoRequest.getStartDate();
         LocalDate endDate = healthInfoRequest.getEndDate();
@@ -844,7 +844,7 @@ public class UserService {
     public ResponseEntity<?> deleteHealthInfo(Integer healthInfoId) {
         var userHealthInfo = healthInfoRepository.findById(healthInfoId).orElse(null);
         if (userHealthInfo == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "health info found"));
         healthInfoRepository.deleteById(userHealthInfo.getId());
         healthInfoRepository.flush();
@@ -852,5 +852,18 @@ public class UserService {
                 .body(Map.of("message", "recorded health info deleted"));
     }
 
+    @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
+    public ResponseEntity<?> getCoachUsers (int coachId){
+        User coach = userRepository.findById(coachId).orElse(null);
+        if (coach == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user not found"));
+        }
+        List<PrivateCoachResponse> coachUsers = new ArrayList<>();
+        for (PrivateCoach element : privateCoachRepository.findByCoachId(coachId))
+            coachUsers.add(new PrivateCoachResponse(element.getUser(), element.getStartedAt(), element.getUserRate()));
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", coachUsers));
+    }
 
 }
