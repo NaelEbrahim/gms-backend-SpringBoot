@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -448,90 +449,85 @@ public class UserService {
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
-    public ResponseEntity<?> createAttendanceFromQr(QrAttendanceRequest request) {
-        try {
-            // 1. Decode QR Base64 image and extract email text
-            String email = "";// TODO : receive email from front instead of this -> decodeEmailFromQrImage(request.getQrCode());
-
-            // 2. Find user by extracted email
-            Optional<User> userOptional = userRepository.findByEmail(email);
-            if (userOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "User not found for the QR code"));
-            }
-
-            User user = userOptional.get();
-
-            // 3. Check if attendance for today already exists
-            LocalDate today = LocalDate.now();
-            LocalDateTime startOfDay = today.atStartOfDay();
-            LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
-
-            boolean attendanceExists = attendanceRepository.existsByUserAndDateBetween(user, startOfDay, endOfDay);
-            if (attendanceExists) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(Map.of("message", "Attendance for today is already recorded"));
-            }
-
-            // 4. Create and save attendance
-            Attendance attendance = new Attendance();
-            attendance.setUser(user);
-            attendance.setDate(LocalDateTime.now());
-
-            attendanceRepository.save(attendance);
-
-            // Create and send notification
-            Notification notification = new Notification();
-            notification.setTitle("Attendance Notification");
-            notification.setContent("Thank you for your attendance");
-            notification.setCreatedAt(LocalDateTime.now());
-            // Persist notification first
-            notification = notificationRepository.save(notification); // Save and get managed instance
-
-            notificationService.sendNotification(
-                    userOptional.get(),
-                    notification
-            );
-
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(Map.of("message", "Attendance recorded successfully"));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Internal server error: " + e.getMessage()));
+    public ResponseEntity<?> createAttendanceFromQr(int userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "User not found for the QR code"));
         }
+
+        // Check if attendance for today already exists
+        LocalDate today = LocalDate.now();
+        boolean attendanceExists = attendanceRepository.existsByUserAndDate(user, today);
+        if (attendanceExists) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "Attendance for today is already recorded"));
+        }
+
+        Attendance attendance = new Attendance();
+        attendance.setUser(user);
+        attendance.setDate(today);
+        attendanceRepository.save(attendance);
+
+        Notification notification = new Notification();
+        notification.setTitle("Attendance Notification");
+        notification.setContent("Thank you for your attendance");
+        notification.setCreatedAt(LocalDateTime.now());
+        notification = notificationRepository.save(notification);
+
+        notificationService.sendNotification(user, notification);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("message", "Attendance recorded successfully"));
     }
+
 
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
-    public ResponseEntity<?> getUserAttendanceById(Integer userId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+    public ResponseEntity<?> getUserAttendanceByRange(Integer userId, LocalDate start, LocalDate end) {
+        if (start.isAfter(end)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Start date cannot be after end date"));
+        }
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
 
-        User user = userOptional.get();
+        // Fetch attendance for user within range
+        List<Attendance> attendanceList = attendanceRepository.findByUserAndDateBetween(user, start, end);
 
-        // Fetch last 30 attendance records sorted descending by date
-        List<Attendance> attendanceList = attendanceRepository
-                .findTop30ByUserOrderByDateDesc(user);
-
-        // Map attendances to list of LocalDateTime (or formatted string if you prefer)
-        List<LocalDateTime> attendanceDates = attendanceList.stream()
+        List<LocalDate> attendanceDates = attendanceList.stream()
                 .map(Attendance::getDate)
                 .toList();
 
-        // Map user entity to user response DTO (implement this mapping according to your UserResponse)
-        UserResponse userResponse = UserResponse.mapToUserResponse(user);
-
-        Map<String, Object> response = Map.of(
-                "user", userResponse,
-                "attendances", attendanceDates
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of("message", attendanceDates));
     }
+
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
+    public ResponseEntity<?> getAllAttendanceByRange(LocalDate start, LocalDate end) {
+        if (start.isAfter(end)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Start date cannot be after end date"));
+        }
+
+        // Fetch all attendance within range
+        List<Attendance> attendanceList = attendanceRepository.findByDateBetween(start, end);
+
+        // Group by user
+        Map<String, List<LocalDate>> grouped = attendanceList.stream()
+                .collect(Collectors.groupingBy(
+                        a -> a.getUser().getFirstName() + " " + a.getUser().getLastName(),
+                        Collectors.mapping(Attendance::getDate, Collectors.toList())
+                ));
+
+        return ResponseEntity.ok(Map.of("message", grouped));
+    }
+
 
     public ResponseEntity<?> getUserProfile() {
         return ResponseEntity.status(HttpStatus.OK)
@@ -853,9 +849,9 @@ public class UserService {
     }
 
     @PreAuthorize("hasAnyAuthority('Admin','Coach','Secretary')")
-    public ResponseEntity<?> getCoachUsers (int coachId){
+    public ResponseEntity<?> getCoachUsers(int coachId) {
         User coach = userRepository.findById(coachId).orElse(null);
-        if (coach == null){
+        if (coach == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "user not found"));
         }

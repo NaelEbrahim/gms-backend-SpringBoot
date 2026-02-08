@@ -11,8 +11,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QrAttendanceRequest {
-
-    @NotNull(message = "QR is required")
-
-    private String qrCode;
+    @NotNull(message = "userId is required")
+    private String userId;
 }

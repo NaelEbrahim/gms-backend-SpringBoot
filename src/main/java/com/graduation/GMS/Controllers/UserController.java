@@ -7,9 +7,11 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 
@@ -101,14 +103,26 @@ public class UserController {
 
     // --- Attendance APIs ---
 
-    @PostMapping("/attendance")
-    public ResponseEntity<?> createAttendanceFromQr(@Valid @RequestBody QrAttendanceRequest request) {
-        return userService.createAttendanceFromQr(request);
+    @PostMapping("/attendance/{userId}")
+    public ResponseEntity<?> createAttendanceFromQr(@PathVariable Integer userId) {
+        return userService.createAttendanceFromQr(userId);
     }
 
-    @GetMapping("/attendance/{userId}")
-    public ResponseEntity<?> getUserAttendanceById(@PathVariable Integer userId) {
-        return userService.getUserAttendanceById(userId);
+    @GetMapping("/user-attendance-by-range/{userId}")
+    public ResponseEntity<?> getUserAttendanceById(
+            @PathVariable Integer userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+        System.out.println(start.toString()+end.toString());
+        return userService.getUserAttendanceByRange(userId,start,end);
+    }
+
+    @GetMapping("/all-attendance-by-range")
+    public ResponseEntity<?> getAllAttendanceByRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+        System.out.println(start.toString()+end.toString());
+        return userService.getAllAttendanceByRange(start, end);
     }
 
     @GetMapping("/profile")
