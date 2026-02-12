@@ -10,6 +10,7 @@ import com.graduation.GMS.Models.Enums.Roles;
 import com.graduation.GMS.Repositories.*;
 import com.graduation.GMS.Handlers.HandleCurrentUserSession;
 import com.graduation.GMS.Services.GeneralServices.NotificationService;
+import com.graduation.GMS.Services.GeneralServices.ScheduleService;
 import com.graduation.GMS.Tools.FilesManagement;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,11 +21,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.graduation.GMS.DTO.Response.UserResponse.mapToUserResponse;
+import static com.graduation.GMS.Services.GeneralServices.ScheduleService.ZONE;
 
 @Service
 @AllArgsConstructor
@@ -397,31 +400,28 @@ public class ClassService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('Admin','Secretary')")
     public ResponseEntity<?> updateSubscription(ClassSubscriptionRequest request) throws Exception {
-        Optional<Class> classOptional = classRepository.findById(request.getClassId());
-
-        // Validate class and user existence
-        if (classOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        Class classO = classRepository.findById(request.getClassId()).orElse(null);
+        if (classO == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Class not found"));
         }
-        Optional<User> userOptional = userRepository.findById(request.getUserId());
-        if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "User not found"));
         }
 
         // Check if user already has an active subscription
         Optional<Subscription> existingSubscription = subscriptionRepository
-                .findByUserAndAClass(userOptional.get(), classOptional.get());
+                .findByUserAndAClass(user, classO);
         if (existingSubscription.isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "User not Subscribed to this class"));
         }
-        //is active
         existingSubscription.get().setIsActive(true);
         subscriptionRepository.save(existingSubscription.get());
-        // Record payment if provided
-        processPayment(request, userOptional.get(), classOptional.get());
+        // Record payment
+        processPayment(request, user, classO);
 
         // Create and send notification
         Notification notification = new Notification();
@@ -432,7 +432,7 @@ public class ClassService {
         notification = notificationRepository.save(notification); // Save and get managed instance
 
         notificationService.sendNotification(
-                userOptional.get(),
+                user,
                 notification
         );
 
@@ -460,10 +460,10 @@ public class ClassService {
             // Create and send notification
             Notification notification = new Notification();
             notification.setTitle("Payment Acknowledgment");
-            notification.setContent("Payment Successfully....to class:" + classEntity.getName());
+            notification.setContent("Payment Successfully to class:" + classEntity.getName());
             notification.setCreatedAt(LocalDateTime.now());
             // Persist notification first
-            notification = notificationRepository.save(notification); // Save and get managed instance
+            notification = notificationRepository.save(notification);
 
             notificationService.sendNotification(
                     user,
@@ -796,6 +796,25 @@ public class ClassService {
         }
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Map.of("message", response));
+    }
+
+    public ResponseEntity<?> getExpiredSubscriptionsByClassId(int classId) {
+        var aClass = classRepository.findById(classId).orElse(null);
+        if (aClass == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "class id not found"));
+        }
+        List<SubscriptionHistory> latestSubs = subscriptionHistoryRepository.findLatestSubscriptionsByClassId(classId);
+        List<UserResponse> expiredUsers = new ArrayList<>();
+        LocalDate today = LocalDate.now(ScheduleService.ZONE);
+        for (SubscriptionHistory sh : latestSubs) {
+            LocalDate endDate = sh.getPaymentDate().toLocalDate().plusMonths(1);
+            if (!endDate.isAfter(today)) {
+                expiredUsers.add(UserResponse.mapToUserResponse(sh.getUser()));
+            }
+        }
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", expiredUsers));
     }
 
 }

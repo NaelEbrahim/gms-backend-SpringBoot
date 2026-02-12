@@ -20,10 +20,21 @@ public interface SubscriptionHistoryRepository extends JpaRepository<Subscriptio
             """)
     List<SubscriptionHistory> findLatestSubscriptions();
 
-    List<SubscriptionHistory> findByUserId (Integer userId);
+    @Query("""
+                SELECT sh FROM SubscriptionHistory sh
+                WHERE sh.aClass.id = :classId
+                  AND sh.paymentDate = (
+                      SELECT MAX(s2.paymentDate)
+                      FROM SubscriptionHistory s2
+                      WHERE s2.user.id = sh.user.id
+                        AND s2.aClass.id = :classId
+                  )
+            """)
+    List<SubscriptionHistory> findLatestSubscriptionsByClassId(Integer classId);
+
+    List<SubscriptionHistory> findByUserId(Integer userId);
 
     List<SubscriptionHistory> findByaClassId(Integer classId);
-
 
 
 }

@@ -32,7 +32,7 @@ public class ScheduleService {
 
     private final SubscriptionHistoryRepository subscriptionHistoryRepository;
 
-    private static final ZoneId ZONE = ZoneId.of("Asia/Damascus");
+    public static final ZoneId ZONE = ZoneId.of("Asia/Damascus");
 
 
     // Runs every day at 03:00:00 AM

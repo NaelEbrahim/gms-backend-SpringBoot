@@ -149,4 +149,9 @@ public class ClassController {
         return classService.getUserSubscriptions(classId);
     }
 
+    @GetMapping("/get-expired-subscriptions/{classId}")
+    public ResponseEntity<?> getExpiredSubscriptionsByClassId(@PathVariable Integer classId) {
+        return classService.getExpiredSubscriptionsByClassId(classId);
+    }
+
 }

@@ -14,10 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -33,20 +30,13 @@ public class SecurityConfig {
                                                    JwtAuthenticationEntryPoint entryPoint) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/user/login",
-                                "api/user/refresh",
-                                "/api/user/forgotPassword",
-                                "/api/user/verifyResetCode",
-                                "/api/user/resetForgotPassword",
-                                "/images/**",
-                                "/chats/**"
-                        ).permitAll()
+                        .requestMatchers(JwtAuthenticationFilter.NO_AUTH_PATHS.toArray(new String[0]))
+                        .permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(rateLimitFilter,JwtAuthenticationFilter.class);
+                .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 

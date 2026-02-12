@@ -6,7 +6,6 @@ import com.graduation.GMS.DTO.Request.MessageRequest;
 import com.graduation.GMS.Services.GeneralServices.ChatService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +14,6 @@ import java.nio.file.AccessDeniedException;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/chat")
-//@CrossOrigin("http://localhost:63342")
 public class ChatController {
 
     private final ChatService chatService;
