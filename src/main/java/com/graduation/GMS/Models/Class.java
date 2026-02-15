@@ -25,7 +25,6 @@ public class Class {
 
     private Float price;
 
-    @Column(nullable = true)
     private String ImagePath;
 
     @ManyToOne
