@@ -206,6 +206,10 @@ public class SessionService {
                                             s.getEndTime()
                                     ))
                                     .toList();
+                    List<UserFeedBackResponse> feedBackResponses = new ArrayList<>();
+                    userSessionRepository.findFeedbackBySession(session).forEach(
+                            element -> feedBackResponses.add(
+                                    new UserFeedBackResponse(element.getUser(), element.getFeedback())));
                     return new SessionResponse(
                             session.getId(),
                             session.getTitle(),
@@ -217,7 +221,7 @@ public class SessionService {
                             session.getCreatedAt(),
                             session.getMaxNumber(),
                             userSessionRepository.countBySession(session),
-                            null,
+                            feedBackResponses,
                             null,
                             null,
                             session.getAClass().getName(),

@@ -2,7 +2,11 @@ package com.graduation.GMS.Tools;
 
 import java.util.Random;
 
+
 public class Generators {
+    public static final String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
+
+    public static final String passwordRegex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$&*])\\S{8,}$";
 
     public static String generatePassword() {
         String lower = "abcdefghijklmnopqrstuvwxyz";
@@ -27,6 +31,6 @@ public class Generators {
         }
         return new String(password);
     }
-
+    
 
 }

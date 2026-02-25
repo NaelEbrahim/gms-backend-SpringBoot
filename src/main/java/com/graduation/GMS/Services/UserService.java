@@ -221,10 +221,10 @@ public class UserService {
             user.setPassword(securityConfig.passwordEncoder().encode(resetPasswordRequest.getNewPassword()));
             userRepository.save(user);
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(Map.of("message:", "password updated successfully"));
+                    .body(Map.of("message", "password updated successfully"));
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message:", "old password incorrect"));
+                    .body(Map.of("message", "old password incorrect"));
         }
     }
 
@@ -696,16 +696,17 @@ public class UserService {
     }
 
     public ResponseEntity<?> resetForgotPassword(ForgetPasswordRequest request) {
-        var user = userRepository.findByEmail(request.getEmail());
-        if (user.isPresent() && request.getNewPassword() != null) {
-            user.get().setPassword(securityConfig.passwordEncoder().encode(request.getNewPassword()));
-            userRepository.save(user.get());
+        var user = userRepository.findByEmail(request.getEmail()).orElse(null);
+        var isValidCode = verificationCodeService.verifyCode(request.getEmail(),request.getCode());
+        if (user != null && isValidCode && request.getNewPassword() != null) {
+            user.setPassword(securityConfig.passwordEncoder().encode(request.getNewPassword()));
+            userRepository.save(user);
             verificationCodeService.clearCode(request.getEmail());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("message", "password reset successfully"));
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", "user not found or new password is invalid"));
+                .body(Map.of("message", "something went wrong, try again later!"));
     }
 
     public ResponseEntity<?> getUserCoaches(Integer userId) {

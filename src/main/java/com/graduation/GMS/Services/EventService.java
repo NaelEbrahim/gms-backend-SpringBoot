@@ -69,8 +69,8 @@ public class EventService {
 
         // Create and send notification
         Notification notification = new Notification();
-        notification.setTitle("New Event" + eventEntity.getTitle());
-        notification.setContent("New Event has been made :" + eventEntity.getTitle());
+        notification.setTitle("New Event " + eventEntity.getTitle());
+        notification.setContent("New Event has been made: " + eventEntity.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
         notification = notificationRepository.save(notification);
@@ -106,11 +106,6 @@ public class EventService {
         if (!event.getEndedAt().equals(request.getEndedAt()) && request.getEndedAt() != null) {
             event.setEndedAt(request.getEndedAt());
         }
-//        String imagePath = FilesManagement.upload(request.getImage(), eventEntity.getId(), "events");
-//        if (imagePath == null) {
-//            throw new InvalidMediaTypeException("IMAGE", "Upload failed");
-//        }
-//        eventEntity.setImagePath(imagePath);
         eventRepository.save(event);
 
         return ResponseEntity.status(HttpStatus.OK)
@@ -215,7 +210,7 @@ public class EventService {
         Optional<Event> eventOptional = eventRepository.findById(id);
 
         if (eventOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Event not found"));
         }
 
@@ -242,10 +237,10 @@ public class EventService {
         // Create and send notification
         Notification notification = new Notification();
         notification.setTitle("Event Subscribed");
-        notification.setContent("You just Subscribed Event :" + event.getTitle());
+        notification.setContent("You just Subscribed Event: " + event.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
-        notification = notificationRepository.save(notification); // Save and get managed instance
+        notification = notificationRepository.save(notification);
 
         notificationService.sendNotification(
                 HandleCurrentUserSession.getCurrentUser(),
@@ -287,7 +282,7 @@ public class EventService {
         // Create and send notification
         Notification notification = new Notification();
         notification.setTitle("Event Un Subscribed");
-        notification.setContent("You just Un Subscribed Event :" + event.getTitle());
+        notification.setContent("You just Un Subscribed Event: " + event.getTitle());
         notification.setCreatedAt(LocalDateTime.now());
         // Persist notification first
         notification = notificationRepository.save(notification);
@@ -409,6 +404,18 @@ public class EventService {
         response.setParticipants(participants);
 
         return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<?> userEvents(int userId) {
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "User Not Found"));
+        }
+        List<EventResponse> responses = eventParticipantRepository.findByUser(user).stream()
+                .map(elements -> buildEventResponse(elements.getEvent()))
+                .toList();
+        return ResponseEntity.ok(responses);
     }
 
 }

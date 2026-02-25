@@ -92,7 +92,6 @@ public class SessionController {
     // Get all sessions assigned to the currently logged-in user
     @GetMapping("/my-sessions")
     public ResponseEntity<?> getMyAssignedSessions() {
-
         return sessionService.getMyAssignedSessions();
     }
 

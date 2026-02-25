@@ -215,8 +215,7 @@ public class WorkoutService {
 
     @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> getMyFavoriteWorkouts() {
-        User user = HandleCurrentUserSession.getCurrentUser();
-        List<User_Workout_favorite> favorites = userWorkoutFavorite.findAllByUser(user);
+        List<User_Workout_favorite> favorites = userWorkoutFavorite.findAllByUser(HandleCurrentUserSession.getCurrentUser());
         List<WorkoutResponse> responseList = favorites.stream()
                 .map(fav -> {
                     Workout w = fav.getWorkout();

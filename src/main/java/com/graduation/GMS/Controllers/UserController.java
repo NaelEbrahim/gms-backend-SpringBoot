@@ -153,6 +153,7 @@ public class UserController {
 
     @PostMapping("/saveFcmToken")
     public ResponseEntity<?> saveFcmToken(@RequestBody Map<String, String> body) {
+        System.out.println(body.get("fcmToken"));
         return userService.saveUserFcmToken(body.get("fcmToken"));
     }
 

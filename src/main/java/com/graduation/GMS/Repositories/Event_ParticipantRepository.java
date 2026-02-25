@@ -18,6 +18,8 @@ public interface Event_ParticipantRepository extends JpaRepository<Event_Partici
 
     List<Event_Participant> findByEvent(Event event);
 
+    List<Event_Participant> findByUser(User user);
+
     Optional<Event_Participant> findByUserAndEvent(User user, Event event);
 
     @Query("SELECT ep FROM Event_Participant ep WHERE ep.event = :event ORDER BY ep.score ASC")

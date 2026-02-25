@@ -1,8 +1,8 @@
 package com.graduation.GMS.DTO.Request;
 
 
+import com.graduation.GMS.Tools.Generators;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,11 +10,12 @@ import lombok.Setter;
 @Getter
 public class ResetPasswordRequest {
 
+    @Pattern(regexp = Generators.passwordRegex,
+            message = "password must contain 8 chars and contain 1 digit, 1 uppercase, 1 lowercase, and 1 special character")
     private String oldPassword;
 
-    @Size(min = 8, message = "must be at least 8 characters")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$&*])\\S{8}$",
-            message = "password must contain 1 digit, 1 uppercase, 1 lowercase, and 1 special character")
+    @Pattern(regexp = Generators.passwordRegex,
+            message = "password must contain 8 chars and contain 1 digit, 1 uppercase, 1 lowercase, and 1 special character")
     private String newPassword;
 
 }

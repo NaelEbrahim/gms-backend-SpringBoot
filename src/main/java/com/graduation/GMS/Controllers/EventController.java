@@ -68,6 +68,11 @@ public class EventController {
         return eventService.unsubscribeFromEvent(id);
     }
 
+    @GetMapping("/get-user-events/{userId}")
+    public ResponseEntity<?> getUserEvents (@PathVariable  Integer userId){
+        return eventService.userEvents(userId);
+    }
+
     // Score Management Endpoints
     @PutMapping("/scores")
     public ResponseEntity<?> updateUserScore(@Valid @RequestBody UpdateScoreRequest request) {
