@@ -34,3 +34,4 @@ build/
 
 # Ignore Spring Boot application.properties
 src/main/resources/application.properties
+src/main/resources/gms-notification-firebase-adminsdk-fbsvc-062d7b52a1.json
