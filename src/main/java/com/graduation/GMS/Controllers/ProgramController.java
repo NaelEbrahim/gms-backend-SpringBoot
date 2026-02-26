@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/program")
@@ -90,6 +92,11 @@ public class ProgramController {
     @PostMapping("/feedback")
     public ResponseEntity<?> submitFeedback(@RequestBody FeedBackProgramRequest request) {
         return programService.submitFeedback(request);
+    }
+
+    @DeleteMapping("/delete-user-feedback")
+    public ResponseEntity<?> deleteUserFeedback(@RequestBody Map<String, String> data) {
+        return programService.deleteProgramFeedBack(Integer.valueOf(data.get("userId")), Integer.valueOf(data.get("programId")));
     }
 
     // Get all feedbacks for a specific program

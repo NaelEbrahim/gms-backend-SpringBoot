@@ -506,17 +506,9 @@ public class ProgramService {
     }
 
 
-    // Nael
     @PreAuthorize("hasAnyAuthority('User')")
     public ResponseEntity<?> getMyAssignedPrograms() {
-        User user = HandleCurrentUserSession.getCurrentUser();
-
-        List<User_Program> userPrograms = userProgramRepository.findByUser(user);
-
-        if (userPrograms.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "No Programms assigned to this user"));
-        }
+        List<User_Program> userPrograms = userProgramRepository.findByUser(HandleCurrentUserSession.getCurrentUser());
 
         List<ProgramResponse> programResponses = userPrograms.stream()
                 .map(up -> {
@@ -674,6 +666,24 @@ public class ProgramService {
             for (User_Program item : userSubscriptions)
                 subscriptionPrograms.add(ProgramResponse.builder().name(item.getProgram().getTitle()).build());
         return ResponseEntity.status(HttpStatus.OK).body(subscriptionPrograms);
+    }
+
+    public ResponseEntity<?> deleteProgramFeedBack(Integer userId, Integer classId) {
+        var user = userRepository.findById(userId).orElse(null);
+        var program = programRepository.findById(classId).orElse(null);
+        if (user == null || program == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "wrong user or program Id"));
+        }
+        var subscription = userProgramRepository.findByUserAndProgram(user, program).orElse(null);
+        if (subscription == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "user has not assign to this program"));
+        }
+        subscription.setFeedback(null);
+        userProgramRepository.save(subscription);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", "feedback deleted"));
     }
 
 
