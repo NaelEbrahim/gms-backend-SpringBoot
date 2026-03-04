@@ -728,4 +728,46 @@ public class SessionService {
         return ResponseEntity.status(HttpStatus.OK).body(subscriptionSessions);
     }
 
+    public ResponseEntity<?> getCoachSessions(int coachId) {
+        var coach = userRepository.findById(coachId).orElse(null);
+        if (coach == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "coach id not found"));
+        }
+        List<Session> coachSessions = sessionRepository.findByCoach(coach);
+        List<SessionResponse> sessionResponses = coachSessions.stream()
+                .map(session -> {
+                    // schedules (day + time)
+                    List<SessionResponse.Schedule> schedules =
+                            session.getSchedules()
+                                    .stream()
+                                    .map(s -> new SessionResponse.Schedule(
+                                            s.getDay().name(),
+                                            s.getStartTime(),
+                                            s.getEndTime()
+                                    ))
+                                    .toList();
+                    return new SessionResponse(
+                            session.getId(),
+                            session.getTitle(),
+                            session.getDescription(),
+                            session.getAClass().getId(),
+                            UserResponse.mapToUserResponse(session.getCoach()),
+                            null,
+                            schedules,
+                            session.getCreatedAt(),
+                            session.getMaxNumber(),
+                            userSessionRepository.countBySession(session),
+                            null,
+                            null,
+                            null,
+                            session.getAClass().getName(),
+                            session.getAClass().getImagePath()
+                    );
+                })
+                .toList();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", sessionResponses));
+    }
+
 }

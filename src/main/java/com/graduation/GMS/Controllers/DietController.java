@@ -119,4 +119,9 @@ public class DietController {
         return dietService.getUserSubscriptionDiets(userId);
     }
 
+    @GetMapping("/get-coach-diets/{userId}")
+    public ResponseEntity<?> getCoachDiets(@PathVariable Integer userId) {
+        return dietService.getCoachDiets(userId);
+    }
+
 }

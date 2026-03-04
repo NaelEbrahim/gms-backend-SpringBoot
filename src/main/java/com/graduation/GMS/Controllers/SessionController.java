@@ -126,4 +126,10 @@ public class SessionController {
         return sessionService.getUserSubscriptionSessions(userId);
     }
 
+    @GetMapping("/get-coach-sessions/{userId}")
+    public ResponseEntity<?> getCoachSessions(@PathVariable Integer userId) {
+        return sessionService.getCoachSessions(userId);
+    }
+
+
 }

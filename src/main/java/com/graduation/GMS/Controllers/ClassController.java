@@ -154,4 +154,11 @@ public class ClassController {
         return classService.getExpiredSubscriptionsByClassId(classId);
     }
 
+    @GetMapping("/get-coach-classes/{userId}")
+    public ResponseEntity<?> getCoachClasses(@PathVariable Integer userId) {
+        return classService.getCoachClasses(userId);
+    }
+
+
+
 }

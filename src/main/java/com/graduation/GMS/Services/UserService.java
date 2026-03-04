@@ -697,7 +697,7 @@ public class UserService {
 
     public ResponseEntity<?> resetForgotPassword(ForgetPasswordRequest request) {
         var user = userRepository.findByEmail(request.getEmail()).orElse(null);
-        var isValidCode = verificationCodeService.verifyCode(request.getEmail(),request.getCode());
+        var isValidCode = verificationCodeService.verifyCode(request.getEmail(), request.getCode());
         if (user != null && isValidCode && request.getNewPassword() != null) {
             user.setPassword(securityConfig.passwordEncoder().encode(request.getNewPassword()));
             userRepository.save(user);

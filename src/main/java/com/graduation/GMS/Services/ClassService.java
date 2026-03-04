@@ -817,4 +817,18 @@ public class ClassService {
                 .body(Map.of("message", expiredUsers));
     }
 
+    public ResponseEntity<?> getCoachClasses(int coachId) {
+        var coach = userRepository.findById(coachId).orElse(null);
+        if (coach == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "coach id not found"));
+        }
+        List<ClassResponse> responses = new ArrayList<>();
+        List<Class> coachClasses = classRepository.findByAuditCoach(coach);
+        for (Class element : coachClasses)
+            responses.add(ClassResponse.mapToClassResponse(element));
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", responses));
+    }
+
 }

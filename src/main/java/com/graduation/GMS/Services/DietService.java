@@ -690,4 +690,29 @@ public class DietService {
         return ResponseEntity.status(HttpStatus.OK).body(subscriptionDiets);
     }
 
+    public ResponseEntity<?> getCoachDiets(int coachId) {
+        var coach = userRepository.findById(coachId).orElse(null);
+        if (coach == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "coach id not found"));
+        }
+        List<DietResponse> dietResponses = dietPlanRepository.findByCoach(coach).stream()
+                .map(dietPlan -> new DietResponse(
+                        dietPlan.getId(),
+                        mapToUserResponse(dietPlan.getCoach()),
+                        dietPlan.getTitle(),
+                        dietPlan.getCreatedAt(),
+                        dietPlan.getLastModifiedAt(),
+                        null,
+                        null,
+                        buildScheduleResponse(dietPlan),
+                        null,
+                        null,
+                        null
+                ))
+                .toList();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(Map.of("message", dietResponses));
+    }
+
 }
