@@ -66,21 +66,16 @@ public class JwtService {
                 .getPayload();
     }
 
-    public String getEmailFromToken(String token) {
-        return getClaims(token).getSubject();
-    }
 
     public String extractId(String token) {
         return getClaims(token).get("id").toString();
     }
 
     public List<Roles> extractRoles(String token) {
-        Claims claims = getClaims(token);
-        List<String> roleNames = claims.get("roles", List.class);
+        List<String> roleNames = getClaims(token).get("roles", List.class);
         return roleNames.stream()
                 .map(Roles::valueOf)
                 .collect(Collectors.toList());
     }
-
 
 }

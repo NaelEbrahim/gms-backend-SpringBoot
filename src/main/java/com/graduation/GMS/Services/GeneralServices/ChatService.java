@@ -42,13 +42,22 @@ public class ChatService {
 
 
     public ResponseEntity<?> userChatAuth(MessageRequest messageRequest) throws JsonProcessingException {
-        Integer senderId = HandleCurrentUserSession.getCurrentUser().getId();
+        String senderId = HandleCurrentUserSession.getCurrentUser().getId().toString();
+        if (messageRequest.getChannel_name() == null || !messageRequest.getChannel_name().startsWith("private-user-")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "invalid channel"));
+        }
+        String channelUserId = messageRequest.getChannel_name().substring("private-user-".length());
+        if (!senderId.equals(channelUserId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "can not access to this channel"));
+        }
         String authJson = pusherService.getPusher().authenticate(messageRequest.getSocket_id(), messageRequest.getChannel_name());
         return ResponseEntity.ok().body(new ObjectMapper().readValue(authJson, Map.class));
     }
 
     @Transactional
-        public ResponseEntity<?> sendMessage(MessageRequest chatMessage) {
+    public ResponseEntity<?> sendMessage(MessageRequest chatMessage) {
         User sender = HandleCurrentUserSession.getCurrentUser();
         User receiver = userRepository.findById(Integer.parseInt(chatMessage.getReceiverId()))
                 .orElseThrow(() -> new EntityNotFoundException("receiver not found"));
@@ -67,11 +76,11 @@ public class ChatService {
         messageRepository.save(message);
 
         Map<String, String> payload = new HashMap<>();
-        payload.put("conversationId" , conversation.getId().toString());
+        payload.put("conversationId", conversation.getId().toString());
         payload.put("senderId", sender.getId().toString());
         payload.put("senderFirstName", sender.getFirstName());
         payload.put("senderLastName", sender.getLastName());
-        payload.put("senderProfileImage",sender.getProfileImagePath());
+        payload.put("senderProfileImage", sender.getProfileImagePath());
         payload.put("receiverId", receiver.getId().toString());
         payload.put("messageId", message.getId().toString());
         payload.put("messageType", message.getType().toString());
@@ -123,11 +132,11 @@ public class ChatService {
         messageRepository.save(message);
 
         Map<String, String> payload = new HashMap<>();
-        payload.put("conversationId" , conversation.getId().toString());
+        payload.put("conversationId", conversation.getId().toString());
         payload.put("senderId", sender.getId().toString());
         payload.put("senderFirstName", sender.getFirstName());
         payload.put("senderLastName", sender.getLastName());
-        payload.put("senderProfileImage",sender.getProfileImagePath());
+        payload.put("senderProfileImage", sender.getProfileImagePath());
         payload.put("receiverId", receiver.getId().toString());
         payload.put("messageId", message.getId().toString());
         payload.put("messageType", message.getType().toString());
@@ -169,7 +178,7 @@ public class ChatService {
 
     private void resetDeletionIfNeeded(User user, Conversation conversation) {
         User_Conversation uc = userConversationRepository.findByUserIdAndConversationId(user.getId(), conversation.getId())
-                        .orElse(null);
+                .orElse(null);
         if (uc != null && uc.getIsDeleted() == true) {
             uc.setIsDeleted(false);
             userConversationRepository.save(uc);
@@ -236,9 +245,9 @@ public class ChatService {
     public ResponseEntity<?> getMessages(Integer conversationId, Integer page, Integer size) {
         User user = HandleCurrentUserSession.getCurrentUser();
         List<MessageResponse> chatMessages = new ArrayList<>();
-        User_Conversation userConversation = userConversationRepository.findByUserIdAndConversationId(user.getId(),conversationId).orElse(null);
-        if (userConversation != null){
-            List<Message> messagesPage = messageRepository.findMessagesAfterDeletedAt(conversationId,userConversation.getDeletedAt(),PageRequest.of(page, size));
+        User_Conversation userConversation = userConversationRepository.findByUserIdAndConversationId(user.getId(), conversationId).orElse(null);
+        if (userConversation != null) {
+            List<Message> messagesPage = messageRepository.findMessagesAfterDeletedAt(conversationId, userConversation.getDeletedAt(), PageRequest.of(page, size));
             for (Message item : messagesPage) {
                 chatMessages.add(MessageResponse.mapToMessageResponse(item));
             }
@@ -248,7 +257,7 @@ public class ChatService {
                 .body(Map.of("message", chatMessages));
     }
 
-    public ResponseEntity<?> updateLastSeen (Integer conversationId){
+    public ResponseEntity<?> updateLastSeen(Integer conversationId) {
         Integer userId = HandleCurrentUserSession.getCurrentUser().getId();
         userConversationRepository.updateLastSeenAt(userId, conversationId, LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.OK)
@@ -276,7 +285,7 @@ public class ChatService {
     @Transactional
     public ResponseEntity<?> deleteConversation(MessageRequest messageRequest) {
         Integer userId = HandleCurrentUserSession.getCurrentUser().getId();
-        userConversationRepository.markDeletedForUser(userId, messageRequest.getConversationId(),LocalDateTime.now());
+        userConversationRepository.markDeletedForUser(userId, messageRequest.getConversationId(), LocalDateTime.now());
         // Check if both participants deleted → fully remove conversation
         List<User_Conversation> participants = userConversationRepository.findAllByConversationId(messageRequest.getConversationId());
         boolean allDeleted = true;

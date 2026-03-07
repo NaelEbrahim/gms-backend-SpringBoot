@@ -2,7 +2,6 @@ package com.graduation.GMS.Handlers;
 
 import com.graduation.GMS.Models.User;
 import com.graduation.GMS.Repositories.UserRepository;
-import com.graduation.GMS.Services.GeneralServices.JwtService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,20 +12,15 @@ public class HandleCurrentUserSession {
 
     private static UserRepository userRepository;
 
-    private static JwtService jwtService;
-
-
-    public HandleCurrentUserSession(UserRepository userRepository, JwtService jwtService) {
-        HandleCurrentUserSession.jwtService = jwtService;
+    public HandleCurrentUserSession(UserRepository userRepository) {
         HandleCurrentUserSession.userRepository = userRepository;
     }
 
     public static User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getCredentials() instanceof String token)) {
-            throw new UsernameNotFoundException("Invalid authentication or token");
+        if (authentication == null || !(authentication.getPrincipal() instanceof Integer userId)) {
+            throw new UsernameNotFoundException("User not authenticated");
         }
-        Integer userId = Integer.parseInt(jwtService.extractId(token));
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + userId));
     }
